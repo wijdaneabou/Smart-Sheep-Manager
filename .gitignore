@@ -1,0 +1,23 @@
+.env
+**/.env
+# Node.js
+node_modules/
+**/node_modules/
+
+# Expo
+.expo/
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
+
+# Variables d'environnement
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
