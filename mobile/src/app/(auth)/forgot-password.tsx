@@ -10,7 +10,6 @@ import {
 export default function ForgotPasswordScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>🐑</Text>
 
       <Text style={styles.title}>
         Mot de passe oublié

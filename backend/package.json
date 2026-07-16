@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
+    
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
     "db:push": "drizzle-kit push",
+
     "seed:roles": "tsx src/db/seeds/roles.ts",
     "seed:admin": "tsx src/db/seeds/admin.ts"
   },

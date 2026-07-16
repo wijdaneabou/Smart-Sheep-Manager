@@ -2,6 +2,11 @@ import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import api from "@/services/api";
+import {
+  saveTokens,
+  getAccessToken,
+  getRefreshToken,
+} from "@/utils/auth";
 
 import {
   Alert,
@@ -14,18 +19,18 @@ import {
 
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [loading, setLoading] = useState(false);
 
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert(
-        "Erreur",
-        "Veuillez remplir tous les champs."
-      );
-      return;
-    }
+    setEmailError("");
+    setPasswordError("");
 
     try {
       setLoading(true);
@@ -34,23 +39,45 @@ export default function LoginScreen() {
         email,
         password,
       });
+      await saveTokens(
+        response.data.accessToken,
+        response.data.refreshToken
+      );
+      const accessToken = await getAccessToken();
+      const refreshToken = await getRefreshToken();
 
-      console.log(response.data);
+      console.log("Access Token :", accessToken);
+      console.log("Refresh Token :", refreshToken);
 
       Alert.alert(
         "Succès",
-        "Connexion réussie !"
+        response.data.message
       );
 
       router.replace("/(dashboard)");
 
     } catch (error: any) {
-      console.log(error.response?.data || error.message);
+
+      const data = error.response?.data;
+
+      if (data?.errors) {
+
+        if (data.errors.email) {
+          setEmailError(data.errors.email[0]);
+        }
+
+        if (data.errors.password) {
+          setPasswordError(data.errors.password[0]);
+        }
+
+        return;
+      }
 
       Alert.alert(
         "Erreur",
-        "Email ou mot de passe incorrect."
+        data?.message || "Une erreur est survenue."
       );
+
     } finally {
       setLoading(false);
     }
@@ -67,11 +94,14 @@ export default function LoginScreen() {
         Connectez-vous à votre compte
       </Text>
 
+      {/* Email */}
+
       <Text style={styles.label}>
         Adresse Email
       </Text>
 
       <View style={styles.inputContainer}>
+
         <Ionicons
           name="mail-outline"
           size={20}
@@ -88,9 +118,19 @@ export default function LoginScreen() {
           onChangeText={setEmail}
           style={styles.input}
         />
+
       </View>
 
+      {emailError !== "" && (
+        <Text style={styles.errorText}>
+          {emailError}
+        </Text>
+      )}
+
+      {/* Mot de passe */}
+
       <View style={styles.passwordHeader}>
+
         <Text style={styles.label}>
           Mot de passe
         </Text>
@@ -104,9 +144,11 @@ export default function LoginScreen() {
             Mot de passe oublié ?
           </Text>
         </TouchableOpacity>
+
       </View>
 
       <View style={styles.inputContainer}>
+
         <Ionicons
           name="lock-closed-outline"
           size={20}
@@ -138,7 +180,14 @@ export default function LoginScreen() {
             color="#8A8A8A"
           />
         </TouchableOpacity>
+
       </View>
+
+      {passwordError !== "" && (
+        <Text style={styles.errorText}>
+          {passwordError}
+        </Text>
+      )}
 
       <TouchableOpacity
         style={styles.button}
@@ -146,25 +195,23 @@ export default function LoginScreen() {
         disabled={loading}
       >
         <Text style={styles.buttonText}>
-          {loading ? "Connexion..." : "Se connecter"}
+          {loading
+            ? "Connexion..."
+            : "Se connecter"}
         </Text>
       </TouchableOpacity>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
     justifyContent: "center",
     paddingHorizontal: 25,
-  },
-
-  logo: {
-    fontSize: 70,
-    textAlign: "center",
-    marginBottom: 10,
   },
 
   title: {
@@ -210,7 +257,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     height: 55,
     paddingHorizontal: 12,
-    marginBottom: 18,
+    marginBottom: 6,
   },
 
   leftIcon: {
@@ -221,6 +268,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#222",
+  },
+
+  errorText: {
+    color: "#DC2626",
+    fontSize: 13,
+    marginBottom: 12,
+    marginLeft: 4,
   },
 
   button: {
@@ -237,4 +291,5 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
   },
+
 });

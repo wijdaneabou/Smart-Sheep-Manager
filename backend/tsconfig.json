@@ -11,7 +11,7 @@
 
     "skipLibCheck": true,
 
-    "rootDir": "./src",
+    "rootDir": ".",
     "outDir": "./dist",
 
     "types": ["node"]
