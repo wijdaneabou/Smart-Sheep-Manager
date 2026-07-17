@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { router } from "expo-router";
 import {
   ActivityIndicator,
@@ -9,29 +10,17 @@ import {
   View,
 } from "react-native";
 
-<<<<<<< Updated upstream
-export default function ForgotPasswordScreen() {
-  return (
-    <View style={styles.container}>
-
-      <Text style={styles.title}>
-        Mot de passe oublié
-      </Text>
-
-      <Text style={styles.subtitle}>
-        Entrez votre adresse email pour recevoir un lien de réinitialisation.
-=======
 const API_URL = "http://172.27.182.10:3000/api";
 
-export default function ForgotPasswordScreen() {
-  const [email, setEmail] = useState("");
+export default function VerifyCodeScreen() {
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleForgotPassword() {
-    if (!email.trim()) {
+  async function handleVerifyCode() {
+    if (code.length !== 6) {
       Alert.alert(
         "Erreur",
-        "Veuillez saisir votre adresse email."
+        "Veuillez saisir le code à 6 chiffres."
       );
       return;
     }
@@ -40,14 +29,14 @@ export default function ForgotPasswordScreen() {
       setLoading(true);
 
       const response = await fetch(
-        `${API_URL}/auth/forgot-password`,
+        `${API_URL}/auth/verify-reset-code`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email,
+            code,
           }),
         }
       );
@@ -62,22 +51,13 @@ export default function ForgotPasswordScreen() {
         return;
       }
 
-      Alert.alert(
-        "Code envoyé",
-        "Un code de vérification a été envoyé à votre adresse email.",
-        [
-          {
-            text: "Continuer",
-            onPress: () =>
-              router.replace({
-                pathname: "/verify-code",
-                params: {
-                  email,
-                },
-              }),
-          },
-        ]
-      );
+      router.replace({
+        pathname: "/reset-password",
+        params: {
+          code,
+        },
+      });
+
     } catch (error) {
       console.error(error);
 
@@ -93,54 +73,48 @@ export default function ForgotPasswordScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        Mot de passe oublié
->>>>>>> Stashed changes
+        Vérification
       </Text>
 
       <Text style={styles.subtitle}>
-        Entrez votre adresse email pour recevoir un code de vérification.
+        Entrez le code de vérification reçu par email.
       </Text>
 
       <Text style={styles.label}>
-        Adresse Email
+        Code de vérification
       </Text>
 
       <TextInput
-        placeholder="nom@gmail.com"
-        keyboardType="email-address"
-        autoCapitalize="none"
+        placeholder="123456"
+        keyboardType="number-pad"
+        maxLength={6}
+        value={code}
+        onChangeText={setCode}
         style={styles.input}
       />
 
-<<<<<<< Updated upstream
-      <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>
-          Envoyer le lien
-        </Text>
-=======
       <TouchableOpacity
         style={[
           styles.button,
-          loading && { opacity: 0.6 },
+          loading && { opacity: 0.7 },
         ]}
         disabled={loading}
-        onPress={handleForgotPassword}
+        onPress={handleVerifyCode}
       >
         {loading ? (
           <ActivityIndicator color="#FFFFFF" />
         ) : (
           <Text style={styles.buttonText}>
-            Envoyer le code
+            Vérifier le code
           </Text>
         )}
->>>>>>> Stashed changes
       </TouchableOpacity>
 
       <TouchableOpacity
         onPress={() => router.back()}
       >
         <Text style={styles.back}>
-          Retour à la connexion
+          Retour
         </Text>
       </TouchableOpacity>
     </View>
@@ -155,12 +129,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
 
-  logo: {
-    fontSize: 70,
-    textAlign: "center",
-    marginBottom: 15,
-  },
-
   title: {
     fontSize: 28,
     fontWeight: "700",
@@ -171,7 +139,7 @@ const styles = StyleSheet.create({
   subtitle: {
     textAlign: "center",
     color: "#666",
-    marginVertical: 25,
+    marginVertical: 20,
     lineHeight: 22,
   },
 
@@ -185,21 +153,23 @@ const styles = StyleSheet.create({
     borderColor: "#D9D9D9",
     borderRadius: 10,
     padding: 15,
-    fontSize: 16,
+    fontSize: 20,
+    textAlign: "center",
+    letterSpacing: 10,
   },
 
   button: {
     backgroundColor: "#2E7D32",
     padding: 15,
     borderRadius: 10,
-    marginTop: 25,
+    marginTop: 30,
     alignItems: "center",
   },
 
   buttonText: {
-    color: "#FFF",
-    fontWeight: "700",
+    color: "#FFFFFF",
     fontSize: 17,
+    fontWeight: "700",
   },
 
   back: {

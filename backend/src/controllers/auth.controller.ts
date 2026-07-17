@@ -1,7 +1,15 @@
 import type { Context } from "hono";
 
 import { login as loginService } from "../services/auth.service.js";
+<<<<<<< Updated upstream
 
+=======
+import {
+  requestPasswordReset,
+  verifyResetCode as verifyResetCodeService,
+  resetPassword as resetPasswordService,
+} from "../services/password-reset.service.js";
+>>>>>>> Stashed changes
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -143,4 +151,84 @@ export async function refreshToken(c: Context) {
       401
     );
   }
+<<<<<<< Updated upstream
+=======
+}
+export async function forgotPassword(c: any) {
+  try {
+    const { email } = await c.req.json();
+
+    const result = await requestPasswordReset(email);
+
+    return c.json(result);
+
+  } catch (error) {
+    console.error("Forgot password error :", error);
+
+    return c.json(
+      {
+        success: false,
+        message: error instanceof Error ? error.message : "Erreur serveur",
+      },
+      500
+    );
+  }
+}
+export async function resetPassword(c: Context) {
+  try {
+    const { code, password } = await c.req.json();
+
+    if (!code || !password) {
+      return c.json(
+        {
+          success: false,
+          message: "Code et mot de passe sont obligatoires.",
+        },
+        400
+      );
+    }
+
+    const result = await resetPasswordService(
+      code,
+      password
+    );
+
+    if (!result.success) {
+      return c.json(result, 400);
+    }
+
+    return c.json(result);
+
+  } catch (error) {
+    console.error("Reset password error :", error);
+
+    return c.json(
+      {
+        success: false,
+        message: "Erreur serveur",
+      },
+      500
+    );
+  }
+}
+export async function verifyResetCode(c: Context) {
+  try {
+    const { code } = await c.req.json();
+
+    const result = await verifyResetCodeService(code);
+
+    return c.json(result);
+
+  } catch (error) {
+    console.error(error);
+
+    return c.json(
+      {
+        success: false,
+        message: "Erreur serveur",
+      },
+      500
+    );
+  }
+>>>>>>> Stashed changes
 }

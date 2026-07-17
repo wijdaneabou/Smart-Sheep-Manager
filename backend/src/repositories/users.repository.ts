@@ -46,4 +46,25 @@ export async function findUserByEmail(email: string) {
   });
 
   return user ?? null;
+<<<<<<< Updated upstream
+=======
+}
+export async function updatePassword(
+  userId: number,
+  hashedPassword: string
+) {
+  return db
+    .update(users)
+    .set({
+      password: hashedPassword,
+    })
+    .where(eq(users.id, userId));
+}
+export async function findUserById(userId: number) {
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+  });
+
+  return user ?? null;
+>>>>>>> Stashed changes
 }

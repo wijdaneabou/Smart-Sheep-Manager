@@ -22,3 +22,11 @@ export async function findRefreshToken(token: string) {
 
   return result[0] ?? null;
 }
+
+export async function deleteUserRefreshTokens(
+  userId: number
+) {
+  return db
+    .delete(refreshTokens)
+    .where(eq(refreshTokens.userId, userId));
+}

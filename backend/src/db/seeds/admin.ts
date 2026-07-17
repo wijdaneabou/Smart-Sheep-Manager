@@ -9,7 +9,7 @@ async function seedAdmin() {
     await db.insert(users).values({
       firstName: "Super",
       lastName: "Admin",
-      email: "admin@ssm.com",
+      email: "f.laassiri0988@uca.ac.ma",
       phone: "0600000000",
       password: hashedPassword,
       roleId: 1, // ADMIN
