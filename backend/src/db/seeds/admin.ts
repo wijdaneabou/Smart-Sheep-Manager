@@ -16,7 +16,7 @@ async function seedAdmin() {
       status: "ACTIVE",
     });
 
-    console.log("✅ Administrateur créé avec succès.");
+    console.log(" Administrateur créé avec succès.");
   } catch (error) {
     console.error(error);
   }

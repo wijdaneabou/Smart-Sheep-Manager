@@ -1,5 +1,5 @@
 import { db } from "../connection.js";
-import { roles } from "../schema/users.js";
+import { roles } from "../schema/roles.js";
 
 async function seedRoles() {
   await db.insert(roles).values([

@@ -3,3 +3,6 @@ export * from "./permissions.js";
 export * from "./rolePermissions.js";
 export * from "./users.js";
 export * from "./refreshTokens.js";
+export * from "./passwordResets.js";
+export * from "./exploitations.js";
+export * from "./loginHistory.js";

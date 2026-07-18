@@ -22,11 +22,9 @@
     "hono": "^4.12.29",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.22.6",
-<<<<<<< Updated upstream
-=======
+
     "nodemailer": "^9.0.3",
     "resend": "^6.17.2",
->>>>>>> Stashed changes
     "zod": "^4.4.3"
   },
   "devDependencies": {

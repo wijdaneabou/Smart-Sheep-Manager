@@ -1,15 +1,13 @@
 import type { Context } from "hono";
 
 import { login as loginService } from "../services/auth.service.js";
-<<<<<<< Updated upstream
 
-=======
+
 import {
   requestPasswordReset,
   verifyResetCode as verifyResetCodeService,
   resetPassword as resetPasswordService,
 } from "../services/password-reset.service.js";
->>>>>>> Stashed changes
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -151,8 +149,7 @@ export async function refreshToken(c: Context) {
       401
     );
   }
-<<<<<<< Updated upstream
-=======
+
 }
 export async function forgotPassword(c: any) {
   try {
@@ -230,5 +227,4 @@ export async function verifyResetCode(c: Context) {
       500
     );
   }
->>>>>>> Stashed changes
 }

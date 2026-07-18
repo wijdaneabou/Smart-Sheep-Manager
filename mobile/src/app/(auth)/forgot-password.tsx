@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { router } from "expo-router";
 import {
   ActivityIndicator,
@@ -9,19 +10,7 @@ import {
   View,
 } from "react-native";
 
-<<<<<<< Updated upstream
-export default function ForgotPasswordScreen() {
-  return (
-    <View style={styles.container}>
-
-      <Text style={styles.title}>
-        Mot de passe oublié
-      </Text>
-
-      <Text style={styles.subtitle}>
-        Entrez votre adresse email pour recevoir un lien de réinitialisation.
-=======
-const API_URL = "http://172.27.182.10:3000/api";
+const API_URL = "http://192.168.1.12:3000/api";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
@@ -57,7 +46,7 @@ export default function ForgotPasswordScreen() {
       if (!data.success) {
         Alert.alert(
           "Erreur",
-          data.message
+          data.message || "Une erreur est survenue."
         );
         return;
       }
@@ -71,9 +60,7 @@ export default function ForgotPasswordScreen() {
             onPress: () =>
               router.replace({
                 pathname: "/verify-code",
-                params: {
-                  email,
-                },
+                params: { email },
               }),
           },
         ]
@@ -94,7 +81,6 @@ export default function ForgotPasswordScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>
         Mot de passe oublié
->>>>>>> Stashed changes
       </Text>
 
       <Text style={styles.subtitle}>
@@ -109,15 +95,12 @@ export default function ForgotPasswordScreen() {
         placeholder="nom@gmail.com"
         keyboardType="email-address"
         autoCapitalize="none"
+        autoCorrect={false}
+        value={email}
+        onChangeText={setEmail}
         style={styles.input}
       />
 
-<<<<<<< Updated upstream
-      <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>
-          Envoyer le lien
-        </Text>
-=======
       <TouchableOpacity
         style={[
           styles.button,
@@ -133,12 +116,9 @@ export default function ForgotPasswordScreen() {
             Envoyer le code
           </Text>
         )}
->>>>>>> Stashed changes
       </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={() => router.back()}
-      >
+      <TouchableOpacity onPress={() => router.back()}>
         <Text style={styles.back}>
           Retour à la connexion
         </Text>
@@ -155,23 +135,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
 
-  logo: {
-    fontSize: 70,
-    textAlign: "center",
-    marginBottom: 15,
-  },
-
   title: {
     fontSize: 28,
     fontWeight: "700",
     textAlign: "center",
     color: "#222",
+    marginBottom: 10,
   },
 
   subtitle: {
     textAlign: "center",
     color: "#666",
-    marginVertical: 25,
+    marginBottom: 25,
     lineHeight: 22,
   },
 
@@ -197,7 +172,7 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    color: "#FFF",
+    color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 17,
   },
