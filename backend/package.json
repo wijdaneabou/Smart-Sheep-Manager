@@ -6,11 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
-    
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:push": "drizzle-kit push",
-
     "seed:roles": "tsx src/db/seeds/roles.ts",
     "seed:admin": "tsx src/db/seeds/admin.ts"
   },
@@ -21,8 +19,7 @@
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.29",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.22.6",
-
+    "mysql2": "^3.23.0",
     "nodemailer": "^9.0.3",
     "resend": "^6.17.2",
     "zod": "^4.4.3"
