@@ -13,25 +13,35 @@ type ModuleCard = {
   available: boolean;
 };
 
-// Seul le Module 1 (Utilisateurs) est realise pour l'instant.
-// Les autres apparaissent en apercu, desactives, pour montrer la roadmap
-// (16 modules prevus au cahier des charges).
+// Seul le Module 1 (Utilisateurs) est réalisé pour l'instant.
+// Les autres apparaissent en aperçu, désactivés, pour montrer la roadmap
+// (16 modules prévus au cahier des charges).
 const MODULES: ModuleCard[] = [
   {
     key: "users",
     icon: "👥",
     title: "Gestion des utilisateurs",
-    subtitle: "Comptes, roles, photos, historique",
+    subtitle: "Comptes, rôles, photos, historique",
     color: "#2563eb",
     bgColor: "#eef2ff",
     route: "/users",
     available: true,
   },
   {
+    key: "permissions",
+    icon: "🔐",
+    title: "Permissions & Rôles",
+    subtitle: "Gérer les droits par module",
+    color: "#7c3aed",
+    bgColor: "#f3e8ff",
+    route: "/permissions",
+    available: true,
+  },
+  {
     key: "herd",
     icon: "🐑",
     title: "Gestion du troupeau",
-    subtitle: "Fiches animales, pesees, pedigree",
+    subtitle: "Fiches animales, pesées, pedigree",
     color: "#7c3aed",
     bgColor: "#f3e8ff",
     route: "",
@@ -50,8 +60,8 @@ const MODULES: ModuleCard[] = [
   {
     key: "finance",
     icon: "💰",
-    title: "Gestion financiere",
-    subtitle: "Budget, tresorerie, rentabilite",
+    title: "Gestion financière",
+    subtitle: "Budget, trésorerie, rentabilité",
     color: "#16a34a",
     bgColor: "#dcfce7",
     route: "",
@@ -99,7 +109,7 @@ export default function Dashboard() {
                 <Text style={[styles.chevron, { color: mod.color }]}>›</Text>
               ) : (
                 <View style={styles.soonBadge}>
-                  <Text style={styles.soonBadgeText}>Bientot</Text>
+                  <Text style={styles.soonBadgeText}>Bientôt</Text>
                 </View>
               )}
             </Pressable>
