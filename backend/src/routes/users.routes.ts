@@ -10,23 +10,21 @@ import {
   uploadUserPhotoHandler,
 } from "../controllers/users.controller.js";
 import { isAuthenticated } from "../middlewares/auth.middleware.js";
-import { requireRole } from "../middlewares/rbac.middleware.js";
+import { requirePermission } from "../middlewares/permissions.middleware.js";
 
 const usersRoutes = new Hono();
 
+// All routes require authentication
 usersRoutes.use("*", isAuthenticated);
 
-usersRoutes.post("/", requireRole("ADMIN"), createUserHandler);
-usersRoutes.put("/:id", requireRole("ADMIN"), updateUserHandler);
-usersRoutes.patch("/:id/deactivate", requireRole("ADMIN"), deactivateUserHandler);
-usersRoutes.patch("/:id/reactivate", requireRole("ADMIN"), reactivateUserHandler);
-usersRoutes.get("/:id", requireRole("ADMIN", "MANAGER"), getUserByIdHandler);
-usersRoutes.get("/", requireRole("ADMIN", "MANAGER"), listUsersHandler);
-usersRoutes.get(
-  "/:id/login-history",
-  requireRole("ADMIN", "MANAGER"),
-  getLoginHistoryHandler
-);
-usersRoutes.post("/:id/photo", uploadUserPhotoHandler);
+// User management endpoints with granular permissions
+usersRoutes.post("/", requirePermission("USERS", "CREATE"), createUserHandler);
+usersRoutes.put("/:id", requirePermission("USERS", "UPDATE"), updateUserHandler);
+usersRoutes.patch("/:id/deactivate", requirePermission("USERS", "UPDATE"), deactivateUserHandler);
+usersRoutes.patch("/:id/reactivate", requirePermission("USERS", "UPDATE"), reactivateUserHandler);
+usersRoutes.get("/:id", requirePermission("USERS", "READ"), getUserByIdHandler);
+usersRoutes.get("/", requirePermission("USERS", "READ"), listUsersHandler);
+usersRoutes.get("/:id/login-history", requirePermission("USERS", "READ"), getLoginHistoryHandler);
+usersRoutes.post("/:id/photo", requirePermission("USERS", "UPDATE"), uploadUserPhotoHandler);
 
 export default usersRoutes;

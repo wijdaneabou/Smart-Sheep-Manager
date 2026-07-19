@@ -10,7 +10,9 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:push": "drizzle-kit push",
     "seed:roles": "tsx src/db/seeds/roles.ts",
-    "seed:admin": "tsx src/db/seeds/admin.ts"
+    "seed:admin": "tsx src/db/seeds/admin.ts",
+    "seed:permissions": "tsx src/db/seeds/permissions.ts",
+    "seed:role-permissions": "tsx src/db/seeds/role-permissions.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.8",
