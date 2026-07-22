@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useFocusEffect } from "expo-router";
+import { usePermissions } from "@/contexts/PermissionsContext";
 import {
   listUsers,
   deactivateUser,
@@ -20,6 +21,7 @@ import {
 import { getRoleName } from "../../../constants/roles";
 
 export default function UsersListScreen() {
+  const { hasPermission } = usePermissions();
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -165,11 +167,13 @@ export default function UsersListScreen() {
           />
         )}
 
-        <Link href="/users/create" asChild>
-          <Pressable style={styles.addButton}>
-            <Text style={styles.addButtonText}>+ Ajouter un utilisateur</Text>
-          </Pressable>
-        </Link>
+        {hasPermission("USERS", "CREATE") && (
+          <Link href="/users/create" asChild>
+            <Pressable style={styles.addButton}>
+              <Text style={styles.addButtonText}>+ Ajouter un utilisateur</Text>
+            </Pressable>
+          </Link>
+        )}
       </View>
     </SafeAreaView>
   );

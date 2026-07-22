@@ -2,7 +2,7 @@ import { db } from "../connection.js";
 import { roles } from "../schema/roles.js";
 import { permissions } from "../schema/permissions.js";
 import { rolePermissions } from "../schema/rolePermissions.js";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 // Define which permissions each role gets (using permission names)
 const rolePermissionMap: Record<string, string[]> = {
@@ -25,7 +25,6 @@ const rolePermissionMap: Record<string, string[]> = {
     "AI_ASSISTANT:CREATE", "AI_ASSISTANT:READ", "AI_ASSISTANT:UPDATE", "AI_ASSISTANT:DELETE",
   ],
   MANAGER: [
-    "USERS:READ", "USERS:UPDATE",
     "EXPLOITATIONS:READ", "EXPLOITATIONS:UPDATE",
     "HERD:READ", "HERD:UPDATE",
     "IOT:READ", "IOT:UPDATE",
@@ -88,7 +87,6 @@ async function seedRolePermissions() {
     }
 
     let totalInserted = 0;
-    let totalSkipped = 0;
 
     for (const [roleName, permNames] of Object.entries(rolePermissionMap)) {
       const roleId = roleMap[roleName];
@@ -97,6 +95,10 @@ async function seedRolePermissions() {
         continue;
       }
 
+      await db
+        .delete(rolePermissions)
+        .where(eq(rolePermissions.roleId, roleId));
+
       for (const permName of permNames) {
         const permId = permMap[permName];
         if (!permId) {
@@ -104,30 +106,14 @@ async function seedRolePermissions() {
           continue;
         }
 
-        // Check if already exists
-        const existing = await db
-          .select()
-          .from(rolePermissions)
-          .where(
-            and(
-              eq(rolePermissions.roleId, roleId),
-              eq(rolePermissions.permissionId, permId)
-            )
-          )
-          .limit(1);
-
-        if (existing.length === 0) {
-          await db
-            .insert(rolePermissions)
-            .values({ roleId, permissionId: permId });
-          totalInserted++;
-        } else {
-          totalSkipped++;
-        }
+        await db
+          .insert(rolePermissions)
+          .values({ roleId, permissionId: permId });
+        totalInserted++;
       }
     }
 
-    console.log(`✅ ${totalInserted} relations ajoutées, ${totalSkipped} déjà existantes.`);
+    console.log(`✅ ${totalInserted} relations synchronisées.`);
   } catch (error) {
     console.error("Erreur :", error);
   }
