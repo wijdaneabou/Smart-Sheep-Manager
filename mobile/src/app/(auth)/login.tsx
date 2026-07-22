@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import api, { saveToken } from "@/services/api";
-
+import api from "@/services/api";
+import {
+  saveTokens,
+  getAccessToken,
+  getRefreshToken,
+} from "@/utils/auth";
 import {
   Alert,
   StyleSheet,
@@ -14,9 +18,12 @@ import {
 
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [loading, setLoading] = useState(false);
+
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
@@ -26,32 +33,50 @@ export default function LoginScreen() {
 
     try {
       setLoading(true);
-
       const response = await api.post("/auth/login", {
         email,
         password,
       });
+      await saveTokens(
+        response.data.accessToken,
+        response.data.refreshToken
+      );
+      const accessToken = await getAccessToken();
+      const refreshToken = await getRefreshToken();
 
-      await saveToken("accessToken", response.data.accessToken);
-      await saveToken("refreshToken", response.data.refreshToken);
+      console.log("Access Token :", accessToken);
+      console.log("Refresh Token :", refreshToken);
 
-      console.log("Access Token:", response.data.accessToken);
-      console.log("Refresh Token:", response.data.refreshToken);
+      Alert.alert(
+        "Succès",
+        response.data.message
+      );
 
-      Alert.alert("Succès", response.data.message);
       router.replace("/(dashboard)");
 
     } catch (error: any) {
-      const data = error.response?.data;
+    const data = error.response?.data;
 
-      if (data?.errors) {
-        if (data.errors.email) setEmailError(data.errors.email[0]);
-        if (data.errors.password) setPasswordError(data.errors.password[0]);
-        return;
+
+    if (data?.errors) {
+
+      if (data.errors.email) {
+        setEmailError(data.errors.email[0]);
       }
 
-      Alert.alert("Erreur", data?.message || "Une erreur est survenue.");
-    } finally {
+      if (data.errors.password) {
+        setPasswordError(data.errors.password[0]);
+      }
+
+      return;
+    }
+
+    Alert.alert(
+      "Erreur",
+      data?.message || error.message
+    );
+
+  } finally {
       setLoading(false);
     }
   };
@@ -164,8 +189,11 @@ export default function LoginScreen() {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={handleLogin}
-        disabled={loading}
+        onPress={() => {
+            console.log("🟢 BUTTON CLICKED");
+            handleLogin();
+          }}        
+          disabled={loading}
       >
         <Text style={styles.buttonText}>
           {loading

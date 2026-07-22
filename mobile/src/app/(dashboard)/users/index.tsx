@@ -8,9 +8,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link, useFocusEffect } from "expo-router";
+import { Link, useFocusEffect, router } from "expo-router";
 import {
   listUsers,
   deactivateUser,
@@ -18,6 +19,7 @@ import {
   type User,
 } from "../../../services/userService";
 import { getRoleName } from "../../../constants/roles";
+import { logout } from "../../../services/authService";
 
 export default function UsersListScreen() {
   const [users, setUsers] = useState<User[]>([]);
@@ -26,6 +28,7 @@ export default function UsersListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   async function fetchUsers() {
     setError(null);
@@ -37,7 +40,6 @@ export default function UsersListScreen() {
     }
   }
 
-  // Rafraichit la liste a chaque retour sur cet ecran (ex: apres creation)
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
@@ -68,27 +70,97 @@ export default function UsersListScreen() {
     setActionLoadingId(null);
   }
 
+  function handleLogoutPress() {
+    Alert.alert(
+      "Déconnexion",
+      "Voulez-vous vraiment vous déconnecter ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Se déconnecter",
+          style: "destructive",
+          onPress: async () => {
+            setLoggingOut(true);
+            await logout();
+            setLoggingOut(false);
+          },
+        },
+      ]
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.container}>
-        <Text style={styles.title}>Utilisateurs</Text>
-        <Text style={styles.subtitle}>
-          {users.length} compte{users.length > 1 ? "s" : ""}
-        </Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.title}>Utilisateurs</Text>
+            <Text style={styles.subtitle}>
+              {users.length} compte{users.length > 1 ? "s" : ""}
+            </Text>
+          </View>
+
+          <Pressable
+            onPress={handleLogoutPress}
+            disabled={loggingOut}
+            style={({ pressed }) => [
+              styles.logoutButton,
+              pressed && styles.logoutButtonPressed,
+            ]}
+          >
+            {loggingOut ? (
+              <ActivityIndicator size="small" color="#DC2626" />
+            ) : (
+              <Text style={styles.logoutIcon}>🚪</Text>
+            )}
+          </Pressable>
+        </View>
 
         <TextInput
-          style={styles.searchInput}
-          placeholder="Rechercher (nom, email)..."
-          placeholderTextColor="#999"
-          value={search}
-          onChangeText={setSearch}
-          onSubmitEditing={() => {
-            setLoading(true);
-            fetchUsers().finally(() => setLoading(false));
-          }}
-        />
+            style={styles.searchInput}
+            placeholder="Rechercher (nom, email)..."
+            placeholderTextColor="#999"
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={() => {
+              setLoading(true);
+              fetchUsers().finally(() => setLoading(false));
+            }}
+          />
 
-        {error && <Text style={styles.error}>{error}</Text>}
+          <View style={styles.actionsRow}>
+            <Link href="/audit" asChild>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.actionCard,
+                  pressed && styles.actionCardPressed,
+                ]}
+              >
+                <View style={[styles.actionIconCircle, { backgroundColor: "#EFF6FF" }]}>
+                  <Text style={styles.actionIcon}>📜</Text>
+                </View>
+                <Text style={styles.actionTitle}>Journal d'audit</Text>
+                <Text style={styles.actionSubtitle}>Actions & modifications</Text>
+              </Pressable>
+            </Link>
+
+            <Link href="/audit/sessions" asChild>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.actionCard,
+                  pressed && styles.actionCardPressed,
+                ]}
+              >
+                <View style={[styles.actionIconCircle, { backgroundColor: "#F0FDF4" }]}>
+                  <Text style={styles.actionIcon}>🔐</Text>
+                </View>
+                <Text style={styles.actionTitle}>Sessions</Text>
+                <Text style={styles.actionSubtitle}>Historique connexions</Text>
+              </Pressable>
+            </Link>
+          </View>
+
+          {error && <Text style={styles.error}>{error}</Text>}
 
         {loading ? (
           <ActivityIndicator style={{ marginTop: 24 }} />
@@ -178,8 +250,33 @@ export default function UsersListScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
   container: { flex: 1, paddingHorizontal: 16 },
-  title: { fontSize: 22, fontWeight: "700", marginTop: 8 },
-  subtitle: { fontSize: 13, color: "#888", marginTop: 2, marginBottom: 14 },
+
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginTop: 8,
+  },
+  title: { fontSize: 22, fontWeight: "700" },
+  subtitle: { fontSize: 13, color: "#888", marginTop: 2 },
+
+  logoutButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutButtonPressed: {
+    backgroundColor: "#FEE2E2",
+  },
+  logoutIcon: {
+    fontSize: 16,
+  },
+
   searchInput: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -187,6 +284,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 11,
+    marginTop: 14,
     marginBottom: 12,
     fontSize: 14,
   },
@@ -250,6 +348,59 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   toggleButtonText: { color: "#2563eb", fontSize: 12, fontWeight: "600" },
+
+  actionsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 14,
+  },
+
+  actionCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+
+  actionCardPressed: {
+    backgroundColor: "#F9FAFB",
+    borderColor: "#D1D5DB",
+  },
+
+  actionIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+
+  actionIcon: {
+    fontSize: 18,
+  },
+
+  actionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  actionSubtitle: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    marginTop: 2,
+  },
+
   addButton: {
     backgroundColor: "#16a34a",
     borderRadius: 12,
