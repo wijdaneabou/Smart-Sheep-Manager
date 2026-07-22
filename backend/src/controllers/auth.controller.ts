@@ -13,6 +13,7 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "../utils/jwt.js";
+import { getPermissionsForRole } from "../services/permissions.service.js";
 
 import { loginSchema } from "../validators/auth.validator.js";
 
@@ -94,6 +95,23 @@ export async function login(c: Context) {
       email: user.email,
       roleId: user.roleId,
     },
+  });
+}
+
+export async function getMyPermissions(c: Context) {
+  const user = c.get("user") as
+    | { id: number; roleId: number; roleName?: string | null }
+    | undefined;
+
+  if (!user) {
+    return c.json({ success: false, message: "Authentification requise." }, 401);
+  }
+
+  const permissions = await getPermissionsForRole(user.roleId);
+
+  return c.json({
+    permissions,
+    roleName: user.roleName ?? null,
   });
 }
 

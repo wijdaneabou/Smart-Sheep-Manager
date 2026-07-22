@@ -1,31 +1,74 @@
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import api from "@/services/api";
-import {
-  saveTokens,
-  getAccessToken,
-  getRefreshToken,
-} from "@/utils/auth";
 import {
   Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { router } from "expo-router";
+import api, { saveToken } from "@/services/api";
+import { fetchAndCachePermissions } from "@/services/permissionsCache";
+
+type Language = "fr" | "en" | "ar";
+
+const COPY = {
+  fr: {
+    subtitle: "Connectez-vous pour gérer vos utilisateurs et permissions.",
+    sectionTitle: "Connexion",
+    email: "Adresse Email",
+    password: "Mot de passe",
+    forgot: "Mot de passe oublié ?",
+    button: "Se connecter",
+    loading: "Connexion...",
+    emailPlaceholder: "nom@gmail.com",
+    passwordPlaceholder: "********",
+    language: "Langue",
+  },
+  en: {
+    subtitle: "Sign in to manage users and permissions.",
+    sectionTitle: "Sign in",
+    email: "Email Address",
+    password: "Password",
+    forgot: "Forgot password?",
+    button: "Sign in",
+    loading: "Signing in...",
+    emailPlaceholder: "name@gmail.com",
+    passwordPlaceholder: "********",
+    language: "Language",
+  },
+  ar: {
+    subtitle: "سجّل الدخول لإدارة المستخدمين والصلاحيات.",
+    sectionTitle: "تسجيل الدخول",
+    email: "البريد الإلكتروني",
+    password: "كلمة المرور",
+    forgot: "نسيت كلمة المرور؟",
+    button: "تسجيل الدخول",
+    loading: "جاري تسجيل الدخول...",
+    emailPlaceholder: "name@gmail.com",
+    passwordPlaceholder: "********",
+    language: "اللغة",
+  },
+} as const;
 
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
-
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [language, setLanguage] = useState<Language>("fr");
+
+  const copy = COPY[language];
+  const isArabic = language === "ar";
 
   const handleLogin = async () => {
     setEmailError("");
@@ -33,264 +76,334 @@ export default function LoginScreen() {
 
     try {
       setLoading(true);
+
       const response = await api.post("/auth/login", {
         email,
         password,
       });
-      await saveTokens(
-        response.data.accessToken,
-        response.data.refreshToken
-      );
-      const accessToken = await getAccessToken();
-      const refreshToken = await getRefreshToken();
 
-      console.log("Access Token :", accessToken);
-      console.log("Refresh Token :", refreshToken);
+      await saveToken("accessToken", response.data.accessToken);
+      await saveToken("refreshToken", response.data.refreshToken);
 
-      Alert.alert(
-        "Succès",
-        response.data.message
-      );
+      await fetchAndCachePermissions().catch(() => null);
 
       router.replace("/(dashboard)");
-
     } catch (error: any) {
-    const data = error.response?.data;
+      const data = error.response?.data;
 
-
-    if (data?.errors) {
-
-      if (data.errors.email) {
-        setEmailError(data.errors.email[0]);
+      if (data?.errors) {
+        if (data.errors.email) setEmailError(data.errors.email[0]);
+        if (data.errors.password) setPasswordError(data.errors.password[0]);
+        return;
       }
 
-      if (data.errors.password) {
-        setPasswordError(data.errors.password[0]);
-      }
-
-      return;
-    }
-
-    Alert.alert(
-      "Erreur",
-      data?.message || error.message
-    );
-
-  } finally {
+      Alert.alert("Erreur", data?.message || "Une erreur est survenue.");
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.screen}>
+      <View style={styles.bgShapeTop} />
+      <View style={styles.bgShapeBottom} />
 
-      <Text style={styles.title}>
-        Smart Sheep Manager
-      </Text>
-
-      <Text style={styles.subtitle}>
-        Connectez-vous à votre compte
-      </Text>
-
-      {/* Email */}
-
-      <Text style={styles.label}>
-        Adresse Email
-      </Text>
-
-      <View style={styles.inputContainer}>
-
-        <Ionicons
-          name="mail-outline"
-          size={20}
-          color="#8A8A8A"
-          style={styles.leftIcon}
-        />
-
-        <TextInput
-          placeholder="nom@gmail.com"
-          placeholderTextColor="#B5B5B5"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-          style={styles.input}
-        />
-
-      </View>
-
-      {emailError !== "" && (
-        <Text style={styles.errorText}>
-          {emailError}
-        </Text>
-      )}
-
-      {/* Mot de passe */}
-
-      <View style={styles.passwordHeader}>
-
-        <Text style={styles.label}>
-          Mot de passe
-        </Text>
-
-        <TouchableOpacity
-          onPress={() =>
-            router.push("/(auth)/forgot-password")
-          }
-        >
-          <Text style={styles.forgotPassword}>
-            Mot de passe oublié ?
-          </Text>
-        </TouchableOpacity>
-
-      </View>
-
-      <View style={styles.inputContainer}>
-
-        <Ionicons
-          name="lock-closed-outline"
-          size={20}
-          color="#8A8A8A"
-          style={styles.leftIcon}
-        />
-
-        <TextInput
-          placeholder="********"
-          placeholderTextColor="#B5B5B5"
-          secureTextEntry={!showPassword}
-          value={password}
-          onChangeText={setPassword}
-          style={styles.input}
-        />
-
-        <TouchableOpacity
-          onPress={() =>
-            setShowPassword(!showPassword)
-          }
-        >
-          <Ionicons
-            name={
-              showPassword
-                ? "eye-off-outline"
-                : "eye-outline"
-            }
-            size={20}
-            color="#8A8A8A"
-          />
-        </TouchableOpacity>
-
-      </View>
-
-      {passwordError !== "" && (
-        <Text style={styles.errorText}>
-          {passwordError}
-        </Text>
-      )}
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => {
-            console.log("🟢 BUTTON CLICKED");
-            handleLogin();
-          }}        
-          disabled={loading}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <Text style={styles.buttonText}>
-          {loading
-            ? "Connexion..."
-            : "Se connecter"}
-        </Text>
-      </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.brandBlock}>
+            <View style={styles.logoWrap}>
+              <Image
+                source={require("../logo.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={[styles.brandSubtitle, isArabic && styles.rtlText]}>
+              {copy.subtitle}
+            </Text>
+          </View>
 
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>{copy.sectionTitle}</Text>
+
+            <Text style={[styles.label, isArabic && styles.rtlText]}>{copy.email}</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons name="mail-outline" size={20} color="#7C8A97" style={styles.leftIcon} />
+              <TextInput
+                placeholder={copy.emailPlaceholder}
+                placeholderTextColor="#A8B3BD"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={email}
+                onChangeText={setEmail}
+                style={[styles.input, isArabic && styles.rtlInput]}
+                textAlign={isArabic ? "right" : "left"}
+              />
+            </View>
+            {emailError !== "" && <Text style={styles.errorText}>{emailError}</Text>}
+
+            <View style={styles.passwordHeader}>
+              <Text style={[styles.label, isArabic && styles.rtlText]}>{copy.password}</Text>
+              <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password") }>
+                <Text style={styles.forgotPassword}>{copy.forgot}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="lock-closed-outline" size={20} color="#7C8A97" style={styles.leftIcon} />
+              <TextInput
+                placeholder={copy.passwordPlaceholder}
+                placeholderTextColor="#A8B3BD"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+                style={[styles.input, isArabic && styles.rtlInput]}
+                textAlign={isArabic ? "right" : "left"}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color="#7C8A97"
+                />
+              </TouchableOpacity>
+            </View>
+            {passwordError !== "" && <Text style={styles.errorText}>{passwordError}</Text>}
+
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.buttonText}>
+                {loading ? copy.loading : copy.button}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.languageFooter}>
+              <Text style={styles.languageLabel}>{copy.language}</Text>
+              <View style={styles.languagePills}>
+                {(["ar", "fr", "en"] as Language[]).map((item) => (
+                  <Pressable
+                    key={item}
+                    onPress={() => setLanguage(item)}
+                    style={[styles.languagePill, language === item && styles.languagePillActive]}
+                  >
+                    <Text
+                      style={[
+                        styles.languagePillText,
+                        language === item && styles.languagePillTextActive,
+                      ]}
+                    >
+                      {item.toUpperCase()}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-
-  container: {
+  flex: { flex: 1 },
+  screen: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+  },
+  bgShapeTop: {
+    position: "absolute",
+    width: 240,
+    height: 240,
+    borderRadius: 240,
+    top: -100,
+    right: -90,
+    backgroundColor: "rgba(37, 99, 235, 0.08)",
+  },
+  bgShapeBottom: {
+    position: "absolute",
+    width: 260,
+    height: 260,
+    borderRadius: 260,
+    bottom: -110,
+    left: -110,
+    backgroundColor: "rgba(34, 197, 94, 0.08)",
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
-    paddingHorizontal: 25,
+    paddingHorizontal: 22,
+    paddingVertical: 28,
   },
-
-  title: {
-    fontSize: 28,
+  languageFooter: {
+    marginTop: 18,
+    alignItems: "center",
+    gap: 10,
+  },
+  languageLabel: {
+    fontSize: 12,
     fontWeight: "700",
-    color: "#222",
-    textAlign: "center",
+    color: "#166534",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-
-  subtitle: {
-    textAlign: "center",
-    color: "#777",
+  languagePills: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  languagePill: {
+    minWidth: 44,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#15803D",
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+  },
+  languagePillActive: {
+    backgroundColor: "#15803D",
+    borderColor: "#15803D",
+  },
+  languagePillText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#15803D",
+  },
+  languagePillTextActive: {
+    color: "#FFFFFF",
+  },
+  brandBlock: {
+    alignItems: "center",
+    marginBottom: 22,
+  },
+  logoWrap: {
+    width: 118,
+    height: 118,
+    borderRadius: 34,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 3,
+  },
+  logo: {
+    width: 88,
+    height: 88,
+  },
+  brandSubtitle: {
     marginTop: 8,
-    marginBottom: 40,
-    fontSize: 15,
-  },
-
-  label: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#444",
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 20,
+    maxWidth: 280,
+  },
+  rtlText: {
+    writingDirection: "rtl",
+    textAlign: "right",
+  },
+  rtlInput: {
+    writingDirection: "rtl",
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    paddingHorizontal: 18,
+    paddingVertical: 22,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#102033",
+    marginBottom: 18,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#334155",
     marginBottom: 8,
   },
-
   passwordHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 5,
+    marginTop: 8,
   },
-
   forgotPassword: {
-    fontSize: 13,
-    color: "#2563EB",
-    fontWeight: "500",
+    fontSize: 12,
+    color: "#1D4ED8",
+    fontWeight: "700",
   },
-
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#D9D9D9",
-    borderRadius: 10,
-    height: 55,
-    paddingHorizontal: 12,
-    marginBottom: 6,
+    borderColor: "#D6DEE8",
+    backgroundColor: "#F8FAFC",
+    borderRadius: 16,
+    height: 56,
+    paddingHorizontal: 14,
   },
-
   leftIcon: {
     marginRight: 10,
   },
-
   input: {
     flex: 1,
-    fontSize: 16,
-    color: "#222",
+    fontSize: 15,
+    color: "#0F172A",
   },
-
   errorText: {
     color: "#DC2626",
-    fontSize: 13,
-    marginBottom: 12,
+    fontSize: 12,
+    marginTop: 7,
     marginLeft: 4,
   },
-
   button: {
-    backgroundColor: "#2E7D32",
-    height: 55,
-    borderRadius: 10,
-    justifyContent: "center",
+    marginTop: 22,
+    height: 56,
+    borderRadius: 16,
     alignItems: "center",
-    marginTop: 20,
+    justifyContent: "center",
+    backgroundColor: "#15803D",
+    shadowColor: "#15803D",
+    shadowOpacity: 0.24,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
   },
-
+  buttonDisabled: {
+    opacity: 0.75,
+  },
   buttonText: {
     color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: 0.2,
   },
-
 });

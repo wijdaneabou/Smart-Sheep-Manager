@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { Link, useLocalSearchParams, useFocusEffect, useRouter } from "expo-router";
+import { usePermissions } from "@/contexts/PermissionsContext";
 import * as ImagePicker from "expo-image-picker";
 import {
   getUserById,
@@ -23,6 +24,7 @@ import {
 const API_ORIGIN = "http://192.168.1.12:3000";
 
 export default function UserProfileScreen() {
+  const { hasPermission } = usePermissions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const userId = Number(id);
   const router = useRouter();
@@ -161,28 +163,32 @@ export default function UserProfileScreen() {
       </View>
 
       <View style={styles.actions}>
-        <Link
-          href={{ pathname: "/users/[id]/edit", params: { id: String(user.id) } }}
-          asChild
-        >
-          <Pressable style={styles.editButton}>
-            <Text style={styles.editButtonText}>Modifier le profil</Text>
-          </Pressable>
-        </Link>
+        {hasPermission("USERS", "UPDATE") && (
+          <Link
+            href={{ pathname: "/users/[id]/edit", params: { id: String(user.id) } }}
+            asChild
+          >
+            <Pressable style={styles.editButton}>
+              <Text style={styles.editButtonText}>Modifier le profil</Text>
+            </Pressable>
+          </Link>
+        )}
 
-        <Pressable
-          style={styles.toggleButton}
-          onPress={handleToggleStatus}
-          disabled={actionLoading}
-        >
-          {actionLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.toggleButtonText}>
-              {user.status === "ACTIVE" ? "Desactiver le compte" : "Reactiver le compte"}
-            </Text>
-          )}
-        </Pressable>
+        {hasPermission("USERS", "DELETE") && (
+          <Pressable
+            style={styles.toggleButton}
+            onPress={handleToggleStatus}
+            disabled={actionLoading}
+          >
+            {actionLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.toggleButtonText}>
+                {user.status === "ACTIVE" ? "Desactiver le compte" : "Reactiver le compte"}
+              </Text>
+            )}
+          </Pressable>
+        )}
 
         <Link
           href={{
