@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
+import api from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import {
   StyleSheet,
@@ -11,7 +12,6 @@ import {
   ActivityIndicator,
 } from "react-native";
 
-const API_URL = "http://192.168.1.12:3000/api";
 
 export default function ResetPasswordScreen() {
   const { code } = useLocalSearchParams<{
@@ -55,21 +55,12 @@ export default function ResetPasswordScreen() {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        `${API_URL}/auth/reset-password`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            code,
-            password,
-          }),
-        }
-      );
+      const response = await api.post("/auth/reset-password", {
+        code,
+        password,
+      });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (!data.success) {
         Alert.alert(

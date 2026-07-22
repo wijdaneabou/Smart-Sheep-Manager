@@ -105,7 +105,6 @@ export async function listUsers(params: {
   limit: number;
   search?: string;
   roleId?: number;
-  exploitationId?: number;
   status?: UserStatus;
 }) {
   const conditions = [];
@@ -121,8 +120,6 @@ export async function listUsers(params: {
     );
   }
   if (params.roleId) conditions.push(eq(users.roleId, params.roleId));
-  if (params.exploitationId)
-    conditions.push(eq(users.exploitationId, params.exploitationId));
   if (params.status) conditions.push(eq(users.status, params.status));
 
   const whereClause = conditions.length ? and(...conditions) : undefined;

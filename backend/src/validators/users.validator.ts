@@ -7,7 +7,6 @@ export const createUserSchema = z.object({
   phone: z.string().max(20).optional(),
   password: z.string().min(8).max(100),
   roleId: z.number().int().positive(),
-  exploitationId: z.number().int().positive().optional(),
 });
 
 export const updateUserSchema = z.object({
@@ -16,7 +15,6 @@ export const updateUserSchema = z.object({
   email: z.string().email().max(150).optional(),
   phone: z.string().max(20).optional(),
   roleId: z.number().int().positive().optional(),
-  exploitationId: z.number().int().positive().optional(),
 });
 
 export const listUsersQuerySchema = z.object({
@@ -24,7 +22,6 @@ export const listUsersQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
   search: z.string().optional(),
   roleId: z.coerce.number().int().positive().optional(),
-  exploitationId: z.coerce.number().int().positive().optional(),
   status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).optional(),
 });
 

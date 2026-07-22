@@ -6,7 +6,6 @@ import {
   timestamp,
   datetime,
 } from "drizzle-orm/mysql-core";
-import { exploitations } from "./exploitations.js";
 
 export const users = mysqlTable("users", {
   id: int("id")
@@ -40,9 +39,6 @@ export const users = mysqlTable("users", {
   }),
 
   roleId: int("role_id").notNull(),
-
-  // NOUVEAU (US-1.2) : assignation a une exploitation
-  exploitationId: int("exploitation_id").references(() => exploitations.id),
 
   status: mysqlEnum("status", [
     "ACTIVE",
