@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 
-const API_URL = "http://192.168.1.12:3000/api";
+const API_URL = "http://192.168.1.105:3000/api";
 
 export default function ResetPasswordScreen() {
   const { code } = useLocalSearchParams<{

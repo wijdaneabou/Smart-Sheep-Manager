@@ -13,9 +13,9 @@ type ModuleCard = {
   available: boolean;
 };
 
-// Seul le Module 1 (Utilisateurs) est réalisé pour l'instant.
-// Les autres apparaissent en aperçu, désactivés, pour montrer la roadmap
-// (16 modules prévus au cahier des charges).
+// Module 1 (Utilisateurs) et debut du Module 2 (Exploitations) realises.
+// Les autres apparaissent en apercu, desactives, pour montrer la roadmap
+// (16 modules prevus au cahier des charges).
 const MODULES: ModuleCard[] = [
   {
     key: "users",
@@ -35,6 +35,16 @@ const MODULES: ModuleCard[] = [
     color: "#7c3aed",
     bgColor: "#f3e8ff",
     route: "/permissions",
+    available: true,
+  },
+  {
+    key: "exploitations",
+    icon: "🏡",
+    title: "Exploitations",
+    subtitle: "Fiches, GPS, superficie",
+    color: "#059669",
+    bgColor: "#d1fae5",
+    route: "/exploitations",
     available: true,
   },
   {

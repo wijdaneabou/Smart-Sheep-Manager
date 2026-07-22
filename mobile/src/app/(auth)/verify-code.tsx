@@ -10,8 +10,8 @@ import {
   View,
 } from "react-native";
 
-const API_URL = "http://192.168.1.12:3000/api";
-
+const API_URL = "http://192.168.1.105:3000/api";
+  
 export default function VerifyCodeScreen() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);

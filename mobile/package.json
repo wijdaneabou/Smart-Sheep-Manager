@@ -5,6 +5,7 @@
   "dependencies": {
     "@expo/ui": "~57.0.4",
     "@expo/vector-icons": "^15.0.2",
+    "@react-native-community/datetimepicker": "9.1.0",
     "axios": "^1.18.1",
     "expo": "~57.0.4",
     "expo-constants": "~57.0.3",
@@ -14,6 +15,7 @@
     "expo-image": "~57.0.0",
     "expo-image-picker": "~57.0.5",
     "expo-linking": "~57.0.2",
+    "expo-location": "~57.0.5",
     "expo-router": "~57.0.4",
     "expo-secure-store": "~57.0.1",
     "expo-splash-screen": "~57.0.2",
@@ -25,6 +27,7 @@
     "react-dom": "19.2.3",
     "react-native": "0.86.0",
     "react-native-gesture-handler": "~2.32.0",
+    "react-native-maps": "1.27.2",
     "react-native-reanimated": "4.5.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
