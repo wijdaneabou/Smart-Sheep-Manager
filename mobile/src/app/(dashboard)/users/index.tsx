@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link, useFocusEffect } from "expo-router";
+import { Link, router, useFocusEffect, usePathname } from "expo-router";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import {
   listUsers,
@@ -22,8 +22,25 @@ import {
 import { getRoleName } from "../../../constants/roles";
 import { logout } from "../../../services/authService";
 
+type NavItem = {
+  key: string;
+  icon: string;
+  label: string;
+  route?: string;
+  isLogout?: boolean;
+};
+
+const NAV_ITEMS: NavItem[] = [
+  { key: "dashboard", icon: "🏠", label: "Dashboard", route: "/" },
+  { key: "users", icon: "👥", label: "Users", route: "/users" },
+  { key: "sessions", icon: "🔐", label: "Sessions", route: "/audit/sessions" },
+  { key: "audit", icon: "🧾", label: "Audit", route: "/audit" },
+  { key: "profile", icon: "👤", label: "Profile", isLogout: true },
+];
+
 export default function UsersListScreen() {
   const { hasPermission } = usePermissions();
+  const pathname = usePathname();
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -91,6 +108,14 @@ export default function UsersListScreen() {
     );
   }
 
+  function handleNavPress(item: NavItem) {
+    if (item.isLogout) {
+      handleLogoutPress();
+    } else if (item.route) {
+      router.push(item.route as any);
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.container}>
@@ -101,68 +126,29 @@ export default function UsersListScreen() {
               {users.length} compte{users.length > 1 ? "s" : ""}
             </Text>
           </View>
-
-          <Pressable
-            onPress={handleLogoutPress}
-            disabled={loggingOut}
-            style={({ pressed }) => [
-              styles.logoutButton,
-              pressed && styles.logoutButtonPressed,
-            ]}
-          >
-            {loggingOut ? (
-              <ActivityIndicator size="small" color="#DC2626" />
-            ) : (
-              <Text style={styles.logoutIcon}>🚪</Text>
-            )}
-          </Pressable>
         </View>
 
         <TextInput
-            style={styles.searchInput}
-            placeholder="Rechercher (nom, email)..."
-            placeholderTextColor="#999"
-            value={search}
-            onChangeText={setSearch}
-            onSubmitEditing={() => {
-              setLoading(true);
-              fetchUsers().finally(() => setLoading(false));
-            }}
-          />
+          style={styles.searchInput}
+          placeholder="Rechercher (nom, email)..."
+          placeholderTextColor="#999"
+          value={search}
+          onChangeText={setSearch}
+          onSubmitEditing={() => {
+            setLoading(true);
+            fetchUsers().finally(() => setLoading(false));
+          }}
+        />
 
-          <View style={styles.actionsRow}>
-            <Link href="/audit" asChild>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.actionCard,
-                  pressed && styles.actionCardPressed,
-                ]}
-              >
-                <View style={[styles.actionIconCircle, { backgroundColor: "#EFF6FF" }]}>
-                  <Text style={styles.actionIcon}>📜</Text>
-                </View>
-                <Text style={styles.actionTitle}>Journal d'audit</Text>
-                <Text style={styles.actionSubtitle}>Actions & modifications</Text>
-              </Pressable>
-            </Link>
+        {hasPermission("USERS", "CREATE") && (
+          <Link href="/users/create" asChild>
+            <Pressable style={styles.addButton}>
+              <Text style={styles.addButtonText}>+ Ajouter un utilisateur</Text>
+            </Pressable>
+          </Link>
+        )}
 
-            <Link href="/audit/sessions" asChild>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.actionCard,
-                  pressed && styles.actionCardPressed,
-                ]}
-              >
-                <View style={[styles.actionIconCircle, { backgroundColor: "#F0FDF4" }]}>
-                  <Text style={styles.actionIcon}>🔐</Text>
-                </View>
-                <Text style={styles.actionTitle}>Sessions</Text>
-                <Text style={styles.actionSubtitle}>Historique connexions</Text>
-              </Pressable>
-            </Link>
-          </View>
-
-          {error && <Text style={styles.error}>{error}</Text>}
+        {error && <Text style={styles.error}>{error}</Text>}
 
         {loading ? (
           <ActivityIndicator style={{ marginTop: 24 }} />
@@ -238,14 +224,32 @@ export default function UsersListScreen() {
             )}
           />
         )}
+      </View>
 
-        {hasPermission("USERS", "CREATE") && (
-          <Link href="/users/create" asChild>
-            <Pressable style={styles.addButton}>
-              <Text style={styles.addButtonText}>+ Ajouter un utilisateur</Text>
+      {/* Barre de navigation en bas */}
+      <View style={styles.bottomNav}>
+        {NAV_ITEMS.map((item) => {
+          const isActive = !item.isLogout && pathname === item.route;
+          return (
+            <Pressable
+              key={item.key}
+              style={styles.navItem}
+              onPress={() => handleNavPress(item)}
+              disabled={item.isLogout && loggingOut}
+            >
+              {item.isLogout && loggingOut ? (
+                <ActivityIndicator size="small" color="#DC2626" />
+              ) : (
+                <Text style={[styles.navIcon, isActive && styles.navIconActive]}>
+                  {item.icon}
+                </Text>
+              )}
+              <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
+                {item.label}
+              </Text>
             </Pressable>
-          </Link>
-        )}
+          );
+        })}
       </View>
     </SafeAreaView>
   );
@@ -253,33 +257,16 @@ export default function UsersListScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
-  container: { flex: 1, paddingHorizontal: 16 },
+  container: { flex: 1, paddingHorizontal: 16, paddingBottom: 90 },
 
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
     marginTop: 8,
   },
   title: { fontSize: 22, fontWeight: "700" },
   subtitle: { fontSize: 13, color: "#888", marginTop: 2 },
-
-  logoutButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-    borderColor: "#FECACA",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoutButtonPressed: {
-    backgroundColor: "#FEE2E2",
-  },
-  logoutIcon: {
-    fontSize: 16,
-  },
 
   searchInput: {
     backgroundColor: "#fff",
@@ -288,7 +275,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 11,
-    marginTop: 14,
+    marginTop: 10,
     marginBottom: 12,
     fontSize: 14,
   },
@@ -353,58 +340,6 @@ const styles = StyleSheet.create({
   },
   toggleButtonText: { color: "#2563eb", fontSize: 12, fontWeight: "600" },
 
-  actionsRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 14,
-  },
-
-  actionCard: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    alignItems: "flex-start",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-
-  actionCardPressed: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#D1D5DB",
-  },
-
-  actionIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-
-  actionIcon: {
-    fontSize: 18,
-  },
-
-  actionTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  actionSubtitle: {
-    fontSize: 11,
-    color: "#9CA3AF",
-    marginTop: 2,
-  },
-
   addButton: {
     backgroundColor: "#16a34a",
     borderRadius: 12,
@@ -414,4 +349,45 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   addButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+
+  bottomNav: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#e2e8f0",
+    paddingTop: 8,
+    paddingBottom: 10,
+    paddingHorizontal: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+  },
+  navIcon: {
+    fontSize: 20,
+    opacity: 0.5,
+  },
+  navIconActive: {
+    opacity: 1,
+  },
+  navLabel: {
+    fontSize: 10,
+    color: "#94a3b8",
+    fontWeight: "500",
+  },
+  navLabelActive: {
+    color: "#15803D",
+    fontWeight: "700",
+  },
 });
