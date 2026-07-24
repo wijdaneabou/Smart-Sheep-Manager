@@ -18,6 +18,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import * as SecureStore from "expo-secure-store";
 import api from "../../../services/api";
+import SubTabBar from "@/components/SubTabBar"; // ✅ import du composant partagé
 
 type AuditLog = {
   id: number;
@@ -130,9 +131,6 @@ export default function AuditScreen() {
     loadLogs(page - 1);
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  //  Export : Mobile (FileSystem) vs Web (fetch + téléchargement)
-  // ═══════════════════════════════════════════════════════════════
   async function handleExport(type: "csv" | "pdf") {
     try {
       setExporting(type);
@@ -151,7 +149,6 @@ export default function AuditScreen() {
 
       const url = `${api.defaults.baseURL}/audit/export/${type}?${params.toString()}`;
 
-      // 🌐 WEB : Téléchargement via fetch
       if (Platform.OS === "web" || typeof window !== "undefined") {
         const response = await fetch(url, {
           headers: {
@@ -177,7 +174,6 @@ export default function AuditScreen() {
         return;
       }
 
-      // 📱 MOBILE : Téléchargement via expo-file-system
       const download = await FileSystem.downloadAsync(
         url,
         `${FileSystem.documentDirectory}audit_${Date.now()}.${type}`,
@@ -253,6 +249,9 @@ export default function AuditScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* ✅ Barre d'onglets partagée */}
+        <SubTabBar />
 
         <TextInput
           style={styles.searchInput}
