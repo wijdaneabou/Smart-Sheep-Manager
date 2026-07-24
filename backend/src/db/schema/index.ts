@@ -6,3 +6,5 @@ export * from "./refreshTokens.js";
 export * from "./passwordResets.js";
 export * from "./exploitations.js";
 export * from "./loginHistory.js";
+export * from "./auditLogs.js";
+export * from "./user-sessions.js";

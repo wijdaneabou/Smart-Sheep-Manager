@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { router } from "expo-router";
+import api from "@/services/api";
 import {
   ActivityIndicator,
   Alert,
@@ -10,7 +11,9 @@ import {
   View,
 } from "react-native";
 
+
 const API_URL = "http://192.168.1.105:3000/api";
+
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
@@ -28,20 +31,11 @@ export default function ForgotPasswordScreen() {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        `${API_URL}/auth/forgot-password`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-          }),
-        }
-      );
+      const response = await api.post("/auth/forgot-password", {
+        email,
+      });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (!data.success) {
         Alert.alert(

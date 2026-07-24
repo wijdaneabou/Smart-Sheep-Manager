@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { router } from "expo-router";
+import api from "@/services/api";
 import {
   ActivityIndicator,
   Alert,
@@ -10,8 +11,10 @@ import {
   View,
 } from "react-native";
 
+
 const API_URL = "http://192.168.1.105:3000/api";
   
+
 export default function VerifyCodeScreen() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,20 +31,11 @@ export default function VerifyCodeScreen() {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        `${API_URL}/auth/verify-reset-code`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            code,
-          }),
-        }
-      );
+      const response = await api.post("/auth/verify-reset-code", {
+        code,
+      });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (!data.success) {
         Alert.alert(

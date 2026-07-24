@@ -30,7 +30,6 @@ export async function createUser(input: {
   phone?: string;
   password: string;
   roleId: number;
-  exploitationId?: number;
 }): Promise<CreateUserResult> {
   const existing = await findUserByEmail(input.email);
   if (existing) {
@@ -50,7 +49,6 @@ export async function createUser(input: {
     phone: input.phone,
     password: hashedPassword,
     roleId: input.roleId,
-    exploitationId: input.exploitationId,
   });
 
   return { success: true, status: 201, user: sanitizeUser(user) };
@@ -68,7 +66,6 @@ export async function updateUser(
     email?: string;
     phone?: string;
     roleId?: number;
-    exploitationId?: number;
   }
 ): Promise<UpdateUserResult> {
   const existing = await findUserById(id);
@@ -133,7 +130,6 @@ export async function listUsers(params: {
   limit: number;
   search?: string;
   roleId?: number;
-  exploitationId?: number;
   status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
 }) {
   const { rows, total } = await listUsersInDb(params);

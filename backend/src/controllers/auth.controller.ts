@@ -1,7 +1,5 @@
 import type { Context } from "hono";
-
 import { login as loginService } from "../services/auth.service.js";
-
 
 import {
   requestPasswordReset,
@@ -13,6 +11,7 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "../utils/jwt.js";
+import { getPermissionsForRole } from "../services/permissions.service.js";
 
 import { loginSchema } from "../validators/auth.validator.js";
 
@@ -20,6 +19,9 @@ import {
   saveRefreshToken,
   findRefreshToken,
 } from "../repositories/refresh-token.repository.js";
+
+import { createSession, closeSessionByRefreshToken } from "../repositories/sessions.repository.js";
+import { auditService } from "../services/audit.service.js";
 
 export async function login(c: Context) {
   const body = await c.req.json();
@@ -80,6 +82,36 @@ export async function login(c: Context) {
     expiresAt
   );
 
+  // Enregistrement de la session (device, IP, user-agent)
+  const ip =
+    c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+    c.req.header("x-real-ip") ??
+    "UNKNOWN";
+
+  // On privilégie le header custom envoyé par le mobile (X-Device-Info),
+  // qui contient des infos lisibles (OS, marque, modèle) plutôt que le
+  // User-Agent brut du client HTTP (ex: "okhttp/4.12.0")
+  const userAgent =
+    c.req.header("x-device-info") ??
+    c.req.header("user-agent") ??
+    "UNKNOWN";
+
+  await createSession({
+    userId: user.id,
+    refreshToken,
+    ip,
+    userAgent,
+  });
+  await auditService.log({
+    userId: user.id,
+    module: "Authentification",
+    action: "LOGIN",
+    description: "Connexion réussie",
+    result: "SUCCESS",
+    ip,
+    userAgent,
+  });
+
   return c.json({
     success: true,
     message: "Connexion réussie",
@@ -94,6 +126,23 @@ export async function login(c: Context) {
       email: user.email,
       roleId: user.roleId,
     },
+  });
+}
+
+export async function getMyPermissions(c: Context) {
+  const user = c.get("user") as
+    | { id: number; roleId: number; roleName?: string | null }
+    | undefined;
+
+  if (!user) {
+    return c.json({ success: false, message: "Authentification requise." }, 401);
+  }
+
+  const permissions = await getPermissionsForRole(user.roleId);
+
+  return c.json({
+    permissions,
+    roleName: user.roleName ?? null,
   });
 }
 
@@ -219,6 +268,47 @@ export async function verifyResetCode(c: Context) {
   } catch (error) {
     console.error(error);
 
+    return c.json(
+      {
+        success: false,
+        message: "Erreur serveur",
+      },
+      500
+    );
+  }
+}
+export async function logout(c: Context) {
+  try {
+    const body = await c.req.json();
+    const { refreshToken } = body;
+
+    if (!refreshToken) {
+      return c.json(
+        {
+          success: false,
+          message: "Refresh Token manquant.",
+        },
+        400
+      );
+    }
+
+    await closeSessionByRefreshToken(refreshToken);
+    const user = c.get("user") as { id: number } | undefined;
+
+    await auditService.log({
+      userId: user?.id,
+      module: "Authentification",
+      action: "LOGOUT",
+      description: "Déconnexion",
+      result: "SUCCESS",
+    });
+
+    return c.json({
+      success: true,
+      message: "Déconnexion réussie",
+    });
+  } catch (error) {
+    console.error("Logout error :", error);
     return c.json(
       {
         success: false,
