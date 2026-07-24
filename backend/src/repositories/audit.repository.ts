@@ -89,6 +89,7 @@ export const auditRepository = {
     .offset((page - 1) * limit);
     },
 
+  // ✅ Méthode export (sans pagination) utilisée par audit.service.ts
   async export(filters: AuditFilters) {
 
     const where = buildWhere(filters);
