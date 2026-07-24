@@ -9,6 +9,7 @@ import {
   TextInput,
   RefreshControl,
   Alert,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
@@ -45,6 +46,21 @@ const MODULE_COLORS: Record<string, { bg: string; text: string }> = {
 function moduleStyle(module: string) {
   return MODULE_COLORS[module] ?? { bg: "#F0FDF4", text: "#166534" };
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  Fonction multi‑plateforme pour récupérer le token
+// ═══════════════════════════════════════════════════════════════
+const getToken = async (): Promise<string | null> => {
+  if (typeof window !== "undefined" && window.localStorage) {
+    return localStorage.getItem("accessToken");
+  }
+  try {
+    return await SecureStore.getItemAsync("accessToken");
+  } catch (error) {
+    console.error("Erreur lors de la récupération du token :", error);
+    return null;
+  }
+};
 
 export default function AuditScreen() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -114,11 +130,14 @@ export default function AuditScreen() {
     loadLogs(page - 1);
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  //  Export : Mobile (FileSystem) vs Web (fetch + téléchargement)
+  // ═══════════════════════════════════════════════════════════════
   async function handleExport(type: "csv" | "pdf") {
     try {
       setExporting(type);
 
-      const token = await SecureStore.getItemAsync("accessToken");
+      const token = await getToken();
       if (!token) {
         Alert.alert("Erreur", "Token introuvable.");
         return;
@@ -132,6 +151,33 @@ export default function AuditScreen() {
 
       const url = `${api.defaults.baseURL}/audit/export/${type}?${params.toString()}`;
 
+      // 🌐 WEB : Téléchargement via fetch
+      if (Platform.OS === "web" || typeof window !== "undefined") {
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = `audit_${Date.now()}.${type}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(downloadUrl);
+
+        Alert.alert("Succès", "Le fichier a été téléchargé.");
+        return;
+      }
+
+      // 📱 MOBILE : Téléchargement via expo-file-system
       const download = await FileSystem.downloadAsync(
         url,
         `${FileSystem.documentDirectory}audit_${Date.now()}.${type}`,

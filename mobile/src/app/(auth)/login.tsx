@@ -221,7 +221,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  flex: { flex: 1 }, // ✅ unique définition de flex
   screen: {
     flex: 1,
     backgroundColor: "#F2FAF5",
@@ -231,11 +231,6 @@ const styles = StyleSheet.create({
     top: 18,
     left: 18,
     zIndex: 10,
-  },
-
-  flex: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
   },
   bgShapeTop: {
     position: "absolute",

@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-
 import {
   listAuditLogs,
   exportAuditCsv,
@@ -9,9 +8,7 @@ import {
 const auditRoutes = new Hono();
 
 auditRoutes.get("/", listAuditLogs);
-
 auditRoutes.get("/export/csv", exportAuditCsv);
-
 auditRoutes.get("/export/pdf", exportAuditPdf);
 
 export default auditRoutes;
