@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { router } from "expo-router";
+import { BackButton } from "@/components/BackButton";
 import api from "@/services/api";
 import {
   ActivityIndicator,
@@ -10,6 +11,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
+
+const API_URL = "http://192.168.1.105:3000/api";
 
 
 export default function ForgotPasswordScreen() {
@@ -70,6 +74,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <View style={styles.container}>
+      <BackButton variant="light" style={styles.backButton} />
       <Text style={styles.title}>
         Mot de passe oublié
       </Text>
@@ -120,6 +125,19 @@ export default function ForgotPasswordScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 25,
+    backgroundColor: "#FFFFFF",
+  },
+
+  backButton: {
+    position: "absolute",
+    top: 18,
+    left: 18,
+  },
+
+  title: {
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: 25,

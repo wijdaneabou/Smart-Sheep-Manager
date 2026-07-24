@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { BackButton } from "@/components/BackButton";
 import {
   Alert,
   Image,
@@ -108,6 +109,7 @@ export default function LoginScreen() {
     <View style={styles.screen}>
       <View style={styles.bgShapeTop} />
       <View style={styles.bgShapeBottom} />
+      <BackButton variant="light" style={styles.backButton} />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -221,6 +223,17 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   screen: {
+    flex: 1,
+    backgroundColor: "#F2FAF5",
+  },
+  backButton: {
+    position: "absolute",
+    top: 18,
+    left: 18,
+    zIndex: 10,
+  },
+
+  flex: {
     flex: 1,
     backgroundColor: "#FFFFFF",
   },

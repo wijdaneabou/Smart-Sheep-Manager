@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import {
   login,
+  logout,
   refreshToken,
   getMyPermissions,
   forgotPassword,
@@ -19,5 +20,6 @@ authRoutes.get("/me/permissions", isAuthenticated, getMyPermissions);
 authRoutes.post("/forgot-password", forgotPassword);
 authRoutes.post("/verify-reset-code", verifyResetCode);
 authRoutes.post("/reset-password", resetPassword);
+authRoutes.post("/logout", logout);
 
 export default authRoutes;

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Tabs, router, usePathname, Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { BackButton } from "@/components/BackButton";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { getTabModules } from "@/constants/modules";
 
@@ -40,6 +41,9 @@ function DashboardTopBar() {
 
   return (
     <View style={styles.topBarShell}>
+      <View style={styles.backRow}>
+        <BackButton variant="dark" label="Retour" />
+      </View>
       <View style={styles.brandRow}>
         <View>
           <Text style={styles.brandTitle}>Smart Sheep Manager</Text>
@@ -131,6 +135,9 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomLeftRadius: 26,
     borderBottomRightRadius: 26,
+  },
+  backRow: {
+    marginBottom: 10,
   },
   brandRow: {
     flexDirection: "row",

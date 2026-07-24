@@ -10,7 +10,7 @@ const MODULES = [
   "HEALTH",
   "REPRODUCTION",
   "FEEDING",
-  "FATTENING",
+  "FATTENING",    
   "AI",
   "FINANCE",
   "COMMERCIAL",
@@ -37,7 +37,7 @@ async function seedPermissions() {
         count++;
       }
     }
-    console.log(`✅ ${count} permissions insérées (ou déjà existantes).`);
+    console.log(` ${count} permissions insérées (ou déjà existantes).`);
   } catch (error) {
     console.error("Erreur :", error);
   }

@@ -63,7 +63,7 @@ export const MODULES: SSMModule[] = [
     color: "#15803D",
     bgColor: "#E6F8ED",
     route: "/exploitations",
-    available: false,
+    available: true,
     priority: 1,
     tabLabel: "Exploit",
   },
@@ -312,9 +312,10 @@ export const getTabModules = (
   const permitted = getPermittedModules(permissions, isAdmin);
 
   if (isAdmin) {
+    const exploitationsModule = permitted.find((mod) => mod.key === "exploitations");
     const usersModule = permitted.find((mod) => mod.key === "users");
     const adminModule = permitted.find((mod) => mod.key === "permissions");
-    const tabModules = [usersModule, adminModule].filter(Boolean) as SSMModule[];
+    const tabModules = [exploitationsModule, usersModule, adminModule].filter(Boolean) as SSMModule[];
     const tabKeys = new Set(tabModules.map((mod) => mod.key));
     const moreModules = permitted.filter((mod) => !tabKeys.has(mod.key));
     return { tabModules, moreModules };
