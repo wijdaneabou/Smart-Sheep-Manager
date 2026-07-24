@@ -29,7 +29,7 @@ export default function ModulePlaceholder({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#F2FAF5",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 30,
@@ -45,17 +45,17 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#222",
+    color: "#0F2A1D",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
+    color: "#5C8A72",
     marginBottom: 12,
   },
   description: {
     fontSize: 14,
-    color: "#888",
+    color: "#7EAB91",
     textAlign: "center",
     lineHeight: 20,
   },

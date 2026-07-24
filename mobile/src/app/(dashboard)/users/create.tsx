@@ -93,7 +93,7 @@ export default function CreateUserScreen() {
             <TextInput
               style={styles.input}
               placeholder="Ex : Ahmed"
-              placeholderTextColor="#aaa"
+              placeholderTextColor="#A6C8B2"
               value={firstName}
               onChangeText={setFirstName}
             />
@@ -103,7 +103,7 @@ export default function CreateUserScreen() {
             <TextInput
               style={styles.input}
               placeholder="Ex : Bennani"
-              placeholderTextColor="#aaa"
+              placeholderTextColor="#A6C8B2"
               value={lastName}
               onChangeText={setLastName}
             />
@@ -113,7 +113,7 @@ export default function CreateUserScreen() {
             <TextInput
               style={styles.input}
               placeholder="exemple@ssm.ma"
-              placeholderTextColor="#aaa"
+              placeholderTextColor="#A6C8B2"
               autoCapitalize="none"
               keyboardType="email-address"
               value={email}
@@ -125,7 +125,7 @@ export default function CreateUserScreen() {
             <TextInput
               style={styles.input}
               placeholder="Optionnel"
-              placeholderTextColor="#aaa"
+              placeholderTextColor="#A6C8B2"
               keyboardType="phone-pad"
               value={phone}
               onChangeText={setPhone}
@@ -138,7 +138,7 @@ export default function CreateUserScreen() {
             <TextInput
               style={styles.input}
               placeholder="Min. 8 caracteres"
-              placeholderTextColor="#aaa"
+              placeholderTextColor="#A6C8B2"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
@@ -157,7 +157,7 @@ export default function CreateUserScreen() {
             <TextInput
               style={styles.input}
               placeholder="Optionnel"
-              placeholderTextColor="#aaa"
+              placeholderTextColor="#A6C8B2"
               keyboardType="number-pad"
               value={exploitationId}
               onChangeText={setExploitationId}
@@ -180,7 +180,7 @@ export default function CreateUserScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
+  safeArea: { flex: 1, backgroundColor: "#F2FAF5" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -194,20 +194,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  backButtonText: { fontSize: 26, color: "#1a1a1a", fontWeight: "400" },
+  backButtonText: { fontSize: 26, color: "#0F2A1D", fontWeight: "400" },
   headerTitle: { fontSize: 16, fontWeight: "700" },
   container: { padding: 20, paddingTop: 4, flexGrow: 1 },
   sectionTitle: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#888",
+    color: "#7EAB91",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginTop: 16,
     marginBottom: 10,
   },
   fieldGroup: { marginBottom: 12 },
-  label: { fontSize: 13, fontWeight: "600", color: "#444", marginBottom: 6 },
+  label: { fontSize: 13, fontWeight: "600", color: "#2F6B46", marginBottom: 6 },
   input: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -217,9 +217,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
   },
-  hint: { fontSize: 11, color: "#999", marginTop: 6 },
+  hint: { fontSize: 11, color: "#A6C8B2", marginTop: 6 },
   error: {
-    color: "#dc2626",
+    color: "#166534",
     backgroundColor: "#fee2e2",
     borderRadius: 8,
     padding: 10,

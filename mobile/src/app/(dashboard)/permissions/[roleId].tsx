@@ -256,7 +256,7 @@ export default function PermissionMatrixScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
+  container: { flex: 1, backgroundColor: "#F2FAF5" },
   centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" },
   header: {
     flexDirection: "row",
@@ -265,15 +265,15 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "white",
     borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
+    borderBottomColor: "#DDEFE4",
   },
   backButton: { fontSize: 16, color: "#15803D", fontWeight: "700" },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#0f172a" },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: "#0F2A1D" },
   scrollView: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 24 },
   instructions: {
     fontSize: 14,
-    color: "#475569",
+    color: "#3E7A5B",
     marginBottom: 16,
     lineHeight: 20,
   },
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#DDEFE4",
     elevation: 1,
   },
   moduleSectionSelected: {
@@ -303,11 +303,11 @@ const styles = StyleSheet.create({
   moduleTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0f172a",
+    color: "#0F2A1D",
   },
   moduleSubtitle: {
     fontSize: 12,
-    color: "#64748b",
+    color: "#5C8A72",
     marginTop: 2,
   },
   selectAllButton: {
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#cbd5e1",
+    borderColor: "#CFE8D8",
     backgroundColor: "#fff",
   },
   selectAllButtonPartial: {
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   selectAllButtonText: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#334155",
+    color: "#2F6B46",
   },
   selectAllButtonTextActive: {
     color: "white",
@@ -351,13 +351,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#15803D",
     borderColor: "#15803D",
   },
-  permissionCellText: { fontSize: 12, color: "#334155", fontWeight: "700" },
+  permissionCellText: { fontSize: 12, color: "#2F6B46", fontWeight: "700" },
   permissionCellTextActive: { color: "white" },
   footer: {
     padding: 16,
     backgroundColor: "white",
     borderTopWidth: 1,
-    borderTopColor: "#e2e8f0",
+    borderTopColor: "#DDEFE4",
   },
   saveButton: {
     backgroundColor: "#15803D",

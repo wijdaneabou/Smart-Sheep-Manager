@@ -68,7 +68,7 @@ function DashboardTopBar() {
             <Ionicons
               name={item.icon as any}
               size={18}
-              color={item.active ? "#0F766E" : "#64748b"}
+              color={item.active ? "#166534" : "#5C8A72"}
             />
             <Text style={[styles.tabChipText, item.active && styles.tabChipTextActive]}>
               {item.title}
@@ -119,13 +119,13 @@ export default function DashboardLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F3F7F4",
+    backgroundColor: "#F2FAF5",
   },
   content: {
     flex: 1,
   },
   topBarShell: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0F2A1D",
     paddingTop: 56,
     paddingHorizontal: 16,
     paddingBottom: 14,
@@ -140,13 +140,13 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   brandTitle: {
-    color: "#F8FAFC",
+    color: "#FFFFFF",
     fontSize: 22,
     fontWeight: "800",
     letterSpacing: 0.2,
   },
   brandSubtitle: {
-    color: "#94A3B8",
+    color: "#8EBC9B",
     fontSize: 12,
     marginTop: 4,
   },
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(15, 118, 110, 0.26)",
+    backgroundColor: "rgba(21, 128, 61, 0.26)",
     borderWidth: 1,
     borderColor: "rgba(167, 243, 208, 0.2)",
     paddingHorizontal: 12,
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   rolePillText: {
-    color: "#E2E8F0",
+    color: "#DDEFE4",
     fontSize: 12,
     fontWeight: "800",
     letterSpacing: 0.5,
@@ -179,20 +179,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: "rgba(248, 250, 252, 0.92)",
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
   },
   tabChipPressed: {
     opacity: 0.8,
   },
   tabChipActive: {
-    backgroundColor: "#D1FAE5",
+    backgroundColor: "#DFF5E6",
   },
   tabChipText: {
-    color: "#334155",
+    color: "#2F6B46",
     fontSize: 12,
     fontWeight: "700",
   },
   tabChipTextActive: {
-    color: "#0F766E",
+    color: "#166534",
   },
 });

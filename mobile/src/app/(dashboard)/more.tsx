@@ -62,7 +62,7 @@ export default function MoreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F3F7F4",
+    backgroundColor: "#F2FAF5",
   },
   content: {
     padding: 16,
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 18,
     marginBottom: 14,
-    shadowColor: "#0F172A",
+    shadowColor: "#0F2A1D",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.06,
     shadowRadius: 24,
@@ -82,12 +82,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#0F2A1D",
   },
   subtitle: {
     fontSize: 13,
     lineHeight: 19,
-    color: "#64748B",
+    color: "#5C8A72",
     marginTop: 6,
   },
   grid: {
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
     padding: 14,
-    shadowColor: "#0F172A",
+    shadowColor: "#0F2A1D",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.05,
     shadowRadius: 20,
@@ -123,11 +123,11 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 15,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#0F2A1D",
   },
   cardSubtitle: {
     fontSize: 12,
-    color: "#64748B",
+    color: "#5C8A72",
     marginTop: 4,
     minHeight: 34,
   },
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   },
   lockText: {
     fontSize: 11,
-    color: "#94A3B8",
+    color: "#8EBC9B",
     fontWeight: "700",
   },
 });

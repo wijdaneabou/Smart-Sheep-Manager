@@ -76,7 +76,7 @@ export default function RolePicker({
 }
 
 const styles = StyleSheet.create({
-  label: { fontSize: 13, fontWeight: "600", color: "#444", marginBottom: 6 },
+  label: { fontSize: 13, fontWeight: "600", color: "#2F6B46", marginBottom: 6 },
   field: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -88,12 +88,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  fieldText: { fontSize: 15, color: "#1a1a1a" },
-  placeholderText: { color: "#aaa" },
-  chevron: { fontSize: 16, color: "#999" },
+  fieldText: { fontSize: 15, color: "#0F2A1D" },
+  placeholderText: { color: "#A6C8B2" },
+  chevron: { fontSize: 16, color: "#8EBC9B" },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: "rgba(15, 42, 29, 0.35)",
     justifyContent: "flex-end",
   },
   sheet: {
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 8,
-    color: "#1a1a1a",
+    color: "#0F2A1D",
   },
   option: {
     flexDirection: "row",
@@ -118,8 +118,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#E5F4EA",
   },
-  optionText: { fontSize: 15, color: "#1a1a1a" },
-  checkmark: { fontSize: 16, color: "#2563eb", fontWeight: "700" },
+  optionText: { fontSize: 15, color: "#0F2A1D" },
+  checkmark: { fontSize: 16, color: "#15803D", fontWeight: "700" },
 });

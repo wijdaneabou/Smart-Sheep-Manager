@@ -216,13 +216,13 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, alignItems: "center", backgroundColor: "#f5f5f5" },
+  container: { padding: 20, alignItems: "center", backgroundColor: "#F2FAF5" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  error: { color: "#dc2626" },
+  error: { color: "#166534" },
   avatarWrapper: { marginTop: 8, marginBottom: 12 },
   avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: "#ddd" },
   avatarPlaceholder: { alignItems: "center", justifyContent: "center" },
-  avatarInitials: { fontSize: 28, fontWeight: "700", color: "#666" },
+  avatarInitials: { fontSize: 28, fontWeight: "700", color: "#5C8A72" },
   avatarBadge: {
     position: "absolute",
     bottom: -4,
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   },
   avatarBadgeText: { color: "#fff", fontSize: 10, fontWeight: "600" },
   name: { fontSize: 19, fontWeight: "700", marginTop: 8 },
-  email: { fontSize: 13, color: "#666", marginTop: 2 },
+  email: { fontSize: 13, color: "#5C8A72", marginTop: 2 },
   badge: {
     marginTop: 10,
     fontSize: 11,
@@ -258,9 +258,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#E5F4EA",
   },
-  infoLabel: { fontSize: 13, color: "#888" },
+  infoLabel: { fontSize: 13, color: "#7EAB91" },
   infoValue: { fontSize: 13, fontWeight: "600" },
   actions: { width: "100%", marginTop: 20, gap: 10 },
   editButton: {
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   },
   editButtonText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   toggleButton: {
-    backgroundColor: "#dc2626",
+    backgroundColor: "#166534",
     borderRadius: 8,
     paddingVertical: 13,
     alignItems: "center",

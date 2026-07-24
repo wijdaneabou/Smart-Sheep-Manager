@@ -16,7 +16,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
+          <Ionicons name="arrow-back" size={22} color="#0F2A1D" />
         </Pressable>
         <Text style={styles.headerTitle}>Mon profil</Text>
         <View style={{ width: 40 }} />
@@ -59,7 +59,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F3F7F4" },
+  safeArea: { flex: 1, backgroundColor: "#F2FAF5" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -74,47 +74,47 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#0F172A",
+    shadowColor: "#0F2A1D",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     elevation: 2,
   },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#0F172A" },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: "#0F2A1D" },
   container: { flex: 1, alignItems: "center", paddingTop: 12, paddingHorizontal: 16 },
   avatar: {
     width: 104,
     height: 104,
     borderRadius: 52,
-    backgroundColor: "#0F766E",
+    backgroundColor: "#166534",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
-    shadowColor: "#0F172A",
+    shadowColor: "#0F2A1D",
     shadowOpacity: 0.16,
     shadowRadius: 20,
     elevation: 3,
   },
   avatarText: { color: "#fff", fontSize: 30, fontWeight: "800" },
-  name: { fontSize: 22, fontWeight: "800", color: "#0F172A" },
-  email: { fontSize: 14, color: "#64748B", marginTop: 4 },
+  name: { fontSize: 22, fontWeight: "800", color: "#0F2A1D" },
+  email: { fontSize: 14, color: "#5C8A72", marginTop: 4 },
   roleBadge: {
     marginTop: 10,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: "#DDEFE4",
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 999,
   },
   roleBadgeAdmin: {
-    backgroundColor: "#D1FAE5",
+    backgroundColor: "#DFF5E6",
   },
   roleBadgeText: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#334155",
+    color: "#2F6B46",
     letterSpacing: 0.3,
   },
   roleBadgeTextAdmin: {
-    color: "#0F766E",
+    color: "#166534",
   },
   infoCard: {
     width: "100%",
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 6,
     marginTop: 24,
-    shadowColor: "#0F172A",
+    shadowColor: "#0F2A1D",
     shadowOpacity: 0.06,
     shadowRadius: 18,
     elevation: 2,
@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#EEF2F7",
+    borderBottomColor: "#E5F4EA",
   },
-  infoLabel: { fontSize: 14, color: "#64748B" },
-  infoValue: { fontSize: 14, fontWeight: "700", color: "#0F172A", flexShrink: 1, textAlign: "right" },
+  infoLabel: { fontSize: 14, color: "#5C8A72" },
+  infoValue: { fontSize: 14, fontWeight: "700", color: "#0F2A1D", flexShrink: 1, textAlign: "right" },
 });

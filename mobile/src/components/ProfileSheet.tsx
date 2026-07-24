@@ -145,7 +145,7 @@ export default function ProfileSheet({ visible, onClose }: ProfileSheetProps) {
 
           {/* Logout */}
           <Pressable style={[styles.menuItem, styles.logoutItem]} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={22} color="#dc2626" />
+            <Ionicons name="log-out-outline" size={22} color="#166534" />
             <Text style={[styles.menuText, styles.logoutText]}>Se déconnecter</Text>
           </Pressable>
         </Animated.View>
@@ -157,9 +157,9 @@ export default function ProfileSheet({ visible, onClose }: ProfileSheetProps) {
 function MenuItem({ icon, label, onPress }: { icon: any; label: string; onPress: () => void }) {
   return (
     <Pressable style={styles.menuItem} onPress={onPress}>
-      <Ionicons name={icon} size={22} color="#475569" />
+      <Ionicons name={icon} size={22} color="#3E7A5B" />
       <Text style={styles.menuText}>{label}</Text>
-      <Ionicons name="chevron-forward" size={18} color="#94a3b8" style={styles.chevron} />
+      <Ionicons name="chevron-forward" size={18} color="#8EBC9B" style={styles.chevron} />
     </Pressable>
   );
 }
@@ -167,7 +167,7 @@ function MenuItem({ icon, label, onPress }: { icon: any; label: string; onPress:
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(15, 42, 29, 0.4)",
     justifyContent: "flex-end",
   },
   backdrop: {
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 40,
     height: 4,
-    backgroundColor: "#cbd5e1",
+    backgroundColor: "#CFE8D8",
     borderRadius: 2,
     alignSelf: "center",
     marginBottom: 20,
@@ -214,16 +214,16 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#0F2A1D",
   },
   userEmail: {
     fontSize: 13,
-    color: "#64748b",
+    color: "#5C8A72",
     marginTop: 2,
   },
   roleBadge: {
     marginTop: 8,
-    backgroundColor: "#DCFCE7",
+    backgroundColor: "#E6F8ED",
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 999,
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#e2e8f0",
+    backgroundColor: "#DDEFE4",
     marginVertical: 8,
   },
   menuItem: {
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: "500",
-    color: "#1e293b",
+    color: "#0F2A1D",
   },
   chevron: {
     marginLeft: "auto",
@@ -257,6 +257,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   logoutText: {
-    color: "#dc2626",
+    color: "#166534",
   },
 });

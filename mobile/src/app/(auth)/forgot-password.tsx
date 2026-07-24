@@ -130,13 +130,13 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     textAlign: "center",
-    color: "#222",
+    color: "#0F2A1D",
     marginBottom: 10,
   },
 
   subtitle: {
     textAlign: "center",
-    color: "#666",
+    color: "#5C8A72",
     marginBottom: 25,
     lineHeight: 22,
   },

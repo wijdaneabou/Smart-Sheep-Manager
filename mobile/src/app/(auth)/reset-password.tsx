@@ -225,12 +225,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     textAlign: "center",
-    color: "#222",
+    color: "#0F2A1D",
   },
 
   subtitle: {
     textAlign: "center",
-    color: "#666",
+    color: "#5C8A72",
     marginTop: 10,
     marginBottom: 35,
     lineHeight: 22,
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#444",
+    color: "#2F6B46",
     marginBottom: 8,
   },
 
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: "#222",
+    color: "#0F2A1D",
   },
 
   button: {

@@ -81,7 +81,7 @@ export default function UsersListScreen() {
         <TextInput
           style={styles.searchInput}
           placeholder="Rechercher (nom, email)..."
-          placeholderTextColor="#999"
+          placeholderTextColor="#A6C8B2"
           value={search}
           onChangeText={setSearch}
           onSubmitEditing={() => {
@@ -180,10 +180,10 @@ export default function UsersListScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
+  safeArea: { flex: 1, backgroundColor: "#F2FAF5" },
   container: { flex: 1, paddingHorizontal: 16 },
   title: { fontSize: 22, fontWeight: "700", marginTop: 8 },
-  subtitle: { fontSize: 13, color: "#888", marginTop: 2, marginBottom: 14 },
+  subtitle: { fontSize: 13, color: "#7EAB91", marginTop: 2, marginBottom: 14 },
   searchInput: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -194,8 +194,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 14,
   },
-  error: { color: "#dc2626", marginBottom: 8, fontSize: 13 },
-  empty: { textAlign: "center", color: "#888", marginTop: 24 },
+  error: { color: "#166534", marginBottom: 8, fontSize: 13 },
+  empty: { textAlign: "center", color: "#7EAB91", marginTop: 24 },
   listContent: { paddingBottom: 12 },
   card: {
     backgroundColor: "#fff",
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   },
   avatarInitials: { fontSize: 15, fontWeight: "700", color: "#4f46e5" },
   name: { fontSize: 15, fontWeight: "600" },
-  email: { fontSize: 13, color: "#666", marginTop: 1 },
+  email: { fontSize: 13, color: "#5C8A72", marginTop: 1 },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
