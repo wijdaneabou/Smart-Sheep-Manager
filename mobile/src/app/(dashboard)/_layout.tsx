@@ -2,13 +2,12 @@ import { useMemo } from "react";
 import { Tabs, router, usePathname, Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { BackButton } from "@/components/BackButton";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { getTabModules } from "@/constants/modules";
 
 function DashboardTopBar() {
   const pathname = usePathname();
-  const { permissions, isAdmin, userRole } = usePermissions();
+  const { permissions, isAdmin } = usePermissions();
 
   const { tabModules } = useMemo(
     () => getTabModules(permissions, isAdmin),
@@ -18,21 +17,18 @@ function DashboardTopBar() {
   const navItems = [
     {
       key: "home",
-      title: "Accueil",
       icon: "home-outline",
       href: "/(dashboard)",
       active: pathname === "/(dashboard)" || pathname === "/(dashboard)/" || pathname === "/",
     },
     ...tabModules.map((module) => ({
       key: module.key,
-      title: module.tabLabel ?? module.title,
       icon: module.ionicon,
       href: module.route,
       active: pathname.includes(module.route),
     })),
     {
       key: "more",
-      title: "Plus",
       icon: "grid-outline",
       href: "/(dashboard)/more",
       active: pathname.includes("/more"),
@@ -40,43 +36,24 @@ function DashboardTopBar() {
   ];
 
   return (
-    <View style={styles.topBarShell}>
-      <View style={styles.backRow}>
-        <BackButton variant="dark" label="Retour" />
-      </View>
-      <View style={styles.brandRow}>
-        <View>
-          <Text style={styles.brandTitle}>Smart Sheep Manager</Text>
-          <Text style={styles.brandSubtitle}>
-            {isAdmin ? "Accès complet administrateur" : userRole || "Accès personnalisé selon vos droits"}
-          </Text>
-        </View>
+    <View style={styles.topBar}>
+      <Text style={styles.brandTitle}>Smart Sheep Manager</Text>
 
-        <View style={styles.rolePill}>
-          <Ionicons name={isAdmin ? "shield-checkmark-outline" : "person-outline"} size={14} color="#EAFBF0" />
-          <Text style={styles.rolePillText}>{isAdmin ? "ADMIN" : userRole || "USER"}</Text>
-        </View>
-      </View>
-
-      <View style={styles.tabsRow}>
+      <View style={styles.navRow}>
         {navItems.map((item) => (
           <Pressable
             key={item.key}
             onPress={() => router.replace(item.href as Href)}
             style={({ pressed }) => [
-              styles.tabChip,
-              item.active && styles.tabChipActive,
-              pressed && styles.tabChipPressed,
+              styles.navItem,
+              pressed && styles.navItemPressed,
             ]}
           >
             <Ionicons
               name={item.icon as any}
-              size={18}
-              color={item.active ? "#166534" : "#5C8A72"}
+              size={28}
+              color={item.active ? "#0F2A1D" : "#5C8A72"}
             />
-            <Text style={[styles.tabChipText, item.active && styles.tabChipTextActive]}>
-              {item.title}
-            </Text>
           </Pressable>
         ))}
       </View>
@@ -123,83 +100,38 @@ export default function DashboardLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2FAF5",
+    backgroundColor: "#FFFFFF",
   },
   content: {
     flex: 1,
+    backgroundColor: "#FFFFFF", // blanc pour tout l'écran
   },
-  topBarShell: {
-    backgroundColor: "#0F2A1D",
-    paddingTop: 56,
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    borderBottomLeftRadius: 26,
-    borderBottomRightRadius: 26,
-  },
-  backRow: {
-    marginBottom: 10,
-  },
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 14,
+  topBar: {
+    backgroundColor: "#FFFFFF",
+    paddingTop: 54,
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+    borderBottomWidth: 0, // pas de ligne de séparation
   },
   brandTitle: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "800",
-    letterSpacing: 0.2,
-  },
-  brandSubtitle: {
-    color: "#8EBC9B",
-    fontSize: 12,
-    marginTop: 4,
-  },
-  rolePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(21, 128, 61, 0.26)",
-    borderWidth: 1,
-    borderColor: "rgba(167, 243, 208, 0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  rolePillText: {
-    color: "#DDEFE4",
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  tabsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  tabChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: "rgba(255, 255, 255, 0.92)",
-  },
-  tabChipPressed: {
-    opacity: 0.8,
-  },
-  tabChipActive: {
-    backgroundColor: "#DFF5E6",
-  },
-  tabChipText: {
-    color: "#2F6B46",
-    fontSize: 12,
+    fontSize: 24,
     fontWeight: "700",
+    color: "#0F2A1D", // vert foncé
+    letterSpacing: -0.5,
+    marginBottom: 10,
+    fontFamily: "DancingScript_700Bold",
   },
-  tabChipTextActive: {
-    color: "#166534",
+  navRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  navItem: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  navItemPressed: {
+    opacity: 0.6,
   },
 });
