@@ -1,340 +1,292 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useMemo } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+} from "react-native";
 import { usePermissions } from "@/contexts/PermissionsContext";
+import { getPermittedModules } from "@/constants/modules";
 
-type DashboardModule = {
-  key: string;
-  module: string;
-  icon: string;
-  title: string;
-  subtitle: string;
-  color: string;
-  bgColor: string;
-  route: string;
-  available: boolean;
-  adminOnly?: boolean;
-};
+export default function DashboardScreen() {
+  const { permissions, userRole, isAdmin } = usePermissions();
 
-const MODULES: DashboardModule[] = [
-  {
-    key: "users",
-    module: "USERS",
-    icon: "👥",
-    title: "Gestion des utilisateurs",
-    subtitle: "Comptes, rôles, photos, historique",
-    color: "#15803D",
-    bgColor: "#DCFCE7",
-    route: "/users",
-    available: true,
-  },
-  {
-    key: "permissions",
-    module: "ADMIN",
-    icon: "🔐",
-    title: "Permissions & Rôles",
-    subtitle: "Gérer les droits par module",
-    color: "#0F766E",
-    bgColor: "#CCFBF1",
-    route: "/permissions",
-    available: true,
-    adminOnly: true,
-  },
-  {
-    key: "exploitations",
-    module: "EXPLOITATIONS",
-    icon: "🏞️",
-    title: "Exploitations",
-    subtitle: "Sites, parcelles, affectations",
-    color: "#0EA5E9",
-    bgColor: "#E0F2FE",
-    route: "",
-    available: false,
-  },
-  {
-    key: "herd",
-    module: "HERD",
-    icon: "🐑",
-    title: "Gestion du troupeau",
-    subtitle: "Fiches animales, pesées, pedigree",
-    color: "#7C3AED",
-    bgColor: "#F3E8FF",
-    route: "",
-    available: false,
-  },
-  {
-    key: "iot",
-    module: "IOT",
-    icon: "📡",
-    title: "IoT & Capteurs",
-    subtitle: "Mesures, alertes, automatisation",
-    color: "#0284C7",
-    bgColor: "#E0F2FE",
-    route: "",
-    available: false,
-  },
-  {
-    key: "health",
-    module: "HEALTH",
-    icon: "🩺",
-    title: "Gestion sanitaire",
-    subtitle: "Vaccinations, traitements, carnet",
-    color: "#DC2626",
-    bgColor: "#FEE2E2",
-    route: "",
-    available: false,
-  },
-  {
-    key: "reproduction",
-    module: "REPRODUCTION",
-    icon: "🔁",
-    title: "Reproduction",
-    subtitle: "Saillies, gestation, mise-bas",
-    color: "#C2410C",
-    bgColor: "#FFEDD5",
-    route: "",
-    available: false,
-  },
-  {
-    key: "feeding",
-    module: "FEEDING",
-    icon: "🌾",
-    title: "Alimentation",
-    subtitle: "Rations, stocks, distribution",
-    color: "#16A34A",
-    bgColor: "#DCFCE7",
-    route: "",
-    available: false,
-  },
-  {
-    key: "fattening",
-    module: "FATTENING",
-    icon: "📈",
-    title: "Engraissement",
-    subtitle: "Suivi des lots et performance",
-    color: "#EA580C",
-    bgColor: "#FFEDD5",
-    route: "",
-    available: false,
-  },
-  {
-    key: "ai",
-    module: "AI",
-    icon: "🤖",
-    title: "Intelligence artificielle",
-    subtitle: "Aide à la décision et alertes",
-    color: "#7C3AED",
-    bgColor: "#EDE9FE",
-    route: "",
-    available: false,
-  },
-  {
-    key: "finance",
-    module: "FINANCE",
-    icon: "💰",
-    title: "Gestion financière",
-    subtitle: "Budget, trésorerie, rentabilité",
-    color: "#15803D",
-    bgColor: "#DCFCE7",
-    route: "",
-    available: false,
-  },
-  {
-    key: "commercial",
-    module: "COMMERCIAL",
-    icon: "🛒",
-    title: "Commercialisation",
-    subtitle: "Ventes, commandes, clients",
-    color: "#2563EB",
-    bgColor: "#DBEAFE",
-    route: "",
-    available: false,
-  },
-  {
-    key: "bi",
-    module: "BI_DASHBOARD",
-    icon: "📊",
-    title: "Tableau de bord BI",
-    subtitle: "KPI, tendances, indicateurs",
-    color: "#0F766E",
-    bgColor: "#CCFBF1",
-    route: "",
-    available: false,
-  },
-  {
-    key: "communication",
-    module: "COMMUNICATION",
-    icon: "💬",
-    title: "Communication",
-    subtitle: "Messages, notifications, canaux",
-    color: "#0284C7",
-    bgColor: "#E0F2FE",
-    route: "",
-    available: false,
-  },
-  {
-    key: "reporting",
-    module: "REPORTING",
-    icon: "🧾",
-    title: "Rapports",
-    subtitle: "Exports, synthèses, conformité",
-    color: "#6D28D9",
-    bgColor: "#EDE9FE",
-    route: "",
-    available: false,
-  },
-  {
-    key: "ai-assistant",
-    module: "AI_ASSISTANT",
-    icon: "✨",
-    title: "Assistant IA",
-    subtitle: "Réponses rapides et assistance",
-    color: "#DB2777",
-    bgColor: "#FCE7F3",
-    route: "",
-    available: false,
-  },
-];
-
-export default function Dashboard() {
-  const { hasAnyPermission, isAdmin, userRole } = usePermissions();
-
-  const visibleModules = MODULES.filter((mod) =>
-    mod.adminOnly ? isAdmin : hasAnyPermission(mod.module)
+  const permittedModules = useMemo(
+    () => getPermittedModules(permissions, isAdmin),
+    [isAdmin, permissions]
   );
 
+  const featuredModules = permittedModules.slice(0, 6);
+  const adminCount = permittedModules.filter((mod) => mod.adminOnly).length;
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.heroCard}>
+        <View style={styles.heroTopRow}>
           <View>
-            <Text style={styles.appName}>Smart Sheep Manager</Text>
-            <Text style={styles.greeting}>
-              {userRole ? `Rôle: ${userRole}` : "Accès personnalisé selon vos permissions"}
+            <Text style={styles.heroEyebrow}>Smart Sheep Manager</Text>
+            <Text style={styles.heroTitle}>
+              {isAdmin ? "Bienvenue administrateur" : "Bienvenue sur votre espace"}
+            </Text>
+            <Text style={styles.heroSubtitle}>
+              {isAdmin
+                ? "Vous pouvez gérer les rôles, les permissions et tous les modules."
+                : `Rôle actif: ${userRole || "utilisateur"}. Seuls les modules autorisés sont affichés.`}
             </Text>
           </View>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>SSM</Text>
+          <View style={styles.avatarBadge}>
+            <Ionicons name={isAdmin ? "shield-checkmark-outline" : "analytics-outline"} size={24} color="#FFFFFF" />
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Modules accessibles</Text>
-
-        <View style={styles.cardsList}>
-          {visibleModules.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Aucun module disponible</Text>
-              <Text style={styles.emptySubtitle}>
-                Votre rôle n'a pas encore de permission READ active.
-              </Text>
-            </View>
-          ) : (
-            visibleModules.map((mod) => (
-              <Pressable
-                key={mod.key}
-                style={[styles.card, !mod.available && styles.cardDisabled]}
-                disabled={!mod.available}
-                onPress={() => mod.available && mod.route && router.push(mod.route as any)}
-              >
-                <View style={[styles.iconWrapper, { backgroundColor: mod.bgColor }]}> 
-                  <Text style={styles.icon}>{mod.icon}</Text>
-                </View>
-
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{mod.title}</Text>
-                  <Text style={styles.cardSubtitle}>{mod.subtitle}</Text>
-                </View>
-
-                {mod.available ? (
-                  <Text style={[styles.chevron, { color: mod.color }]}>›</Text>
-                ) : (
-                  <View style={styles.soonBadge}>
-                    <Text style={styles.soonBadgeText}>Bientôt</Text>
-                  </View>
-                )}
-              </Pressable>
-            ))
-          )}
+        <View style={styles.statsRow}>
+          <StatPill label="Modules visibles" value={String(permittedModules.length)} />
+          <StatPill label="Admin" value={String(adminCount)} />
+          <StatPill label="Permissions" value={String(permissions.length)} />
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Accès rapides</Text>
+        <Pressable onPress={() => router.push("/(dashboard)/more")}>
+          <Text style={styles.sectionAction}>Voir tout</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.quickGrid}>
+        {featuredModules.map((mod) => (
+          <Pressable
+            key={mod.route}
+            style={({ pressed }) => [styles.quickCard, pressed && styles.quickCardPressed]}
+            onPress={() => router.push(mod.route as any)}
+          >
+            <View style={[styles.quickIcon, { backgroundColor: `${mod.color}18` }]}>
+              <Ionicons name={mod.ionicon as any} size={22} color={mod.color} />
+            </View>
+            <Text style={styles.quickTitle}>{mod.tabLabel ?? mod.title}</Text>
+            <Text style={styles.quickSubtitle} numberOfLines={2}>{mod.subtitle}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Modules disponibles</Text>
+        <Text style={styles.sectionMeta}>{permittedModules.length} au total</Text>
+      </View>
+
+      <View style={styles.moduleList}>
+        {permittedModules.map((mod) => (
+          <Pressable
+            key={mod.route}
+            style={({ pressed }) => [styles.moduleCard, pressed && styles.moduleCardPressed]}
+            onPress={() => router.push(mod.route as any)}
+          >
+            <View style={styles.moduleCardLeft}>
+              <View style={[styles.moduleIcon, { backgroundColor: `${mod.color}18` }]}>
+                <Ionicons name={mod.ionicon as any} size={20} color={mod.color} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.moduleName}>{mod.title}</Text>
+                <Text style={styles.moduleDescription}>{mod.subtitle}</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+          </Pressable>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+function StatPill({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.statPill}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#f8fafc" },
-  container: { flex: 1, paddingHorizontal: 16 },
-  header: {
+  container: {
+    flex: 1,
+    backgroundColor: "#F3F7F4",
+  },
+  content: {
+    padding: 16,
+    paddingBottom: 28,
+  },
+  heroCard: {
+    backgroundColor: "#1b2316",
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: "#0f2a19",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.14,
+    shadowRadius: 28,
+    elevation: 4,
+  },
+  heroTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  heroEyebrow: {
+    color: "#86EFAC",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  heroTitle: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "800",
+    marginTop: 8,
+  },
+  heroSubtitle: {
+    color: "#CBD5E1",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 8,
+  },
+  avatarBadge: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: "rgba(134, 239, 172, 0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 16,
+    flexWrap: "wrap",
+  },
+  statPill: {
+    flex: 1,
+    minWidth: 90,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
+  statValue: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  statLabel: {
+    color: "#94A3B8",
+    fontSize: 11,
+    marginTop: 3,
+  },
+  sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 12,
-    marginBottom: 24,
-  },
-  greeting: { fontSize: 13, color: "#64748b", marginTop: 2 },
-  appName: { fontSize: 21, fontWeight: "700", marginTop: 2, color: "#0f172a" },
-  logoBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#15803D",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoBadgeText: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#64748b",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    marginTop: 18,
     marginBottom: 10,
   },
-  cardsList: { gap: 10 },
-  emptyState: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0f2a1d",
   },
-  emptyTitle: { fontSize: 16, fontWeight: "700", color: "#0f172a" },
-  emptySubtitle: { fontSize: 13, color: "#64748b", marginTop: 4, lineHeight: 18 },
-  card: {
+  sectionAction: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#0F766E",
+  },
+  sectionMeta: {
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "700",
+  },
+  quickGrid: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    flexWrap: "wrap",
+    gap: 12,
   },
-  cardDisabled: { opacity: 0.55 },
-  iconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+  quickCard: {
+    width: "48%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 14,
+    shadowColor: "#0f2a1d",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 22,
+    elevation: 3,
+  },
+  quickCardPressed: {
+    transform: [{ scale: 0.98 }],
+  },
+  quickIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 14,
+    marginBottom: 10,
   },
-  icon: { fontSize: 22 },
-  cardTitle: { fontSize: 15, fontWeight: "600", color: "#1a1a1a" },
-  cardSubtitle: { fontSize: 12, color: "#64748b", marginTop: 2 },
-  chevron: { fontSize: 26, fontWeight: "300", marginLeft: 8 },
-  soonBadge: {
-    backgroundColor: "#f1f5f9",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginLeft: 8,
+  quickTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#0F172A",
   },
-  soonBadgeText: { fontSize: 10, fontWeight: "600", color: "#64748b" },
+  quickSubtitle: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 4,
+    lineHeight: 17,
+  },
+  moduleList: {
+    gap: 10,
+  },
+  moduleCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 18,
+    elevation: 2,
+  },
+  moduleCardPressed: {
+    transform: [{ scale: 0.99 }],
+  },
+  moduleCardLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  moduleIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  moduleName: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+  moduleDescription: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 3,
+    lineHeight: 17,
+  },
 });

@@ -15,13 +15,13 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import api, { saveToken } from "@/services/api";
-import { fetchAndCachePermissions } from "@/services/permissionsCache";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 type Language = "fr" | "en" | "ar";
 
 const COPY = {
   fr: {
-    subtitle: "Connectez-vous pour gérer vos utilisateurs et permissions.",
+    subtitle: "",
     sectionTitle: "Connexion",
     email: "Adresse Email",
     password: "Mot de passe",
@@ -33,7 +33,7 @@ const COPY = {
     language: "Langue",
   },
   en: {
-    subtitle: "Sign in to manage users and permissions.",
+    subtitle: "",
     sectionTitle: "Sign in",
     email: "Email Address",
     password: "Password",
@@ -45,7 +45,7 @@ const COPY = {
     language: "Language",
   },
   ar: {
-    subtitle: "سجّل الدخول لإدارة المستخدمين والصلاحيات.",
+    subtitle: "",
     sectionTitle: "تسجيل الدخول",
     email: "البريد الإلكتروني",
     password: "كلمة المرور",
@@ -66,6 +66,7 @@ export default function LoginScreen() {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [language, setLanguage] = useState<Language>("fr");
+  const { refreshPermissions } = usePermissions();
 
   const copy = COPY[language];
   const isArabic = language === "ar";
@@ -85,7 +86,7 @@ export default function LoginScreen() {
       await saveToken("accessToken", response.data.accessToken);
       await saveToken("refreshToken", response.data.refreshToken);
 
-      await fetchAndCachePermissions().catch(() => null);
+      await refreshPermissions();
 
       router.replace("/(dashboard)");
     } catch (error: any) {

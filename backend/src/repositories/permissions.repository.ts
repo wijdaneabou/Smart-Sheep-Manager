@@ -21,3 +21,13 @@ export async function getPermissionNamesForRole(roleId: number): Promise<string[
 
   return result.map((row) => row.name);
 }
+
+export async function getAllPermissionNames(): Promise<string[]> {
+  const result = await db
+    .select({
+      name: permissions.name,
+    })
+    .from(permissions);
+
+  return result.map((row) => row.name);
+}

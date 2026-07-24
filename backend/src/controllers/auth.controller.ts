@@ -1,8 +1,6 @@
 import type { Context } from "hono";
 
 import { login as loginService } from "../services/auth.service.js";
-
-
 import {
   requestPasswordReset,
   verifyResetCode as verifyResetCodeService,
@@ -14,18 +12,16 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt.js";
 import { getPermissionsForRole } from "../services/permissions.service.js";
-
 import { loginSchema } from "../validators/auth.validator.js";
-
 import {
   saveRefreshToken,
   findRefreshToken,
 } from "../repositories/refresh-token.repository.js";
+import { findUserById } from "../repositories/users.repository.js";
 
 export async function login(c: Context) {
   const body = await c.req.json();
 
-  // Validation des données
   const validation = loginSchema.safeParse(body);
 
   if (!validation.success) {
@@ -38,13 +34,11 @@ export async function login(c: Context) {
     );
   }
 
-  // Authentification
   const result = await loginService(
     validation.data.email,
     validation.data.password
   );
 
-  // Mauvais mot de passe ou compte verrouillé
   if (result.success === false) {
     return c.json(
       {
@@ -57,10 +51,8 @@ export async function login(c: Context) {
     );
   }
 
-  // Ici TypeScript sait que user existe
   const user = result.user;
 
-  // Génération des tokens
   const accessToken = generateAccessToken(
     user.id,
     user.roleId
@@ -70,11 +62,9 @@ export async function login(c: Context) {
     user.id
   );
 
-  // Expiration dans 7 jours
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
-  // Sauvegarde du Refresh Token
   await saveRefreshToken(
     user.id,
     refreshToken,
@@ -84,10 +74,8 @@ export async function login(c: Context) {
   return c.json({
     success: true,
     message: "Connexion réussie",
-
     accessToken,
     refreshToken,
-
     user: {
       id: user.id,
       firstName: user.firstName,
@@ -96,6 +84,43 @@ export async function login(c: Context) {
       roleId: user.roleId,
     },
   });
+}
+
+export async function getMe(c: Context) {
+  const user = c.get("user") as
+    | { id: number; roleId: number; roleName?: string | null }
+    | undefined;
+
+  if (!user) {
+    return c.json({ success: false, message: "Authentification requise." }, 401);
+  }
+
+  try {
+    const fullUser = await findUserById(user.id);
+
+    if (!fullUser) {
+      return c.json({ success: false, message: "Utilisateur non trouvé." }, 404);
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        id: fullUser.id,
+        firstName: fullUser.firstName,
+        lastName: fullUser.lastName,
+        email: fullUser.email,
+        phone: fullUser.phone,
+        photo: fullUser.photo,
+        roleId: fullUser.roleId,
+        roleName: user.roleName ?? null,
+        status: fullUser.status,
+        createdAt: fullUser.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error("GetMe error:", error);
+    return c.json({ success: false, message: "Erreur serveur." }, 500);
+  }
 }
 
 export async function getMyPermissions(c: Context) {
@@ -131,10 +156,8 @@ export async function refreshToken(c: Context) {
   }
 
   try {
-    // Vérifier la signature du JWT
     const payload = verifyRefreshToken(token);
 
-    // Vérifier qu'il existe en base
     const storedToken = await findRefreshToken(token);
 
     if (!storedToken) {
@@ -147,10 +170,21 @@ export async function refreshToken(c: Context) {
       );
     }
 
-    // À remplacer plus tard par le vrai rôle récupéré en base
+    const fullUser = await findUserById(payload.userId);
+
+    if (!fullUser) {
+      return c.json(
+        {
+          success: false,
+          message: "Utilisateur non trouvé.",
+        },
+        404
+      );
+    }
+
     const accessToken = generateAccessToken(
-      payload.userId,
-      1
+      fullUser.id,
+      fullUser.roleId
     );
 
     return c.json({
@@ -167,8 +201,8 @@ export async function refreshToken(c: Context) {
       401
     );
   }
-
 }
+
 export async function forgotPassword(c: any) {
   try {
     const { email } = await c.req.json();
@@ -189,6 +223,7 @@ export async function forgotPassword(c: any) {
     );
   }
 }
+
 export async function resetPassword(c: Context) {
   try {
     const { code, password } = await c.req.json();
@@ -226,6 +261,7 @@ export async function resetPassword(c: Context) {
     );
   }
 }
+
 export async function verifyResetCode(c: Context) {
   try {
     const { code } = await c.req.json();
