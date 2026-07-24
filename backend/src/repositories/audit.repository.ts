@@ -8,7 +8,7 @@ import {
   gte,
   lte,
   or,
-  ilike,
+  like,
   SQL,
 } from "drizzle-orm";
 
@@ -37,12 +37,12 @@ function buildWhere(filters: AuditFilters): SQL | undefined {
     const term = `%${filters.search}%`;
     conditions.push(
       or(
-        ilike(auditLogs.module, term),
-        ilike(auditLogs.action, term),
-        ilike(auditLogs.ip, term),
-        ilike(users.firstName, term),
-        ilike(users.lastName, term),
-        ilike(users.email, term)
+        like(auditLogs.module, term),
+        like(auditLogs.action, term),
+        like(auditLogs.ip, term),
+        like(users.firstName, term),
+        like(users.lastName, term),
+        like(users.email, term)
       )!
     );
   }

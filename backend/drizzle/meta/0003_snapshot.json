@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "a8e4fece-6cc3-4851-a6d8-658ffa345996",
-  "prevId": "c9b23a2b-e47e-428c-9960-28582416015e",
+  "id": "d2ba5c17-8568-4fd2-82ee-6bd51d605600",
+  "prevId": "a8e4fece-6cc3-4851-a6d8-658ffa345996",
   "tables": {
     "roles": {
       "name": "roles",
@@ -217,13 +217,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "exploitation_id": {
-          "name": "exploitation_id",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "status": {
           "name": "status",
           "type": "enum('ACTIVE','INACTIVE','SUSPENDED')",
@@ -272,21 +265,7 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "users_exploitation_id_exploitations_id_fk": {
-          "name": "users_exploitation_id_exploitations_id_fk",
-          "tableFrom": "users",
-          "tableTo": "exploitations",
-          "columnsFrom": [
-            "exploitation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {
         "users_id": {
           "name": "users_id",
@@ -739,6 +718,61 @@
       "compositePrimaryKeys": {
         "user_sessions_id": {
           "name": "user_sessions_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "teams": {
+      "name": "teams",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "teams_id": {
+          "name": "teams_id",
           "columns": [
             "id"
           ]
