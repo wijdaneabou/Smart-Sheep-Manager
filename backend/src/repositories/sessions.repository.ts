@@ -63,7 +63,7 @@ function buildWhere(search?: string): SQL | undefined {
   )!;
 }
 
-// ✅ nouveau : liste paginée des sessions (utilisée par la route GET /sessions)
+// ✅ paginée : utilisée par la route GET /sessions
 export async function findAllSessions(page = 1, limit = 20, search?: string) {
   const where = buildWhere(search);
 
@@ -75,4 +75,13 @@ export async function findAllSessions(page = 1, limit = 20, search?: string) {
     .orderBy(desc(userSessions.loginAt))
     .limit(limit)
     .offset((page - 1) * limit);
+}
+
+// ✅ NOUVELLE : export complet sans pagination (utilisée par CSV/PDF)
+export async function exportAllSessions() {
+  return db
+    .select(selectFields)
+    .from(userSessions)
+    .leftJoin(users, eq(userSessions.userId, users.id))
+    .orderBy(desc(userSessions.loginAt));
 }
