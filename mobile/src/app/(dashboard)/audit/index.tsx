@@ -18,7 +18,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import * as SecureStore from "expo-secure-store";
 import api from "../../../services/api";
-import SubTabBar from "@/components/SubTabBar"; // ✅ import du composant partagé
+import SubTabBar from "@/components/SubTabBar";
 
 type AuditLog = {
   id: number;
@@ -48,9 +48,6 @@ function moduleStyle(module: string) {
   return MODULE_COLORS[module] ?? { bg: "#F0FDF4", text: "#166534" };
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  Fonction multi‑plateforme pour récupérer le token
-// ═══════════════════════════════════════════════════════════════
 const getToken = async (): Promise<string | null> => {
   if (typeof window !== "undefined" && window.localStorage) {
     return localStorage.getItem("accessToken");
@@ -148,18 +145,13 @@ export default function AuditScreen() {
       if (search.trim()) params.set("search", search.trim());
 
       const url = `${api.defaults.baseURL}/audit/export/${type}?${params.toString()}`;
+      console.log("🌐 Export URL:", url);
 
-      if (Platform.OS === "web" || typeof window !== "undefined") {
+      if (Platform.OS === "web") {
         const response = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (!response.ok) {
-          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const blob = await response.blob();
         const downloadUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -169,25 +161,33 @@ export default function AuditScreen() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(downloadUrl);
-
-        Alert.alert("Succès", "Le fichier a été téléchargé.");
+        Alert.alert("Succès", "Fichier téléchargé.");
         return;
       }
 
-      const download = await FileSystem.downloadAsync(
+      const fileUri = FileSystem.documentDirectory + `audit_${Date.now()}.${type}`;
+      console.log("📁 Destination:", fileUri);
+
+      const downloadResult = await FileSystem.downloadAsync(
         url,
-        `${FileSystem.documentDirectory}audit_${Date.now()}.${type}`,
+        fileUri,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      console.log("✅ Téléchargé:", downloadResult.uri, "status:", downloadResult.status);
+
+      if (downloadResult.status !== 200) {
+        throw new Error(`HTTP ${downloadResult.status}`);
+      }
+
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
-        await Sharing.shareAsync(download.uri);
+        await Sharing.shareAsync(downloadResult.uri);
       } else {
         Alert.alert("Succès", "Le fichier a été enregistré.");
       }
     } catch (err: any) {
-      console.log("Erreur export :", err.response?.data || err.message);
+      console.error("❌ Erreur export:", err);
       Alert.alert("Erreur", err.message ?? "Impossible d'exporter.");
     } finally {
       setExporting(null);
@@ -250,7 +250,6 @@ export default function AuditScreen() {
           </View>
         </View>
 
-        {/* ✅ Barre d'onglets partagée */}
         <SubTabBar />
 
         <TextInput
