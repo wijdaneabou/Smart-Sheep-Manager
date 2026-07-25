@@ -9,7 +9,7 @@ import exploitationsRoutes from "./routes/exploitations.routes.js";
 
 import sessionsRoutes from "./routes/sessions.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
-
+import animalsRoutes from "./routes/animals.routes.js";
 
 const app = new Hono();
 
@@ -38,5 +38,6 @@ app.route("/api/exploitations", exploitationsRoutes);
 app.route("/api/sessions", sessionsRoutes);
 app.route("/api/audit", auditRoutes);
 
+app.route("/api/animals", animalsRoutes);
 
 export default app;

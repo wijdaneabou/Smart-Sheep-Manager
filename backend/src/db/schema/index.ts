@@ -8,3 +8,4 @@ export * from "./exploitations.js";
 export * from "./loginHistory.js";
 export * from "./auditLogs.js";
 export * from "./user-sessions.js";
+export * from "./animals.js";

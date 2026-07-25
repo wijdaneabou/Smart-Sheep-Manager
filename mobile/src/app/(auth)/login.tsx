@@ -91,6 +91,10 @@ export default function LoginScreen() {
 
       router.replace("/(dashboard)");
     } catch (error: any) {
+      console.log("LOGIN ERROR STATUS:", error.response?.status);
+      console.log("LOGIN ERROR DATA:", error.response?.data);
+      console.log("LOGIN ERROR MESSAGE:", error.message);
+      
       const data = error.response?.data;
 
       if (data?.errors) {

@@ -77,7 +77,7 @@ export const MODULES: SSMModule[] = [
     color: "#166534",
     bgColor: "#F3E8FF",
     route: "/herd",
-    available: false,
+    available: true,
     priority: 2,
     tabLabel: "Troupeau",
   },

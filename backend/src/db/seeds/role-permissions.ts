@@ -41,7 +41,7 @@ const rolePermissionMap: Record<string, string[]> = {
     "AI_ASSISTANT:READ",
   ],
   ELEVEUR: [
-    "HERD:READ", "HERD:UPDATE",
+    "HERD:CREATE", "HERD:READ", "HERD:UPDATE",
     "HEALTH:READ", "HEALTH:UPDATE",
     "REPRODUCTION:READ", "REPRODUCTION:UPDATE",
     "FEEDING:READ", "FEEDING:UPDATE",
