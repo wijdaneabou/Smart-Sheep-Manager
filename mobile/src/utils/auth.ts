@@ -5,25 +5,22 @@ function canUseWebStorage() {
   return Platform.OS === "web" && typeof window !== "undefined" && !!window.localStorage;
 }
 
-export async function saveTokens(
-  accessToken: string,
-  refreshToken: string
-) {
+export async function saveToken(key: string, value: string) {
   if (canUseWebStorage()) {
-    window.localStorage.setItem("accessToken", accessToken);
-    window.localStorage.setItem("refreshToken", refreshToken);
+    window.localStorage.setItem(key, value);
     return;
   }
 
-  await SecureStore.setItemAsync(
-    "accessToken",
-    accessToken
-  );
+  await SecureStore.setItemAsync(key, value);
+}
 
-  await SecureStore.setItemAsync(
-    "refreshToken",
-    refreshToken
-  );
+export async function saveAccessToken(accessToken: string) {
+  await saveToken("accessToken", accessToken);
+}
+
+export async function saveTokens(accessToken: string, refreshToken: string) {
+  await saveToken("accessToken", accessToken);
+  await saveToken("refreshToken", refreshToken);
 }
 
 export async function getAccessToken() {
@@ -31,9 +28,7 @@ export async function getAccessToken() {
     return window.localStorage.getItem("accessToken");
   }
 
-  return await SecureStore.getItemAsync(
-    "accessToken"
-  );
+  return await SecureStore.getItemAsync("accessToken");
 }
 
 export async function getRefreshToken() {
@@ -41,9 +36,7 @@ export async function getRefreshToken() {
     return window.localStorage.getItem("refreshToken");
   }
 
-  return await SecureStore.getItemAsync(
-    "refreshToken"
-  );
+  return await SecureStore.getItemAsync("refreshToken");
 }
 
 export async function removeTokens() {
@@ -53,11 +46,6 @@ export async function removeTokens() {
     return;
   }
 
-  await SecureStore.deleteItemAsync(
-    "accessToken"
-  );
-
-  await SecureStore.deleteItemAsync(
-    "refreshToken"
-  );
+  await SecureStore.deleteItemAsync("accessToken");
+  await SecureStore.deleteItemAsync("refreshToken");
 }

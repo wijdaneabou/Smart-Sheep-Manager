@@ -60,9 +60,18 @@ export interface BcsHerdSummaryResponse {
 }
 
 function extractError(err: any): string {
+  // 1. Server responded with an error field (string)
   const apiError = err?.response?.data?.error;
   if (typeof apiError === "string") return apiError;
-  return err?.response?.data?.message ?? "Impossible de contacter le serveur.";
+
+  // 2. Server responded with a message field
+  if (err?.response?.data?.message) return err.response.data.message;
+
+  // 3. Network-level error (server unreachable, timeout, CORS, etc.)
+  if (err?.message) return `Erreur réseau : ${err.message}`;
+
+  // 4. Fallback
+  return "Impossible de contacter le serveur. Vérifiez que le backend est démarré.";
 }
 
 /**

@@ -101,6 +101,7 @@ export interface PedigreeAnimal {
   weight: string | null;
   bcs: string | null;
   healthStatus: string;
+  photoUrl: string | null;
 }
 
 /**
@@ -130,6 +131,7 @@ function toPedigreeAnimal(row: typeof animals.$inferSelect): PedigreeAnimal {
     weight: row.weight,
     bcs: row.bcs,
     healthStatus: row.healthStatus,
+    photoUrl: row.photoUrl,
   };
 }
 

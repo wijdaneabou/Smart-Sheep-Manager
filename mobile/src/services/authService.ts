@@ -1,10 +1,10 @@
-import * as SecureStore from "expo-secure-store";
 import { router } from "expo-router";
 import api from "./api";
+import { getRefreshToken, removeTokens } from "@/utils/auth";
 
 export async function logout() {
   try {
-    const refreshToken = await SecureStore.getItemAsync("refreshToken");
+    const refreshToken = await getRefreshToken();
 
     if (refreshToken) {
       await api.post("/auth/logout", { refreshToken });
@@ -12,8 +12,7 @@ export async function logout() {
   } catch (error) {
     console.log("Erreur logout serveur :", error);
   } finally {
-    await SecureStore.deleteItemAsync("accessToken");
-    await SecureStore.deleteItemAsync("refreshToken");
-    router.replace("/(auth)/login"); // ⚠️ à corriger si le chemin réel diffère
+    await removeTokens();
+    router.replace("/(auth)/login");
   }
 }

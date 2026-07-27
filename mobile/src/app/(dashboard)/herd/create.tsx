@@ -35,6 +35,7 @@ export default function CreateAnimalScreen() {
   const [name, setName] = useState("");
   const [breed, setBreed] = useState<Breed>("Sardi");
   const [sex, setSex] = useState<Sex>("FEMALE");
+  const [exploitationId, setExploitationId] = useState("");
 
   // --- Caractéristiques ---
   const [birthDate, setBirthDate] = useState("");
@@ -106,6 +107,7 @@ export default function CreateAnimalScreen() {
     if (bcs && Number.isNaN(Number(bcs))) return "Le BCS doit être un nombre.";
     if (fatherId && Number.isNaN(Number(fatherId))) return "L'ID du père doit être un nombre.";
     if (motherId && Number.isNaN(Number(motherId))) return "L'ID de la mère doit être un nombre.";
+    if (exploitationId && Number.isNaN(Number(exploitationId))) return "L'exploitation doit être un nombre.";
     return null;
   }
 
@@ -130,6 +132,7 @@ export default function CreateAnimalScreen() {
       healthStatus,
       fatherId: fatherId ? Number(fatherId) : undefined,
       motherId: motherId ? Number(motherId) : undefined,
+      exploitationId: exploitationId ? Number(exploitationId) : undefined,
       // NOTE: `photoUri` is a local file URI for now. If your backend accepts
       // photo uploads, replace this with the uploaded file's URL, or switch
       // this call to a multipart/form-data request that includes the file.
@@ -255,8 +258,21 @@ export default function CreateAnimalScreen() {
             </View>
           </View>
 
-          {/* --- 2. Caractéristiques --- */}
-          <SectionTitle index={2} label="Caractéristiques" />
+           {/* --- Exploitation --- */}
+           <View style={styles.fieldGroup}>
+             <Text style={styles.label}>Exploitation (ID)</Text>
+             <TextInput
+               style={styles.input}
+               placeholder="Optionnel"
+               placeholderTextColor="#aaa"
+               keyboardType="numeric"
+               value={exploitationId}
+               onChangeText={setExploitationId}
+             />
+           </View>
+
+           {/* --- 2. Caractéristiques --- */}
+           <SectionTitle index={2} label="Caractéristiques" />
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Date de naissance</Text>

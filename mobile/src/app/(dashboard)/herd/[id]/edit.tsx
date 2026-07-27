@@ -42,6 +42,7 @@ export default function EditAnimalScreen() {
   const [name, setName] = useState("");
   const [breed, setBreed] = useState<Breed>("Sardi");
   const [sex, setSex] = useState<Sex>("FEMALE");
+  const [exploitationId, setExploitationId] = useState("");
 
   // --- Caractéristiques ---
   const [birthDate, setBirthDate] = useState("");
@@ -75,6 +76,7 @@ export default function EditAnimalScreen() {
           setHealthStatus(a.healthStatus);
           setFatherId(a.fatherId ? String(a.fatherId) : "");
           setMotherId(a.motherId ? String(a.motherId) : "");
+          setExploitationId(a.exploitationId ? String(a.exploitationId) : "");
           if (a.photoUrl) {
             setPhotoUri(a.photoUrl);
           }
@@ -96,6 +98,7 @@ export default function EditAnimalScreen() {
     if (bcs && Number.isNaN(Number(bcs))) return "Le BCS doit être un nombre.";
     if (fatherId && Number.isNaN(Number(fatherId))) return "L'ID du père doit être un nombre.";
     if (motherId && Number.isNaN(Number(motherId))) return "L'ID de la mère doit être un nombre.";
+    if (exploitationId && Number.isNaN(Number(exploitationId))) return "L'exploitation doit être un nombre.";
     return null;
   }
 
@@ -122,6 +125,7 @@ export default function EditAnimalScreen() {
       
       fatherId: fatherId ? Number(fatherId) : null,
       motherId: motherId ? Number(motherId) : null,
+      exploitationId: exploitationId ? Number(exploitationId) : null,
       photoUri: photoUri ?? undefined,
     });
 
@@ -300,8 +304,21 @@ export default function EditAnimalScreen() {
             </View>
           </View>
 
-          {/* --- 2. Caractéristiques --- */}
-          <SectionTitle index={2} label="Caractéristiques" />
+           {/* --- Exploitation --- */}
+           <View style={styles.fieldGroup}>
+             <Text style={styles.label}>Exploitation (ID)</Text>
+             <TextInput
+               style={styles.input}
+               placeholder="Optionnel"
+               placeholderTextColor="#aaa"
+               keyboardType="numeric"
+               value={exploitationId}
+               onChangeText={setExploitationId}
+             />
+           </View>
+
+           {/* --- 2. Caractéristiques --- */}
+           <SectionTitle index={2} label="Caractéristiques" />
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Date de naissance</Text>

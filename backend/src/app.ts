@@ -43,11 +43,13 @@ app.route("/api/exploitations", exploitationsRoutes);
 app.route("/api/sessions", sessionsRoutes);
 app.route("/api/audit", auditRoutes);
 
-app.route("/api/animals", animalsRoutes);
-app.route("/api/animals", animalHistoryRoutes);
-app.route("/api/movements", animalMovementsRoutes);
-app.route("/api/animals", animalWeightsRoutes);
+// Mount more specific sub-routes BEFORE the generic animalsRoutes
+// to prevent the GET /:id route from shadowing /:id/bcs, /:id/history, etc.
 app.route("/api/animals", animalBcsRoutes);
+app.route("/api/animals", animalWeightsRoutes);
+app.route("/api/animals", animalHistoryRoutes);
+app.route("/api/animals", animalsRoutes);
+app.route("/api/movements", animalMovementsRoutes);
 
 
 export default app;

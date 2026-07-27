@@ -6,18 +6,41 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import {
   getPedigree,
   type PedigreeAnimal,
-  type PedigreeNode,
   type PedigreeResult,
   type ConsanguinityAlert,
 } from "@/services/animalsService";
 import { getBreedInfo, getSexInfo, getHealthStatusInfo } from "@/constants/breeds";
+import { API_URL } from "@/services/api";
 
+// ── Design tokens ──────────────────────────────────────────────
+const GREEN = "#14532d";
+const GREEN_EMERALD = "#059669";
+const BACKGROUND = "#f8fafc";
+const CARD_BG = "#ffffff";
+const BORDER = "#e5e7eb";
+const TEXT_DARK = "#1f2937";
+const TEXT_MUTED = "#6b7280";
+
+// ── Helpers ────────────────────────────────────────────────────
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("fr-FR");
+}
+
+function getPhotoUrl(photoUrl: string | null): string | null {
+  if (!photoUrl) return null;
+  return photoUrl.startsWith("http") ? photoUrl : `${API_URL}${photoUrl}`;
+}
+
+// ── Main component ─────────────────────────────────────────────
 export default function PedigreeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const animalId = Number(id);
@@ -49,34 +72,37 @@ export default function PedigreeScreen() {
     router.push(`/herd/${animal.id}` as any);
   }
 
+  // ── Loading state ──
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Text style={styles.backButtonText}>‹</Text>
+            <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
           </Pressable>
           <Text style={styles.headerTitle}>Arbre généalogique</Text>
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#059669" />
+          <ActivityIndicator size="large" color={GREEN_EMERALD} />
         </View>
       </SafeAreaView>
     );
   }
 
+  // ── Error state ──
   if (error || !data) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Text style={styles.backButtonText}>‹</Text>
+            <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
           </Pressable>
           <Text style={styles.headerTitle}>Arbre généalogique</Text>
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.center}>
+          <Ionicons name="alert-circle" size={48} color="#dc2626" />
           <Text style={styles.error}>{error ?? "Aucune donnée."}</Text>
         </View>
       </SafeAreaView>
@@ -86,13 +112,14 @@ export default function PedigreeScreen() {
   const { tree, consanguinityAlerts, hasConsanguinity } = data;
   const subject = tree.animal;
   const breedInfo = subject ? getBreedInfo(subject.breed) : { icon: "🐑", label: "Inconnu" };
+  const subjectPhotoUrl = subject ? getPhotoUrl(subject.photoUrl) : null;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      {/* Header */}
+      {/* ── Header ── */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-          <Text style={styles.backButtonText}>‹</Text>
+          <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
         </Pressable>
         <Text style={styles.headerTitle}>Arbre généalogique</Text>
         <View style={{ width: 32 }} />
@@ -102,20 +129,24 @@ export default function PedigreeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Subject header */}
+        {/* ── Subject header ── */}
         <View style={styles.subjectHeader}>
-          <Text style={styles.subjectIcon}>{breedInfo.icon}</Text>
+          <AnimalAvatar
+            photoUrl={subjectPhotoUrl}
+            breedIcon={breedInfo.icon}
+            size={80}
+          />
           <Text style={styles.subjectName}>{subject ? subject.name : "—"}</Text>
           {subject && (
             <Text style={styles.subjectRfid}>{subject.rfid}</Text>
           )}
         </View>
 
-        {/* Consanguinity alert */}
+        {/* ── Consanguinity alert ── */}
         {hasConsanguinity && (
           <View style={styles.alertContainer}>
             <View style={styles.alertHeader}>
-              <Text style={styles.alertIcon}>⚠️</Text>
+              <Ionicons name="warning" size={20} color="#92400e" />
               <Text style={styles.alertTitle}>Alerte de consanguinité</Text>
             </View>
             <Text style={styles.alertText}>
@@ -133,7 +164,7 @@ export default function PedigreeScreen() {
           </View>
         )}
 
-        {/* Tree visualization */}
+        {/* ── Tree visualization ── */}
         <View style={styles.treeContainer}>
           {/* Generation 2: Grandparents */}
           <View style={styles.generationRow}>
@@ -172,7 +203,7 @@ export default function PedigreeScreen() {
           </View>
 
           {/* Generation 1: Parents */}
-          <View style={styles.generationRow}>
+          <View style={styles.generationRow}>²²²²²
             <Gen1Node
               animal={tree.father?.animal ?? null}
               relationship="Père"
@@ -205,30 +236,65 @@ export default function PedigreeScreen() {
           </View>
         </View>
 
-        {/* Legend */}
+        {/* ── Legend ── */}
         <View style={styles.legendContainer}>
           <Text style={styles.legendTitle}>Légende</Text>
           <View style={styles.legendRow}>
             <View style={styles.legendItem}>
-              <Text style={styles.legendIcon}>♂️</Text>
+              <Ionicons name="male" size={14} color="#3b82f6" />
               <Text style={styles.legendLabel}>Mâle</Text>
             </View>
             <View style={styles.legendItem}>
-              <Text style={styles.legendIcon}>♀️</Text>
+              <Ionicons name="female" size={14} color="#ec4899" />
               <Text style={styles.legendLabel}>Femelle</Text>
             </View>
             <View style={styles.legendItem}>
-              <Text style={styles.legendIcon}>✅</Text>
+              <Ionicons name="checkmark-circle" size={14} color="#16a34a" />
               <Text style={styles.legendLabel}>En santé</Text>
             </View>
             <View style={styles.legendItem}>
-              <Text style={styles.legendIcon}>⚠️</Text>
+              <Ionicons name="warning" size={14} color="#d97706" />
               <Text style={styles.legendLabel}>Consanguinité</Text>
             </View>
           </View>
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// ── Sub-components ─────────────────────────────────────────────
+
+function AnimalAvatar({
+  photoUrl,
+  breedIcon,
+  size,
+}: {
+  photoUrl: string | null;
+  breedIcon: string;
+  size: number;
+}) {
+  if (photoUrl) {
+    return (
+      <Image
+        source={{ uri: photoUrl }}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
+      />
+    );
+  }
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: "#F0FDF4",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Text style={{ fontSize: size * 0.4 }}>{breedIcon}</Text>
+    </View>
   );
 }
 
@@ -247,7 +313,7 @@ function renderConnector(
 }
 
 /**
- * Generation 2 node (grandparent) — smallest card.
+ * Generation 2 node (grandparent) — card with photo and readable info.
  */
 function Gen2Node({
   animal,
@@ -258,6 +324,10 @@ function Gen2Node({
   relationship: string;
   onPress: (animal: PedigreeAnimal | null) => void;
 }) {
+  const photoUrl = animal ? getPhotoUrl(animal.photoUrl) : null;
+  const breedInfo = animal ? getBreedInfo(animal.breed) : { icon: "🐑", label: "Inconnu" };
+  const sexInfo = animal ? getSexInfo(animal.sex) : { icon: "❓", label: "?", id: "" };
+
   return (
     <Pressable
       style={styles.gen2Card}
@@ -275,7 +345,7 @@ function Gen2Node({
       >
         {animal ? (
           <>
-            <Text style={styles.gen2Icon}>{getBreedInfo(animal.breed).icon}</Text>
+            <AnimalAvatar photoUrl={photoUrl} breedIcon={breedInfo.icon} size={36} />
             <Text style={styles.gen2Name} numberOfLines={1}>
               {animal.name}
             </Text>
@@ -284,13 +354,13 @@ function Gen2Node({
             </Text>
             <View style={styles.gen2Badge}>
               <Text style={styles.gen2Sex}>
-                {getSexInfo(animal.sex).icon}
+                {sexInfo.icon}
               </Text>
             </View>
           </>
         ) : (
           <>
-            <Text style={styles.gen2Icon}>❓</Text>
+            <AnimalAvatar photoUrl={null} breedIcon="❓" size={36} />
             <Text style={styles.gen2Name}>Inconnu</Text>
           </>
         )}
@@ -301,7 +371,7 @@ function Gen2Node({
 }
 
 /**
- * Generation 1 node (parent) — medium card.
+ * Generation 1 node (parent) — medium card with photo and readable info.
  */
 function Gen1Node({
   animal,
@@ -312,6 +382,13 @@ function Gen1Node({
   relationship: string;
   onPress: (animal: PedigreeAnimal | null) => void;
 }) {
+  const photoUrl = animal ? getPhotoUrl(animal.photoUrl) : null;
+  const breedInfo = animal ? getBreedInfo(animal.breed) : { icon: "🐑", label: "Inconnu" };
+  const sexInfo = animal ? getSexInfo(animal.sex) : { icon: "❓", label: "?", id: "" };
+  const healthInfo = animal
+    ? getHealthStatusInfo(animal.healthStatus)
+    : { icon: "❓", label: "?", color: "#666" };
+
   return (
     <Pressable
       style={styles.gen1Card}
@@ -329,7 +406,7 @@ function Gen1Node({
       >
         {animal ? (
           <>
-            <Text style={styles.gen1Icon}>{getBreedInfo(animal.breed).icon}</Text>
+            <AnimalAvatar photoUrl={photoUrl} breedIcon={breedInfo.icon} size={44} />
             <Text style={styles.gen1Name} numberOfLines={1}>
               {animal.name}
             </Text>
@@ -344,36 +421,36 @@ function Gen1Node({
                 ]}
               >
                 <Text style={styles.gen1Sex}>
-                  {getSexInfo(animal.sex).icon} {getSexInfo(animal.sex).label}
+                  {sexInfo.icon} {sexInfo.label}
                 </Text>
               </View>
               <View
                 style={[
                   styles.gen1HealthBadge,
                   {
-                    backgroundColor: getHealthStatusInfo(animal.healthStatus).color + "20",
+                    backgroundColor: healthInfo.color + "20",
                   },
                 ]}
               >
                 <Text
                   style={[
                     styles.gen1Health,
-                    { color: getHealthStatusInfo(animal.healthStatus).color },
+                    { color: healthInfo.color },
                   ]}
                 >
-                  {getHealthStatusInfo(animal.healthStatus).icon}
+                  {healthInfo.icon}
                 </Text>
               </View>
             </View>
             {animal.birthDate && (
               <Text style={styles.gen1BirthDate}>
-                Né(e) le {new Date(animal.birthDate).toLocaleDateString("fr-FR")}
+                Né(e) le {formatDate(animal.birthDate)}
               </Text>
             )}
           </>
         ) : (
           <>
-            <Text style={styles.gen1Icon}>❓</Text>
+            <AnimalAvatar photoUrl={null} breedIcon="❓" size={44} />
             <Text style={styles.gen1Name}>Inconnu</Text>
           </>
         )}
@@ -384,7 +461,7 @@ function Gen1Node({
 }
 
 /**
- * Generation 0 node (subject) — largest card, highlighted.
+ * Generation 0 node (subject) — largest card, highlighted, with photo.
  */
 function Gen0Node({
   animal,
@@ -395,6 +472,13 @@ function Gen0Node({
   relationship: string;
   onPress: (animal: PedigreeAnimal | null) => void;
 }) {
+  const photoUrl = animal ? getPhotoUrl(animal.photoUrl) : null;
+  const breedInfo = animal ? getBreedInfo(animal.breed) : { icon: "🐑", label: "Inconnu" };
+  const sexInfo = animal ? getSexInfo(animal.sex) : { icon: "❓", label: "?", id: "" };
+  const healthInfo = animal
+    ? getHealthStatusInfo(animal.healthStatus)
+    : { icon: "❓", label: "?", color: "#666" };
+
   return (
     <Pressable
       style={styles.gen0Card}
@@ -413,7 +497,7 @@ function Gen0Node({
       >
         {animal ? (
           <>
-            <Text style={styles.gen0Icon}>{getBreedInfo(animal.breed).icon}</Text>
+            <AnimalAvatar photoUrl={photoUrl} breedIcon={breedInfo.icon} size={60} />
             <Text style={styles.gen0Name}>{animal.name}</Text>
             <Text style={styles.gen0Rfid}>{animal.rfid}</Text>
             <View style={styles.gen0Badges}>
@@ -424,31 +508,30 @@ function Gen0Node({
                 ]}
               >
                 <Text style={styles.gen0BadgeText}>
-                  {getSexInfo(animal.sex).icon} {getSexInfo(animal.sex).label}
+                  {sexInfo.icon} {sexInfo.label}
                 </Text>
               </View>
               <View
                 style={[
                   styles.gen0Badge,
                   {
-                    backgroundColor: getHealthStatusInfo(animal.healthStatus).color + "20",
+                    backgroundColor: healthInfo.color + "20",
                   },
                 ]}
               >
                 <Text
                   style={[
                     styles.gen0BadgeText,
-                    { color: getHealthStatusInfo(animal.healthStatus).color },
+                    { color: healthInfo.color },
                   ]}
                 >
-                  {getHealthStatusInfo(animal.healthStatus).icon}{" "}
-                  {getHealthStatusInfo(animal.healthStatus).label}
+                  {healthInfo.icon} {healthInfo.label}
                 </Text>
               </View>
             </View>
             {animal.birthDate && (
               <Text style={styles.gen0BirthDate}>
-                Né(e) le {new Date(animal.birthDate).toLocaleDateString("fr-FR")}
+                Né(e) le {formatDate(animal.birthDate)}
               </Text>
             )}
             {animal.weight && (
@@ -459,7 +542,7 @@ function Gen0Node({
           </>
         ) : (
           <>
-            <Text style={styles.gen0Icon}>❓</Text>
+            <AnimalAvatar photoUrl={null} breedIcon="❓" size={60} />
             <Text style={styles.gen0Name}>Inconnu</Text>
           </>
         )}
@@ -469,35 +552,67 @@ function Gen0Node({
   );
 }
 
-const PAGE_BG = "#faf3ea";
+// ── Styles ─────────────────────────────────────────────────────
+
 const MALE_BORDER = "#3b82f6";
 const FEMALE_BORDER = "#ec4899";
 const UNKNOWN_BG = "#f3f4f6";
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: PAGE_BG },
+  // ── Layout ──
+  safeArea: { flex: 1, backgroundColor: BACKGROUND },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
-  backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  backButtonText: { fontSize: 26, color: "#1a1a1a", fontWeight: "400" },
-  headerTitle: { fontSize: 16, fontWeight: "700", flex: 1, textAlign: "center" },
-
-  center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 },
-  error: { color: "#dc2626", fontSize: 14, textAlign: "center" },
-
-  scrollContent: { padding: 16, paddingBottom: 40 },
+  backButton: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: TEXT_DARK,
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: 24,
+  },
+  error: {
+    color: "#dc2626",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
 
   // ── Subject header ──
-  subjectHeader: { alignItems: "center", marginBottom: 20 },
-  subjectIcon: { fontSize: 42, marginBottom: 6 },
-  subjectName: { fontSize: 20, fontWeight: "800", color: "#0F2A1D" },
-  subjectRfid: { fontSize: 12, color: "#888", marginTop: 2 },
+  subjectHeader: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  subjectName: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: GREEN,
+    marginTop: 8,
+  },
+  subjectRfid: {
+    fontSize: 13,
+    color: TEXT_MUTED,
+    marginTop: 2,
+  },
 
   // ── Consanguinity alert ──
   alertContainer: {
@@ -508,27 +623,50 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 20,
   },
-  alertHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
-  alertIcon: { fontSize: 20 },
-  alertTitle: { fontSize: 14, fontWeight: "700", color: "#92400e" },
-  alertText: { fontSize: 12, color: "#78350f", lineHeight: 17, marginBottom: 8 },
+  alertHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 6,
+  },
+  alertTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#92400e",
+  },
+  alertText: {
+    fontSize: 12,
+    color: "#78350f",
+    lineHeight: 17,
+    marginBottom: 8,
+  },
   alertDetail: {
-    backgroundColor: "#fff",
+    backgroundColor: CARD_BG,
     borderRadius: 8,
     padding: 8,
     marginTop: 6,
   },
-  alertDetailName: { fontSize: 12, fontWeight: "700", color: "#78350f" },
-  alertDetailText: { fontSize: 11, color: "#92400e" },
+  alertDetailName: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#78350f",
+  },
+  alertDetailText: {
+    fontSize: 11,
+    color: "#92400e",
+  },
 
   // ── Tree ──
   treeContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: CARD_BG,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
 
   generationRow: {
@@ -539,20 +677,33 @@ const styles = StyleSheet.create({
   },
 
   // ── Gen 2 cards (grandparents) ──
-  gen2Card: { flex: 1, alignItems: "center" },
+  gen2Card: {
+    flex: 1,
+    alignItems: "center",
+  },
   gen2CardInner: {
     width: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: CARD_BG,
     borderWidth: 2,
-    borderRadius: 10,
-    padding: 8,
+    borderRadius: 12,
+    padding: 10,
     alignItems: "center",
-    aspectRatio: 1,
+    height: 120,
     justifyContent: "center",
   },
-  gen2Icon: { fontSize: 22, marginBottom: 2 },
-  gen2Name: { fontSize: 10, fontWeight: "700", color: "#333", textAlign: "center" },
-  gen2Rfid: { fontSize: 7, color: "#999", textAlign: "center", marginTop: 1 },
+  gen2Name: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: TEXT_DARK,
+    textAlign: "center",
+    marginTop: 4,
+  },
+  gen2Rfid: {
+    fontSize: 7,
+    color: TEXT_MUTED,
+    textAlign: "center",
+    marginTop: 1,
+  },
   gen2Badge: {
     backgroundColor: "#f0f0f0",
     borderRadius: 8,
@@ -560,27 +711,42 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     marginTop: 2,
   },
-  gen2Sex: { fontSize: 10 },
+  gen2Sex: {
+    fontSize: 10,
+  },
 
   // ── Gen 1 cards (parents) ──
-  gen1Card: { flex: 1, alignItems: "center" },
+  gen1Card: {
+    flex: 1,
+    alignItems: "center",
+  },
   gen1CardInner: {
     width: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: CARD_BG,
     borderWidth: 2,
-    borderRadius: 12,
-    padding: 10,
+    borderRadius: 14,
+    padding: 12,
     alignItems: "center",
-    aspectRatio: 1.2,
+    height: 160,
     justifyContent: "center",
   },
-  gen1Icon: { fontSize: 26, marginBottom: 4 },
-  gen1Name: { fontSize: 12, fontWeight: "700", color: "#333", textAlign: "center" },
-  gen1Rfid: { fontSize: 8, color: "#999", textAlign: "center", marginTop: 1 },
+  gen1Name: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: TEXT_DARK,
+    textAlign: "center",
+    marginTop: 4,
+  },
+  gen1Rfid: {
+    fontSize: 8,
+    color: TEXT_MUTED,
+    textAlign: "center",
+    marginTop: 1,
+  },
   gen1Badges: {
     flexDirection: "row",
     gap: 4,
-    marginTop: 4,
+    marginTop: 6,
     alignItems: "center",
     justifyContent: "center",
     flexWrap: "wrap",
@@ -590,41 +756,63 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 6,
   },
-  gen1Sex: { fontSize: 9, fontWeight: "600" },
+  gen1Sex: {
+    fontSize: 9,
+    fontWeight: "600",
+  },
   gen1HealthBadge: {
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 6,
   },
-  gen1Health: { fontSize: 10 },
-  gen1BirthDate: { fontSize: 8, color: "#888", marginTop: 2, textAlign: "center" },
+  gen1Health: {
+    fontSize: 10,
+  },
+  gen1BirthDate: {
+    fontSize: 8,
+    color: TEXT_MUTED,
+    marginTop: 4,
+    textAlign: "center",
+  },
 
   // ── Gen 0 card (subject) ──
-  gen0Card: { alignItems: "center" },
-  gen0CardInner: {
-    width: 140,
-    backgroundColor: "#fff",
-    borderWidth: 3,
-    borderRadius: 14,
-    padding: 12,
+  gen0Card: {
     alignItems: "center",
-    aspectRatio: 1,
+  },
+  gen0CardInner: {
+    width: 160,
+    backgroundColor: CARD_BG,
+    borderWidth: 3,
+    borderRadius: 16,
+    padding: 14,
+    alignItems: "center",
+    height: 200,
     justifyContent: "center",
   },
   gen0Highlight: {
-    shadowColor: "#059669",
+    shadowColor: GREEN_EMERALD,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 4,
   },
-  gen0Icon: { fontSize: 32, marginBottom: 4 },
-  gen0Name: { fontSize: 14, fontWeight: "800", color: "#0F2A1D", textAlign: "center" },
-  gen0Rfid: { fontSize: 9, color: "#888", textAlign: "center", marginTop: 2 },
+  gen0Name: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: GREEN,
+    textAlign: "center",
+    marginTop: 6,
+  },
+  gen0Rfid: {
+    fontSize: 9,
+    color: TEXT_MUTED,
+    textAlign: "center",
+    marginTop: 2,
+  },
   gen0Badges: {
     flexDirection: "row",
     gap: 4,
-    marginTop: 4,
+    marginTop: 6,
     flexWrap: "wrap",
     justifyContent: "center",
   },
@@ -633,19 +821,39 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 8,
   },
-  gen0BadgeText: { fontSize: 9, fontWeight: "600" },
-  gen0BirthDate: { fontSize: 9, color: "#888", marginTop: 4, textAlign: "center" },
-  gen0Weight: { fontSize: 9, color: "#666", marginTop: 2, textAlign: "center" },
+  gen0BadgeText: {
+    fontSize: 9,
+    fontWeight: "600",
+  },
+  gen0BirthDate: {
+    fontSize: 9,
+    color: TEXT_MUTED,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  gen0Weight: {
+    fontSize: 9,
+    color: "#666",
+    marginTop: 2,
+    textAlign: "center",
+  },
 
   // ── Shared card states ──
-  cardMale: { borderColor: MALE_BORDER },
-  cardFemale: { borderColor: FEMALE_BORDER },
-  cardUnknown: { backgroundColor: UNKNOWN_BG, borderColor: "#ccc" },
+  cardMale: {
+    borderColor: MALE_BORDER,
+  },
+  cardFemale: {
+    borderColor: FEMALE_BORDER,
+  },
+  cardUnknown: {
+    backgroundColor: UNKNOWN_BG,
+    borderColor: "#ccc",
+  },
 
   // ── Relationship label ──
   relationshipLabel: {
     fontSize: 10,
-    color: "#666",
+    color: TEXT_MUTED,
     textAlign: "center",
     marginTop: 4,
     fontStyle: "italic",
@@ -689,13 +897,21 @@ const styles = StyleSheet.create({
 
   // ── Legend ──
   legendContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: CARD_BG,
     borderRadius: 14,
     padding: 14,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  legendTitle: { fontSize: 13, fontWeight: "700", color: "#1a1a1a", marginBottom: 8 },
+  legendTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: TEXT_DARK,
+    marginBottom: 8,
+  },
   legendRow: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -707,6 +923,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
   },
-  legendIcon: { fontSize: 14 },
-  legendLabel: { fontSize: 11, color: "#555" },
+  legendLabel: {
+    fontSize: 11,
+    color: TEXT_MUTED,
+  },
 });

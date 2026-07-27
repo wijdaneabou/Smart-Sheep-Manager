@@ -45,6 +45,7 @@ export interface PedigreeAnimal {
   weight: string | null;
   bcs: string | null;
   healthStatus: string;
+  photoUrl: string | null;
 }
 
 export interface PedigreeNode {

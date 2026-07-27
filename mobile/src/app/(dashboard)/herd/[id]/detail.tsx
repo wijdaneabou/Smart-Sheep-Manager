@@ -7,9 +7,11 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter, useFocusEffect, Link } from "expo-router";
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import {
   getAnimalById,
   deleteAnimal,
@@ -17,7 +19,43 @@ import {
 } from "../../../../services/animalsService";
 import { exportAnimalHistoryPdf } from "../../../../services/animalHistoryService";
 import { getBreedInfo, getSexInfo, getHealthStatusInfo } from "../../../../constants/breeds";
+import { API_URL } from "../../../../services/api";
 
+// ── Design tokens ──────────────────────────────────────────────
+const GREEN = "#14532d";
+const GREEN_EMERALD = "#059669";
+const BACKGROUND = "#f8fafc";
+const CARD_BG = "#ffffff";
+const BORDER = "#e5e7eb";
+const TEXT_DARK = "#1f2937";
+const TEXT_MUTED = "#6b7280";
+
+// ── Helpers ────────────────────────────────────────────────────
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("fr-FR");
+}
+
+function calculateAge(birthDate: string | null): string {
+  if (!birthDate) return "—";
+  const birth = new Date(birthDate);
+  const now = new Date();
+  const diffMs = now.getTime() - birth.getTime();
+  if (diffMs < 0) return "—";
+  const ageDate = new Date(diffMs);
+  const years = ageDate.getUTCFullYear() - 1970;
+  const months = ageDate.getUTCMonth();
+  if (years > 0) {
+    return `${years}a${months > 0 ? ` ${months}m` : ""}`;
+  }
+  if (months > 0) {
+    return `${months} mois`;
+  }
+  const days = ageDate.getUTCDate() - 1;
+  return `${days}j`;
+}
+
+// ── Main component ─────────────────────────────────────────────
 export default function AnimalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const animalId = Number(id);
@@ -79,18 +117,37 @@ export default function AnimalDetailScreen() {
     }
   }
 
+  // ── Loading state ──
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <ActivityIndicator style={{ marginTop: 40 }} />
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+            <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Fiche Animal</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={GREEN_EMERALD} />
+        </View>
       </SafeAreaView>
     );
   }
 
+  // ── Error state ──
   if (error || !animal) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+            <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Fiche Animal</Text>
+          <View style={{ width: 32 }} />
+        </View>
         <View style={styles.center}>
+          <Ionicons name="alert-circle" size={48} color="#dc2626" />
           <Text style={styles.error}>{error ?? "Animal introuvable."}</Text>
         </View>
       </SafeAreaView>
@@ -100,185 +157,294 @@ export default function AnimalDetailScreen() {
   const breedInfo = getBreedInfo(animal.breed);
   const sexInfo = getSexInfo(animal.sex);
   const healthInfo = getHealthStatusInfo(animal.healthStatus);
+  const photoUrl = animal.photoUrl
+    ? animal.photoUrl.startsWith("http")
+      ? animal.photoUrl
+      : `${API_URL}${animal.photoUrl}`
+    : null;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      {/* ── Header ── */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-          <Text style={styles.backButtonText}>‹</Text>
+          <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
         </Pressable>
         <Text style={styles.headerTitle}>Fiche Animal</Text>
         <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* En-tête avec icône et nom */}
-        <View style={styles.animalHeader}>
-          <Text style={styles.animalIcon}>{breedInfo.icon}</Text>
-          <Text style={styles.animalName}>{animal.name}</Text>
-          <View
-            style={[
-              styles.healthBadge,
-              { backgroundColor: healthInfo.color + "20" },
-            ]}
-          >
-            <Text style={[styles.healthBadgeText, { color: healthInfo.color }]}>
-              {healthInfo.icon} {healthInfo.label}
-            </Text>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Hero Card ── */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroTop}>
+            {photoUrl ? (
+              <Image source={{ uri: photoUrl }} style={styles.heroPhoto} />
+            ) : (
+              <View style={styles.heroAvatar}>
+                <Text style={styles.heroAvatarIcon}>{breedInfo.icon}</Text>
+              </View>
+            )}
+            <View style={styles.heroBadges}>
+              <View
+                style={[
+                  styles.heroBadge,
+                  { backgroundColor: healthInfo.color + "20" },
+                ]}
+              >
+                <Text style={[styles.heroBadgeText, { color: healthInfo.color }]}>
+                  {healthInfo.icon} {healthInfo.label}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.heroBadge,
+                  {
+                    backgroundColor:
+                      sexInfo.id === "MALE" ? "#dbeafe" : "#fce7f3",
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.heroBadgeText,
+                    { color: sexInfo.id === "MALE" ? "#2563eb" : "#db2777" },
+                  ]}
+                >
+                  {sexInfo.icon} {sexInfo.label}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <Text style={styles.heroName}>{animal.name}</Text>
+          <Text style={styles.heroRfid}>{animal.rfid}</Text>
+        </View>
+
+        {/* ── Quick Stats ── */}
+        <View style={styles.statsRow}>
+          <StatCard
+            icon="barbell"
+            iconColor={GREEN}
+            value={animal.weight ? `${animal.weight} kg` : "—"}
+            label="Poids"
+          />
+          <StatCard
+            icon="eye"
+            iconColor={GREEN}
+            value={animal.bcs ?? "—"}
+            label="BCS"
+          />
+          <StatCard
+            icon="calendar"
+            iconColor={GREEN}
+            value={calculateAge(animal.birthDate)}
+            label="Âge"
+          />
+          <StatCard
+            icon="body"
+            iconColor={GREEN}
+            value={breedInfo.label}
+            label="Race"
+          />
+        </View>
+
+        {/* ── Actions ── */}
+        <View style={styles.section}>
+          <SectionTitle label="Actions rapides" />
+          <View style={styles.actionsGrid}>
+            <ActionCard
+              icon="create"
+              iconBg="#EFF6FF"
+              iconColor={GREEN}
+              label="Modifier"
+              onPress={() =>
+                router.push(
+                  {
+                    pathname: "/herd/[id]/edit",
+                    params: { id: String(animal.id) },
+                  } as any
+                )
+              }
+            />
+            <ActionCard
+              icon="list"
+              iconBg="#F5F3FF"
+              iconColor="#7c3aed"
+              label="Historique"
+              onPress={() => router.push(`/herd/${animal.id}/history` as any)}
+            />
+            <ActionCard
+              icon="analytics"
+              iconBg="#ECFDF5"
+              iconColor={GREEN_EMERALD}
+              label="Croissance"
+              onPress={() => router.push(`/herd/${animal.id}/growth` as any)}
+            />
+            <ActionCard
+              icon="body"
+              iconBg="#E6F8ED"
+              iconColor="#0d9488"
+              label="Radar BCS"
+              onPress={() => router.push(`/herd/${animal.id}/bcs` as any)}
+            />
+            <ActionCard
+              icon="git-branch"
+              iconBg="#FFFBEB"
+              iconColor="#d97706"
+              label="Pedigree"
+              onPress={() => router.push(`/herd/${animal.id}/pedigree` as any)}
+            />
+            <ActionCard
+              icon="download"
+              iconBg="#F0FDF4"
+              iconColor={GREEN_EMERALD}
+              label="Exporter"
+              onPress={handleExport}
+              loading={exporting}
+            />
+            <ActionCard
+              icon="trash"
+              iconBg="#FEE2E2"
+              iconColor="#dc2626"
+              label="Supprimer"
+              onPress={handleDelete}
+              loading={deleting}
+              danger
+            />
           </View>
         </View>
 
-        {/* Actions rapides — grille 3 colonnes */}
-        <View style={styles.actionsGrid}>
-          <Link
-            href={{ pathname: "/herd/[id]/edit", params: { id: String(animal.id) } }}
-            asChild
-          >
-            <Pressable
-              style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
-            >
-              <View style={[styles.actionIconCircle, { backgroundColor: "#EFF6FF" }]}>
-                <Text style={styles.actionIcon}>✏️</Text>
-              </View>
-              <Text style={styles.actionLabel}>Modifier</Text>
-            </Pressable>
-          </Link>
-
-          <Pressable
-            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
-            onPress={() => router.push(`/herd/${animal.id}/history` as any)}
-          >
-            <View style={[styles.actionIconCircle, { backgroundColor: "#F5F3FF" }]}>
-              <Text style={styles.actionIcon}>📋</Text>
-            </View>
-            <Text style={styles.actionLabel}>Historique</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
-            onPress={() => router.push(`/herd/${animal.id}/growth` as any)}
-          >
-            <View style={[styles.actionIconCircle, { backgroundColor: "#ECFDF5" }]}>
-              <Text style={styles.actionIcon}>📈</Text>
-            </View>
-            <Text style={styles.actionLabel}>Croissance</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
-            onPress={() => router.push(`/herd/${animal.id}/bcs` as any)}
-          >
-            <View style={[styles.actionIconCircle, { backgroundColor: "#E6F8ED" }]}>
-              <Text style={styles.actionIcon}>🎯</Text>
-            </View>
-            <Text style={styles.actionLabel}>Radar BCS</Text>
-          </Pressable>
-
-
-          <Pressable
-            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
-            onPress={() => router.push(`/herd/${animal.id}/pedigree` as any)}
-          >
-            <View style={[styles.actionIconCircle, { backgroundColor: "#FFFBEB" }]}>
-              <Text style={styles.actionIcon}>🌳</Text>
-            </View>
-            <Text style={styles.actionLabel}>Pedigree</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
-            onPress={handleExport}
-            disabled={exporting}
-          >
-            <View style={[styles.actionIconCircle, { backgroundColor: "#F0FDF4" }]}>
-              {exporting ? (
-                <ActivityIndicator size="small" color="#059669" />
-              ) : (
-                <Text style={styles.actionIcon}>📤</Text>
-              )}
-            </View>
-            <Text style={styles.actionLabel}>Exporter</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.actionCard,
-              styles.actionCardDanger,
-              pressed && styles.actionCardDangerPressed,
-            ]}
-            onPress={handleDelete}
-            disabled={deleting}
-          >
-            <View style={[styles.actionIconCircle, { backgroundColor: "#FEE2E2" }]}>
-              {deleting ? (
-                <ActivityIndicator size="small" color="#DC2626" />
-              ) : (
-                <Text style={styles.actionIcon}>🗑️</Text>
-              )}
-            </View>
-            <Text style={[styles.actionLabel, { color: "#DC2626" }]}>Supprimer</Text>
-          </Pressable>
-        </View>
-
-        {/* Informations complètes */}
-        <View style={styles.infoBlock}>
+        {/* ── Identité ── */}
+        <View style={styles.section}>
           <SectionTitle label="Identité" />
-          <InfoRow label="RFID" value={animal.rfid} />
-          <InfoRow label="Nom" value={animal.name} />
-          <InfoRow label="Race" value={breedInfo.label} />
-          <InfoRow
-            label="Sexe"
-            value={`${sexInfo.icon} ${sexInfo.label}`}
-          />
-          <InfoRow
-            label="Statut santé"
-            value={`${healthInfo.icon} ${healthInfo.label}`}
-            last
-          />
+          <View style={styles.infoBlock}>
+            <InfoRow label="RFID" value={animal.rfid} />
+            <InfoRow label="Nom" value={animal.name} />
+            <InfoRow label="Race" value={breedInfo.label} />
+            <InfoRow label="Sexe" value={`${sexInfo.icon} ${sexInfo.label}`} />
+            <InfoRow
+              label="Statut santé"
+              value={`${healthInfo.icon} ${healthInfo.label}`}
+              last
+            />
+          </View>
         </View>
 
-        <View style={styles.infoBlock}>
+        {/* ── Caractéristiques ── */}
+        <View style={styles.section}>
           <SectionTitle label="Caractéristiques" />
-          <InfoRow
-            label="Date de naissance"
-            value={
-              animal.birthDate
-                ? new Date(animal.birthDate).toLocaleDateString("fr-FR")
-                : "—"
-            }
-          />
-          <InfoRow
-            label="Poids"
-            value={animal.weight ? `${animal.weight} kg` : "—"}
-          />
-          <InfoRow label="BCS" value={animal.bcs ?? "—"} />
-          <InfoRow label="Créé le" value={new Date(animal.createdAt).toLocaleDateString("fr-FR")} last />
+          <View style={styles.infoBlock}>
+            <InfoRow label="Date de naissance" value={formatDate(animal.birthDate)} />
+            <InfoRow
+              label="Poids"
+              value={animal.weight ? `${animal.weight} kg` : "—"}
+            />
+            <InfoRow label="BCS" value={animal.bcs ?? "—"} />
+            <InfoRow label="Créé le" value={formatDate(animal.createdAt)} last />
+          </View>
         </View>
 
-        <View style={styles.infoBlock}>
+        {/* ── Pedigree ── */}
+        <View style={styles.section}>
           <SectionTitle label="Pedigree" />
-          <InfoRow
-            label="Père (ID)"
-            value={animal.fatherId ? String(animal.fatherId) : "Non renseigné"}
-          />
-          <InfoRow
-            label="Mère (ID)"
-            value={animal.motherId ? String(animal.motherId) : "Non renseigné"}
-          />
-          <InfoRow
-            label="Exploitation (ID)"
-            value={animal.exploitationId ? String(animal.exploitationId) : "Non renseignée"}
-            last
-          />
+          <View style={styles.infoBlock}>
+            <InfoRow
+              label="Père (ID)"
+              value={animal.fatherId ? String(animal.fatherId) : "Non renseigné"}
+            />
+            <InfoRow
+              label="Mère (ID)"
+              value={animal.motherId ? String(animal.motherId) : "Non renseigné"}
+            />
+            <InfoRow
+              label="Exploitation (ID)"
+              value={
+                animal.exploitationId
+                  ? String(animal.exploitationId)
+                  : "Non renseignée"
+              }
+              last
+            />
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+// ── Sub-components ─────────────────────────────────────────────
+
+function StatCard({
+  icon,
+  iconColor,
+  value,
+  label,
+}: {
+  icon: string;
+  iconColor: string;
+  value: string;
+  label: string;
+}) {
+  return (
+    <View style={styles.statCard}>
+      <Ionicons name={icon as any} size={18} color={iconColor} />
+      <Text style={styles.statValue} numberOfLines={1}>
+        {value}
+      </Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function ActionCard({
+  icon,
+  iconBg,
+  iconColor,
+  label,
+  onPress,
+  loading,
+  danger,
+}: {
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  label: string;
+  onPress: () => void;
+  loading?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.actionCard,
+        danger && styles.actionCardDanger,
+        pressed && styles.actionCardPressed,
+      ]}
+      onPress={onPress}
+      disabled={loading}
+    >
+      <View style={[styles.actionIconCircle, { backgroundColor: iconBg }]}>
+        {loading ? (
+          <ActivityIndicator size="small" color={iconColor} />
+        ) : (
+          <Ionicons name={icon as any} size={20} color={iconColor} />
+        )}
+      </View>
+      <Text style={[styles.actionLabel, danger && { color: "#dc2626" }]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 function SectionTitle({ label }: { label: string }) {
   return (
     <View style={styles.sectionTitleContainer}>
+      <View style={styles.sectionBar} />
       <Text style={styles.sectionTitle}>{label}</Text>
     </View>
   );
@@ -301,75 +467,189 @@ function InfoRow({
   );
 }
 
-const PAGE_BG = "#faf3ea";
+// ── Styles ─────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: PAGE_BG },
+  // ── Layout ──
+  safeArea: { flex: 1, backgroundColor: BACKGROUND },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
-  backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  backButtonText: { fontSize: 26, color: "#1a1a1a", fontWeight: "400" },
-  headerTitle: { fontSize: 16, fontWeight: "700" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  error: { color: "#dc2626" },
-
-  container: { padding: 20, paddingTop: 8 },
-
-  animalHeader: {
+  backButton: {
+    width: 36,
+    height: 36,
     alignItems: "center",
-    marginBottom: 20,
+    justifyContent: "center",
   },
-  animalIcon: { fontSize: 48, marginBottom: 8 },
-  animalName: { fontSize: 22, fontWeight: "800", color: "#0F2A1D", marginBottom: 8 },
-  healthBadge: {
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: TEXT_DARK,
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: 24,
+  },
+  error: {
+    color: "#dc2626",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  container: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+
+  // ── Hero Card ──
+  heroCard: {
+    backgroundColor: CARD_BG,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  heroTop: {
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  heroPhoto: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    marginBottom: 12,
+  },
+  heroAvatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: "#F0FDF4",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  heroAvatarIcon: {
+    fontSize: 42,
+  },
+  heroBadges: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  heroBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
   },
-  healthBadgeText: { fontSize: 12, fontWeight: "700" },
+  heroBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  heroName: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: GREEN,
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  heroRfid: {
+    fontSize: 13,
+    color: TEXT_MUTED,
+    textAlign: "center",
+  },
 
+  // ── Quick Stats ──
+  statsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 20,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: CARD_BG,
+    borderRadius: 14,
+    padding: 12,
+    alignItems: "center",
+    gap: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  statValue: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: TEXT_DARK,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: TEXT_MUTED,
+    fontWeight: "600",
+  },
+
+  // ── Section ──
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  sectionBar: {
+    width: 4,
+    height: 18,
+    backgroundColor: GREEN,
+    borderRadius: 2,
+    marginRight: 8,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: TEXT_DARK,
+  },
+
+  // ── Actions Grid ──
   actionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 18,
-    rowGap: 10,
+    gap: 10,
   },
-
   actionCard: {
-    width: "31%",
-    backgroundColor: "#fff",
+    width: "30%",
+    backgroundColor: CARD_BG,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: BORDER,
     shadowColor: "#000",
-    shadowOpacity: 0.03,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
     shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
     elevation: 1,
   },
-
+  actionCardDanger: {
+    borderColor: "#fecaca",
+    backgroundColor: "#fef2f2",
+  },
   actionCardPressed: {
     backgroundColor: "#F9FAFB",
     borderColor: "#E5E7EB",
   },
-
-  actionCardDanger: {
-    borderColor: "#FECACA",
-    backgroundColor: "#FEF2F2",
-  },
-
-  actionCardDangerPressed: {
-    backgroundColor: "#FEE2E2",
-  },
-
   actionIconCircle: {
     width: 40,
     height: 40,
@@ -378,39 +658,45 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
   },
-
-  actionIcon: {
-    fontSize: 18,
-  },
-
   actionLabel: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#333",
+    color: TEXT_DARK,
     textAlign: "center",
   },
 
+  // ── Info Block ──
   infoBlock: {
     width: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: CARD_BG,
     borderRadius: 14,
     padding: 16,
-    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: BORDER,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  sectionTitleContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    paddingBottom: 8,
-    marginBottom: 10,
-  },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1a1a1a" },
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 9,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
   },
-  infoLabel: { fontSize: 13, color: "#888" },
-  infoValue: { fontSize: 13, fontWeight: "600", color: "#333" },
+  infoLabel: {
+    fontSize: 13,
+    color: TEXT_MUTED,
+    fontWeight: "500",
+  },
+  infoValue: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: TEXT_DARK,
+    textAlign: "right",
+    flex: 1,
+    marginLeft: 12,
+  },
 });
