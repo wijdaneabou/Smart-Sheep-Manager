@@ -5,6 +5,9 @@ import {
   updateAnimal as updateAnimalInDb,
   deleteAnimal as deleteAnimalInDb,
   listAnimals as listAnimalsInDb,
+  getPedigreeTree,
+  type PedigreeNode,
+  type PedigreeAnimal,
 } from "../repositories/animals.repository.js";
 
 export type CreateAnimalResult =
@@ -169,4 +172,104 @@ export async function deleteAnimal(id: number): Promise<UpdateAnimalResult> {
   }
   await deleteAnimalInDb(id);
   return { success: true, status: 200, animal: existing };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pedigree / Genealogical Tree
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Information about a consanguinity (inbreeding) alert.
+ * When the same ancestor appears on both the paternal and maternal sides,
+ * the coefficient of relationship can be computed.
+ */
+export interface ConsanguinityAlert {
+  animalId: number;
+  animalName: string;
+  occurrences: number;
+  paths: string[];
+}
+
+/**
+ * Result of the pedigree query, including the tree and any consanguinity alerts.
+ */
+export interface PedigreeResult {
+  tree: PedigreeNode;
+  consanguinityAlerts: ConsanguinityAlert[];
+  hasConsanguinity: boolean;
+}
+
+/**
+ * Traverses the pedigree tree and collects all animal IDs with their
+ * relationship paths. Used to detect consanguinity (same ancestor appearing
+ * on both paternal and maternal sides).
+ */
+function collectAncestors(
+  node: PedigreeNode | null,
+  path: string,
+  map: Map<number, string[]>
+) {
+  if (!node || !node.animal) return;
+
+  const currentPath = path ? `${path} → ${node.animal.name}` : node.animal.name;
+
+  // Record this animal
+  if (!map.has(node.animal.id)) {
+    map.set(node.animal.id, []);
+  }
+  map.get(node.animal.id)!.push(currentPath);
+
+  // Recurse into parents
+  collectAncestors(node.father, `${currentPath} (père)`, map);
+  collectAncestors(node.mother, `${currentPath} (mère)`, map);
+}
+
+/**
+ * Builds the pedigree tree for an animal and detects consanguinity.
+ *
+ * @param animalId       The subject animal.
+ * @param maxGenerations Number of generations (default 3).
+ * @returns              The tree, consanguinity alerts, and a boolean flag.
+ */
+export async function getPedigree(
+  animalId: number,
+  maxGenerations: number = 3
+): Promise<
+  | { success: true; status: 200; data: PedigreeResult }
+  | { success: false; status: 404; message: string }
+> {
+  const tree = await getPedigreeTree(animalId, maxGenerations);
+  if (!tree) {
+    return { success: false, status: 404, message: "Animal introuvable." };
+  }
+
+  // Detect consanguinity: collect all ancestors and find duplicates
+  const ancestorMap = new Map<number, string[]>();
+  collectAncestors(tree.father, "Père", ancestorMap);
+  collectAncestors(tree.mother, "Mère", ancestorMap);
+
+  const consanguinityAlerts: ConsanguinityAlert[] = [];
+  for (const [id, paths] of ancestorMap) {
+    if (paths.length > 1) {
+      // Find the animal name from the first path
+      const nameMatch = paths[0].match(/→ ([^(]+)/);
+      const name = nameMatch ? nameMatch[1].trim() : `Animal #${id}`;
+      consanguinityAlerts.push({
+        animalId: id,
+        animalName: name,
+        occurrences: paths.length,
+        paths,
+      });
+    }
+  }
+
+  return {
+    success: true,
+    status: 200,
+    data: {
+      tree,
+      consanguinityAlerts,
+      hasConsanguinity: consanguinityAlerts.length > 0,
+    },
+  };
 }

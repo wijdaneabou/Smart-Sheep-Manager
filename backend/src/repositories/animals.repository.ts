@@ -82,3 +82,129 @@ export async function listAnimals(params: {
 
   return { rows, total };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pedigree / Genealogical Tree
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Compact animal info returned as part of the pedigree tree.
+ * Only the fields relevant for a genealogical view are included.
+ */
+export interface PedigreeAnimal {
+  id: number;
+  rfid: string;
+  name: string;
+  breed: string;
+  sex: string;
+  birthDate: string | null;
+  weight: string | null;
+  bcs: string | null;
+  healthStatus: string;
+}
+
+/**
+ * A node in the recursive pedigree tree.
+ * `animal` is null when the parent is unknown (not recorded).
+ * `father` / `mother` are null when the corresponding parent ID is missing
+ * or when the maximum generation depth has been reached.
+ */
+export interface PedigreeNode {
+  animal: PedigreeAnimal | null;
+  father: PedigreeNode | null;
+  mother: PedigreeNode | null;
+}
+
+/**
+ * Maps a full animal row to the compact PedigreeAnimal shape.
+ * Converts Date fields to ISO date strings for JSON serialisation.
+ */
+function toPedigreeAnimal(row: typeof animals.$inferSelect): PedigreeAnimal {
+  return {
+    id: row.id,
+    rfid: row.rfid,
+    name: row.name,
+    breed: row.breed,
+    sex: row.sex,
+    birthDate: row.birthDate ? new Date(row.birthDate).toISOString().split("T")[0] : null,
+    weight: row.weight,
+    bcs: row.bcs,
+    healthStatus: row.healthStatus,
+  };
+}
+
+/**
+ * Recursively builds a pedigree node for the given animal ID.
+ *
+ * @param id              The animal to look up.
+ * @param generation      Current generation index (0 = subject, 1 = parents, …).
+ * @param maxGenerations  How many generations to traverse (3 = subject + parents + grandparents).
+ * @param visited         Set of already-visited IDs to prevent infinite loops on circular references.
+ */
+async function buildPedigreeNode(
+  id: number,
+  generation: number,
+  maxGenerations: number,
+  visited: Set<number>
+): Promise<PedigreeNode> {
+  // Stop if we've reached the generation limit or hit a cycle.
+  if (generation >= maxGenerations || visited.has(id)) {
+    return { animal: null, father: null, mother: null };
+  }
+
+  visited.add(id);
+  const row = await findAnimalById(id);
+  visited.delete(id);
+
+  if (!row) {
+    return { animal: null, father: null, mother: null };
+  }
+
+  const father = row.fatherId
+    ? await buildPedigreeNode(row.fatherId, generation + 1, maxGenerations, visited)
+    : null;
+
+  const mother = row.motherId
+    ? await buildPedigreeNode(row.motherId, generation + 1, maxGenerations, visited)
+    : null;
+
+  return {
+    animal: toPedigreeAnimal(row),
+    father,
+    mother,
+  };
+}
+
+/**
+ * Builds the complete pedigree tree for an animal (up to 3 generations).
+ *
+ * @param animalId       The subject animal.
+ * @param maxGenerations Number of generations to include (default 3).
+ * @returns              The root PedigreeNode, or null if the animal doesn't exist.
+ */
+export async function getPedigreeTree(
+  animalId: number,
+  maxGenerations: number = 3
+): Promise<PedigreeNode | null> {
+  const subject = await findAnimalById(animalId);
+  if (!subject) {
+    return null;
+  }
+
+  const visited = new Set<number>();
+  visited.add(subject.id);
+
+  const father = subject.fatherId
+    ? await buildPedigreeNode(subject.fatherId, 1, maxGenerations, visited)
+    : null;
+
+  const mother = subject.motherId
+    ? await buildPedigreeNode(subject.motherId, 1, maxGenerations, visited)
+    : null;
+
+  return {
+    animal: toPedigreeAnimal(subject),
+    father,
+    mother,
+  };
+}

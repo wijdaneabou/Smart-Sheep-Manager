@@ -15,6 +15,7 @@ import {
   deleteAnimal,
   type Animal,
 } from "../../../../services/animalsService";
+import { exportAnimalHistoryPdf } from "../../../../services/animalHistoryService";
 import { getBreedInfo, getSexInfo, getHealthStatusInfo } from "../../../../constants/breeds";
 
 export default function AnimalDetailScreen() {
@@ -26,6 +27,7 @@ export default function AnimalDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   async function fetchAnimal() {
     setError(null);
@@ -66,6 +68,15 @@ export default function AnimalDetailScreen() {
         },
       ]
     );
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    const result = await exportAnimalHistoryPdf(animalId);
+    setExporting(false);
+    if (!result.success) {
+      Alert.alert("Erreur", result.message);
+    }
   }
 
   if (loading) {
@@ -117,37 +128,84 @@ export default function AnimalDetailScreen() {
           </View>
         </View>
 
-        {/* Actions rapides */}
-        <View style={styles.actionsRow}>
+        {/* Actions rapides — grille 3 colonnes */}
+        <View style={styles.actionsGrid}>
           <Link
-            href={{
-              pathname: "/herd/[id]/edit",
-              params: { id: String(animal.id) },
-            }}
+            href={{ pathname: "/herd/[id]/edit", params: { id: String(animal.id) } }}
             asChild
           >
-            <Pressable style={styles.actionButton}>
-              <Text style={styles.actionIcon}>✏️</Text>
+            <Pressable
+              style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
+            >
+              <View style={[styles.actionIconCircle, { backgroundColor: "#EFF6FF" }]}>
+                <Text style={styles.actionIcon}>✏️</Text>
+              </View>
               <Text style={styles.actionLabel}>Modifier</Text>
             </Pressable>
           </Link>
+
           <Pressable
-            style={[styles.actionButton, styles.actionButtonDanger]}
+            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
+            onPress={() => router.push(`/herd/${animal.id}/history` as any)}
+          >
+            <View style={[styles.actionIconCircle, { backgroundColor: "#F5F3FF" }]}>
+              <Text style={styles.actionIcon}>📋</Text>
+            </View>
+            <Text style={styles.actionLabel}>Historique</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
+            onPress={() => router.push(`/herd/${animal.id}/growth` as any)}
+          >
+            <View style={[styles.actionIconCircle, { backgroundColor: "#ECFDF5" }]}>
+              <Text style={styles.actionIcon}>📈</Text>
+            </View>
+            <Text style={styles.actionLabel}>Croissance</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
+            onPress={() => router.push(`/herd/${animal.id}/pedigree` as any)}
+          >
+            <View style={[styles.actionIconCircle, { backgroundColor: "#FFFBEB" }]}>
+              <Text style={styles.actionIcon}>🌳</Text>
+            </View>
+            <Text style={styles.actionLabel}>Pedigree</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
+            onPress={handleExport}
+            disabled={exporting}
+          >
+            <View style={[styles.actionIconCircle, { backgroundColor: "#F0FDF4" }]}>
+              {exporting ? (
+                <ActivityIndicator size="small" color="#059669" />
+              ) : (
+                <Text style={styles.actionIcon}>📤</Text>
+              )}
+            </View>
+            <Text style={styles.actionLabel}>Exporter</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionCard,
+              styles.actionCardDanger,
+              pressed && styles.actionCardDangerPressed,
+            ]}
             onPress={handleDelete}
             disabled={deleting}
           >
-            {deleting ? (
-              <ActivityIndicator size="small" color="#dc2626" />
-            ) : (
-              <>
+            <View style={[styles.actionIconCircle, { backgroundColor: "#FEE2E2" }]}>
+              {deleting ? (
+                <ActivityIndicator size="small" color="#DC2626" />
+              ) : (
                 <Text style={styles.actionIcon}>🗑️</Text>
-                <Text style={[styles.actionLabel, { color: "#dc2626" }]}>Supprimer</Text>
-              </>
-            )}
-          </Pressable>
-          <Pressable style={styles.actionButton} onPress={() => {}}>
-            <Text style={styles.actionIcon}>📤</Text>
-            <Text style={styles.actionLabel}>Exporter</Text>
+              )}
+            </View>
+            <Text style={[styles.actionLabel, { color: "#DC2626" }]}>Supprimer</Text>
           </Pressable>
         </View>
 
@@ -264,22 +322,62 @@ const styles = StyleSheet.create({
   },
   healthBadgeText: { fontSize: 12, fontWeight: "700" },
 
-  actionsRow: { flexDirection: "row", gap: 10, marginBottom: 18 },
-  actionButton: {
-    flex: 1,
+  actionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginBottom: 18,
+    rowGap: 10,
+  },
+
+  actionCard: {
+    width: "31%",
     backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingVertical: 12,
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#eee",
+    shadowColor: "#000",
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
-  actionButtonDanger: {
-    borderColor: "#fecaca",
-    backgroundColor: "#fef2f2",
+
+  actionCardPressed: {
+    backgroundColor: "#F9FAFB",
+    borderColor: "#E5E7EB",
   },
-  actionIcon: { fontSize: 16, marginBottom: 4 },
-  actionLabel: { fontSize: 12, fontWeight: "600", color: "#333" },
+
+  actionCardDanger: {
+    borderColor: "#FECACA",
+    backgroundColor: "#FEF2F2",
+  },
+
+  actionCardDangerPressed: {
+    backgroundColor: "#FEE2E2",
+  },
+
+  actionIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+
+  actionIcon: {
+    fontSize: 18,
+  },
+
+  actionLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#333",
+    textAlign: "center",
+  },
 
   infoBlock: {
     width: "100%",

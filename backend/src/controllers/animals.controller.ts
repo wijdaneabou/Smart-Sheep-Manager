@@ -61,3 +61,29 @@ export async function deleteAnimalHandler(c: Context) {
   if (!result.success) return c.json({ error: result.message }, result.status);
   return c.json({ message: "Animal supprimé." }, result.status);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pedigree / Genealogical Tree
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * GET /api/animals/:id/pedigree
+ *
+ * Returns the 3-generation pedigree tree for the given animal,
+ * along with any consanguinity (inbreeding) alerts.
+ *
+ * Query params:
+ *   - generations (optional, default 3): number of generations to include.
+ */
+export async function getPedigreeHandler(c: Context) {
+  const id = Number(c.req.param("id"));
+  if (Number.isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
+
+  const generations = c.req.query("generations")
+    ? Number(c.req.query("generations"))
+    : 3;
+
+  const result = await animalsService.getPedigree(id, generations);
+  if (!result.success) return c.json({ error: result.message }, result.status);
+  return c.json({ data: result.data }, result.status);
+}

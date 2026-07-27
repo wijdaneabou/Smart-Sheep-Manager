@@ -28,6 +28,41 @@ export type Pagination = {
   totalPages?: number;
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Pedigree / Genealogical Tree
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface PedigreeAnimal {
+  id: number;
+  rfid: string;
+  name: string;
+  breed: string;
+  sex: string;
+  birthDate: string | null;
+  weight: string | null;
+  bcs: string | null;
+  healthStatus: string;
+}
+
+export interface PedigreeNode {
+  animal: PedigreeAnimal | null;
+  father: PedigreeNode | null;
+  mother: PedigreeNode | null;
+}
+
+export interface ConsanguinityAlert {
+  animalId: number;
+  animalName: string;
+  occurrences: number;
+  paths: string[];
+}
+
+export interface PedigreeResult {
+  tree: PedigreeNode;
+  consanguinityAlerts: ConsanguinityAlert[];
+  hasConsanguinity: boolean;
+}
+
 function extractError(err: any): string {
     console.log("FULL ERROR RESPONSE DATA:", JSON.stringify(err?.response?.data, null, 2));
   const apiError = err?.response?.data?.error;
@@ -107,6 +142,24 @@ export async function deleteAnimal(id: number) {
   try {
     await api.delete(`/animals/${id}`);
     return { success: true as const };
+  } catch (err: any) {
+    return { success: false as const, message: extractError(err) };
+  }
+}
+
+/**
+ * Récupère l'arbre généalogique (3 générations) d'un animal.
+ */
+export async function getPedigree(
+  animalId: number,
+  generations: number = 3
+) {
+  try {
+    const response = await api.get<{ data: PedigreeResult }>(
+      `/animals/${animalId}/pedigree`,
+      { params: { generations } }
+    );
+    return { success: true as const, data: response.data.data };
   } catch (err: any) {
     return { success: false as const, message: extractError(err) };
   }

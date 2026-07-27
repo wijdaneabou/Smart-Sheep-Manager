@@ -10,6 +10,9 @@ import exploitationsRoutes from "./routes/exploitations.routes.js";
 import sessionsRoutes from "./routes/sessions.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
 import animalsRoutes from "./routes/animals.routes.js";
+import animalHistoryRoutes from "./routes/animalHistory.routes.js";
+import animalMovementsRoutes from "./routes/animalMovements.routes.js";
+import animalWeightsRoutes from "./routes/animalWeights.routes.js";
 
 const app = new Hono();
 
@@ -39,5 +42,8 @@ app.route("/api/sessions", sessionsRoutes);
 app.route("/api/audit", auditRoutes);
 
 app.route("/api/animals", animalsRoutes);
+app.route("/api/animals", animalHistoryRoutes);
+app.route("/api/movements", animalMovementsRoutes);
+app.route("/api/animals", animalWeightsRoutes);
 
 export default app;

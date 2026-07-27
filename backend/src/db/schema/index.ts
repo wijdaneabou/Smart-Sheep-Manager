@@ -9,3 +9,7 @@ export * from "./loginHistory.js";
 export * from "./auditLogs.js";
 export * from "./user-sessions.js";
 export * from "./animals.js";
+export * from "./animalHealthRecords.js";
+export * from "./animalReproductionRecords.js";
+export * from "./animalWeightRecords.js";
+export * from "./animalMovements.js";

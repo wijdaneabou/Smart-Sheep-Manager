@@ -12,7 +12,10 @@
     "seed:roles": "tsx src/db/seeds/roles.ts",
     "seed:admin": "tsx src/db/seeds/admin.ts",
     "seed:permissions": "tsx src/db/seeds/permissions.ts",
-    "seed:role-permissions": "tsx src/db/seeds/role-permissions.ts"
+    "seed:role-permissions": "tsx src/db/seeds/role-permissions.ts",
+    "seed:animal-history": "tsx src/db/seeds/animal-history.ts",
+    "seed:animal-movements": "tsx src/db/seeds/animal-movements.ts",
+    "seed:pedigree": "tsx src/db/seeds/animal-pedigree.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.8",
