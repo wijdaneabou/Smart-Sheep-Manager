@@ -166,6 +166,17 @@ export default function AnimalDetailScreen() {
 
           <Pressable
             style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
+            onPress={() => router.push(`/herd/${animal.id}/bcs` as any)}
+          >
+            <View style={[styles.actionIconCircle, { backgroundColor: "#E6F8ED" }]}>
+              <Text style={styles.actionIcon}>🎯</Text>
+            </View>
+            <Text style={styles.actionLabel}>Radar BCS</Text>
+          </Pressable>
+
+
+          <Pressable
+            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
             onPress={() => router.push(`/herd/${animal.id}/pedigree` as any)}
           >
             <View style={[styles.actionIconCircle, { backgroundColor: "#FFFBEB" }]}>

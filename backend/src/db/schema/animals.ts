@@ -51,6 +51,9 @@ export const animals = mysqlTable("animals", {
     .notNull()
     .default("HEALTHY"),
 
+  // Chemin/URL de la photo de l'animal (ex: /uploads/animals/xxx.jpg)
+  photoUrl: varchar("photo_url", { length: 255 }),
+
   // Exploitation propriétaire (optionnelle)
   exploitationId: int("exploitation_id").references(
     (): AnyMySqlColumn => exploitations.id

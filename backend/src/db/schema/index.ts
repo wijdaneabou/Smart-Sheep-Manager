@@ -13,3 +13,5 @@ export * from "./animalHealthRecords.js";
 export * from "./animalReproductionRecords.js";
 export * from "./animalWeightRecords.js";
 export * from "./animalMovements.js";
+export * from "./animalBcsRecords.js";
+

@@ -30,6 +30,7 @@ export async function createAnimal(input: {
   bcs?: number;
   healthStatus?: "HEALTHY" | "SICK" | "RECOVERING" | "DECEASED" | "QUARANTINE";
   exploitationId?: number;
+  photoUrl?: string;
 }): Promise<CreateAnimalResult> {
   // Vérifier l'unicité du RFID
   const existing = await findAnimalByRfid(input.rfid);
@@ -53,6 +54,7 @@ export async function createAnimal(input: {
     bcs: input.bcs !== undefined ? String(input.bcs) : undefined,
     healthStatus: input.healthStatus ?? "HEALTHY",
     exploitationId: input.exploitationId,
+    photoUrl: input.photoUrl,
   });
 
   if (!animal) {
@@ -85,6 +87,7 @@ export async function updateAnimal(
     bcs?: number | null;
     healthStatus?: "HEALTHY" | "SICK" | "RECOVERING" | "DECEASED" | "QUARANTINE";
     exploitationId?: number | null;
+    photoUrl?: string;
   }
 ): Promise<UpdateAnimalResult> {
   const existing = await findAnimalById(id);
@@ -118,6 +121,7 @@ export async function updateAnimal(
       input.bcs !== undefined ? (input.bcs === null ? undefined : String(input.bcs)) : undefined,
     healthStatus: input.healthStatus,
     exploitationId: input.exploitationId ?? undefined,
+    photoUrl: input.photoUrl,
   });
 
   if (!updated) {

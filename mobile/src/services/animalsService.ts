@@ -17,6 +17,9 @@ export type Animal = {
   bcs: string | null;
   healthStatus: HealthStatus;
   exploitationId: number | null;
+
+  photoUrl: string | null;
+
   createdAt: string;
   updatedAt: string;
 };
@@ -64,7 +67,7 @@ export interface PedigreeResult {
 }
 
 function extractError(err: any): string {
-    console.log("FULL ERROR RESPONSE DATA:", JSON.stringify(err?.response?.data, null, 2));
+    //console.log("FULL ERROR RESPONSE DATA:", JSON.stringify(err?.response?.data, null, 2));
   const apiError = err?.response?.data?.error;
   if (typeof apiError === "string") return apiError;
   return err?.response?.data?.message ?? "Impossible de contacter le serveur.";
@@ -105,12 +108,64 @@ export async function createAnimal(input: {
   bcs?: number;
   healthStatus?: HealthStatus;
   exploitationId?: number;
+  photoUri?: string;
 }) {
   try {
-    const response = await api.post<{ data: Animal }>("/animals", input);
-    return { success: true as const, animal: response.data.data };
+    const formData = new FormData();
+
+    formData.append("rfid", input.rfid);
+    formData.append("name", input.name);
+    formData.append("breed", input.breed);
+    formData.append("sex", input.sex);
+
+    if (input.birthDate)
+      formData.append("birthDate", input.birthDate);
+
+    if (input.weight !== undefined)
+      formData.append("weight", String(input.weight));
+
+    if (input.bcs !== undefined)
+      formData.append("bcs", String(input.bcs));
+
+    if (input.healthStatus)
+      formData.append("healthStatus", input.healthStatus);
+
+    if (input.fatherId !== undefined)
+      formData.append("fatherId", String(input.fatherId));
+
+    if (input.motherId !== undefined)
+      formData.append("motherId", String(input.motherId));
+
+    if (input.exploitationId !== undefined)
+      formData.append("exploitationId", String(input.exploitationId));
+
+    if (input.photoUri) {
+      formData.append("photo", {
+        uri: input.photoUri,
+        name: "animal.jpg",
+        type: "image/jpeg",
+      } as any);
+    }
+
+    const response = await api.post<{ data: Animal }>(
+      "/animals",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return {
+      success: true as const,
+      animal: response.data.data,
+    };
   } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
+    return {
+      success: false as const,
+      message: extractError(err),
+    };
   }
 }
 
@@ -122,19 +177,72 @@ export async function updateAnimal(
     breed: Breed;
     sex: Sex;
     birthDate: string | null;
-    fatherId: number | null;
-    motherId: number | null;
-    weight: number | null;
-    bcs: number | null;
+    fatherId: number |null;
+    motherId: number |null;
+    weight: number |null;
+    bcs: number |null;
     healthStatus: HealthStatus;
-    exploitationId: number | null;
+    exploitationId: number |null;
+
+    photoUri: string;
   }>
 ) {
   try {
-    const response = await api.put<{ data: Animal }>(`/animals/${id}`, input);
-    return { success: true as const, animal: response.data.data };
+    const formData = new FormData();
+
+    if (input.rfid) formData.append("rfid", input.rfid);
+    if (input.name) formData.append("name", input.name);
+    if (input.breed) formData.append("breed", input.breed);
+    if (input.sex) formData.append("sex", input.sex);
+
+    if (input.birthDate)
+      formData.append("birthDate", input.birthDate);
+
+    if (input.weight != null)
+      formData.append("weight", String(input.weight));
+
+    if (input.bcs != null)
+      formData.append("bcs", String(input.bcs));
+
+    if (input.healthStatus)
+      formData.append("healthStatus", input.healthStatus);
+
+    if (input.fatherId != null)
+      formData.append("fatherId", String(input.fatherId));
+
+    if (input.motherId != null)
+      formData.append("motherId", String(input.motherId));
+
+    if (input.exploitationId != null)
+      formData.append("exploitationId", String(input.exploitationId));
+
+    if (input.photoUri) {
+      formData.append("photo", {
+        uri: input.photoUri,
+        name: "animal.jpg",
+        type: "image/jpeg",
+      } as any);
+    }
+
+    const response = await api.put(
+      `/animals/${id}`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return {
+      success: true as const,
+      animal: response.data.data,
+    };
   } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
+    return {
+      success: false as const,
+      message: extractError(err),
+    };
   }
 }
 

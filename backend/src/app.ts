@@ -13,6 +13,7 @@ import animalsRoutes from "./routes/animals.routes.js";
 import animalHistoryRoutes from "./routes/animalHistory.routes.js";
 import animalMovementsRoutes from "./routes/animalMovements.routes.js";
 import animalWeightsRoutes from "./routes/animalWeights.routes.js";
+import animalBcsRoutes from "./routes/animalBcs.routes.js";
 
 const app = new Hono();
 
@@ -26,6 +27,7 @@ app.use(async (c, next) => {
   console.log(`${c.req.method} ${c.req.url}`);
   await next();
 });
+app.use("/uploads/*", serveStatic({ root: "./" }));
 
 app.get("/", (c) => {
   return c.text("Smart Sheep Manager API");
@@ -45,5 +47,7 @@ app.route("/api/animals", animalsRoutes);
 app.route("/api/animals", animalHistoryRoutes);
 app.route("/api/movements", animalMovementsRoutes);
 app.route("/api/animals", animalWeightsRoutes);
+app.route("/api/animals", animalBcsRoutes);
+
 
 export default app;

@@ -19,12 +19,13 @@ export const createAnimalSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Format de date invalide (YYYY-MM-DD).")
     .optional(),
-  fatherId: z.number().int().positive().optional(),
-  motherId: z.number().int().positive().optional(),
-  weight: z.number().positive().optional(),
-  bcs: z.number().min(0).max(5).optional(),
+  fatherId: z.coerce.number().int().positive().optional(),
+  motherId: z.coerce.number().int().positive().optional(),
+  weight: z.coerce.number().positive().optional(),
+  bcs: z.coerce.number().min(0).max(5).optional(),
   healthStatus: z.enum(HEALTH_STATUSES).default("HEALTHY"),
-  exploitationId: z.number().int().positive().optional(),
+  exploitationId: z.coerce.number().int().positive().optional(),
+  photoUrl: z.string().optional(),
 });
 
 export const updateAnimalSchema = z.object({
@@ -36,36 +37,40 @@ export const updateAnimalSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Format de date invalide (YYYY-MM-DD).")
     .optional(),
-  fatherId: z
-    .number()
-    .int()
-    .positive()
-    .nullable()
-    .optional(),
-  motherId: z
-    .number()
-    .int()
-    .positive()
-    .nullable()
-    .optional(),
-  weight: z
-    .number()
-    .positive()
-    .nullable()
-    .optional(),
-  bcs: z
-    .number()
-    .min(0)
-    .max(5)
-    .nullable()
-    .optional(),
-  healthStatus: z.enum(HEALTH_STATUSES).optional(),
-  exploitationId: z
-    .number()
-    .int()
-    .positive()
-    .nullable()
-    .optional(),
+  fatherId: z.coerce
+  .number()
+  .int()
+  .positive()
+  .nullable()
+  .optional(),
+
+motherId: z.coerce
+  .number()
+  .int()
+  .positive()
+  .nullable()
+  .optional(),
+
+weight: z.coerce
+  .number()
+  .positive()
+  .nullable()
+  .optional(),
+
+bcs: z.coerce
+  .number()
+  .min(0)
+  .max(5)
+  .nullable()
+  .optional(),
+
+exploitationId: z.coerce
+  .number()
+  .int()
+  .positive()
+  .nullable()
+  .optional(),
+  photoUrl: z.string().optional(),
 });
 
 export const listAnimalsQuerySchema = z.object({

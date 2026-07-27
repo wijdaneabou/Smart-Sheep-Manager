@@ -9,10 +9,13 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import {
   createAnimal,
   type Breed,
@@ -23,6 +26,9 @@ import { BREEDS, SEXES, HEALTH_STATUSES } from "../../../constants/breeds";
 
 export default function CreateAnimalScreen() {
   const router = useRouter();
+
+  // --- Photo ---
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   // --- Identité ---
   const [rfid, setRfid] = useState("MA202600001245");
@@ -42,6 +48,56 @@ export default function CreateAnimalScreen() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function pickFromLibrary() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission requise",
+        "Autorisez l'accès à vos photos pour choisir une image."
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  }
+
+  async function takePhoto() {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission requise",
+        "Autorisez l'accès à la caméra pour prendre une photo."
+      );
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  }
+
+  function onPickPhoto() {
+    Alert.alert("Photo de l'animal", "Choisissez une source", [
+      { text: "Prendre une photo", onPress: takePhoto },
+      { text: "Choisir dans la galerie", onPress: pickFromLibrary },
+      ...(photoUri
+        ? [{ text: "Supprimer la photo", style: "destructive" as const, onPress: () => setPhotoUri(null) }]
+        : []),
+      { text: "Annuler", style: "cancel" as const },
+    ]);
+  }
 
   function validate(): string | null {
     if (rfid.trim().length < 1) return "Le RFID est requis.";
@@ -74,7 +130,13 @@ export default function CreateAnimalScreen() {
       healthStatus,
       fatherId: fatherId ? Number(fatherId) : undefined,
       motherId: motherId ? Number(motherId) : undefined,
-    });
+      // NOTE: `photoUri` is a local file URI for now. If your backend accepts
+      // photo uploads, replace this with the uploaded file's URL, or switch
+      // this call to a multipart/form-data request that includes the file.
+      // You'll also need to add `photoUrl`/`photoUri` to the `createAnimal`
+      // payload type in animalsService.ts.
+      ...(photoUri ? { photoUri } : {}),
+    } as any);
 
     setLoading(false);
 
@@ -105,6 +167,23 @@ export default function CreateAnimalScreen() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
+          {/* --- Photo --- */}
+          <View style={styles.photoSection}>
+            <Pressable onPress={onPickPhoto} style={styles.photoCircle}>
+              {photoUri ? (
+                <Image source={{ uri: photoUri }} style={styles.photoImage} />
+              ) : (
+                <Ionicons name="camera-outline" size={28} color="#9ca3af" />
+              )}
+              <View style={styles.photoBadge}>
+                <Ionicons name="camera" size={14} color="#fff" />
+              </View>
+            </Pressable>
+            <Text style={styles.photoHint}>
+              {photoUri ? "Modifier la photo" : "Ajouter une photo"}
+            </Text>
+          </View>
+
           {/* --- 1. Identité --- */}
           <SectionTitle index={1} label="Identité" />
 
@@ -133,7 +212,7 @@ export default function CreateAnimalScreen() {
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Race</Text>
             <View style={styles.typeRow}>
-              {BREEDS.map((b) => {
+              {BREEDS.map((b: { id: Breed; label: string; icon: string }) => {
                 const selected = breed === b.id;
                 return (
                   <Pressable
@@ -156,7 +235,7 @@ export default function CreateAnimalScreen() {
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Sexe</Text>
             <View style={styles.typeRow}>
-              {SEXES.map((s) => {
+              {SEXES.map((s: { id: Sex; label: string; icon: string }) => {
                 const selected = sex === s.id;
                 return (
                   <Pressable
@@ -218,7 +297,7 @@ export default function CreateAnimalScreen() {
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Statut santé</Text>
             <View style={styles.typeRow}>
-              {HEALTH_STATUSES.map((h) => {
+              {HEALTH_STATUSES.map((h: { id: HealthStatus; label: string; icon: string; color: string }) => {
                 const selected = healthStatus === h.id;
                 return (
                   <Pressable
@@ -326,6 +405,34 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   container: { padding: 20, paddingTop: 4, flexGrow: 1 },
+
+  photoSection: { alignItems: "center", marginBottom: 8 },
+  photoCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: BORDER,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  photoImage: { width: 96, height: 96, borderRadius: 48 },
+  photoBadge: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: GREEN,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#faf6f1",
+  },
+  photoHint: { marginTop: 8, fontSize: 12, fontWeight: "600", color: GREEN },
 
   sectionTitleRow: { flexDirection: "row", alignItems: "center", marginTop: 18, marginBottom: 12 },
   sectionBar: { width: 4, height: 14, backgroundColor: GREEN, borderRadius: 2, marginRight: 8 },

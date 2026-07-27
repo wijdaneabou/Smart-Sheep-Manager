@@ -35,7 +35,7 @@ sessionsRoutes.get("/export/csv", async (c) => {
     const page = Number(c.req.query("page") ?? "1");
     const limit = Number(c.req.query("limit") ?? "20");
     const search = c.req.query("search") ?? undefined;
-    const csv = await sessionExportService.exportCsv(page, limit, search);
+    const csv = await sessionExportService.exportCsv();
     c.header("Content-Type", "text/csv");
     c.header("Content-Disposition", "attachment; filename=sessions.csv");
     return c.body(csv);
@@ -51,7 +51,7 @@ sessionsRoutes.get("/export/pdf", async (c) => {
     const page = Number(c.req.query("page") ?? "1");
     const limit = Number(c.req.query("limit") ?? "20");
     const search = c.req.query("search") ?? undefined;
-    const pdf = await sessionExportService.exportPdf(page, limit, search);
+    const pdf = await sessionExportService.exportPdf();
     c.header("Content-Type", "application/pdf");
     c.header("Content-Disposition", "attachment; filename=sessions.pdf");
     return c.body(new Uint8Array(pdf));

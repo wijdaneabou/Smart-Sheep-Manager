@@ -9,10 +9,14 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { API_URL } from "../../../../services/api";
 import {
   getAnimalById,
   updateAnimal,
@@ -48,6 +52,7 @@ export default function EditAnimalScreen() {
   // --- Pedigree ---
   const [fatherId, setFatherId] = useState("");
   const [motherId, setMotherId] = useState("");
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -70,6 +75,9 @@ export default function EditAnimalScreen() {
           setHealthStatus(a.healthStatus);
           setFatherId(a.fatherId ? String(a.fatherId) : "");
           setMotherId(a.motherId ? String(a.motherId) : "");
+          if (a.photoUrl) {
+            setPhotoUri(a.photoUrl);
+          }
         } else {
           setError(result.message);
         }
@@ -110,8 +118,11 @@ export default function EditAnimalScreen() {
       weight: weight ? Number(weight) : null,
       bcs: bcs ? Number(bcs) : null,
       healthStatus,
+
+      
       fatherId: fatherId ? Number(fatherId) : null,
       motherId: motherId ? Number(motherId) : null,
+      photoUri: photoUri ?? undefined,
     });
 
     setSaving(false);
@@ -122,7 +133,26 @@ export default function EditAnimalScreen() {
       setError(result.message);
     }
   }
+  async function pickImage() {
+    const permission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
 
+    if (!permission.granted) {
+      alert("Permission refusée");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  }
   if (loadingData) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
@@ -149,6 +179,56 @@ export default function EditAnimalScreen() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
+          <SectionTitle index={0} label="Photo" />
+          <View
+            style={{
+              alignItems: "center",
+              marginBottom: 20,
+            }}
+          >
+            {photoUri ? (
+              <Image
+                source={{
+                  uri: photoUri.startsWith("http")
+                    ? photoUri
+                    : `${API_URL}${photoUri}`,
+                }}
+                style={{
+                  width: 150,
+                  height: 150,
+                  borderRadius: 75,
+                }}
+              />
+            ) : (
+              <View
+                style={{
+                  width: 150,
+                  height: 150,
+                  borderRadius: 75,
+                  backgroundColor: "#ddd",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Text>Aucune photo</Text>
+              </View>
+            )}
+
+            <Pressable
+              onPress={pickImage}
+              style={{
+                marginTop: 15,
+                backgroundColor: "#14532d",
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+                borderRadius: 10,
+              }}
+            >
+              <Text style={{ color: "#fff" }}>
+                Changer la photo
+              </Text>
+            </Pressable>
+          </View>
           {/* --- 1. Identité --- */}
           <SectionTitle index={1} label="Identité" />
 
