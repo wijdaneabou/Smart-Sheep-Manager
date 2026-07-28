@@ -101,6 +101,7 @@ export async function getGrowthCurve(animalId: number) {
       breed: animal.breed,
       sex: animal.sex,
       birthDate: animal.birthDate,
+      photoUrl: animal.photoUrl,
     },
     dataPoints,
     averageGmq,

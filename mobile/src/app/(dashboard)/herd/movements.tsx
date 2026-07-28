@@ -120,7 +120,7 @@ function MovementCard({ movement }: { movement: AnimalMovement }) {
   const typeInfo = getMovementTypeInfo(movement.type);
   const dateStr = new Date(movement.date).toLocaleDateString("fr-FR");
   const priceStr = movement.price
-    ? `${Number(movement.price).toLocaleString("fr-FR")} €`
+    ? `${Number(movement.price).toLocaleString("fr-FR")} DH`
     : "—";
 
   return (
@@ -136,7 +136,7 @@ function MovementCard({ movement }: { movement: AnimalMovement }) {
       </View>
 
       <Text style={styles.cardTitle}>
-        Animal #{movement.animalId}
+        RFID : {movement.animalRfid ?? `#${movement.animalId}`}
       </Text>
 
       {movement.reason ? (

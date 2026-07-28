@@ -9,6 +9,8 @@ import {
   type AnyMySqlColumn,
 } from "drizzle-orm/mysql-core";
 import { exploitations } from "./exploitations.js";
+import { relations } from "drizzle-orm";
+import { animalMovements } from "./animalMovements.js";
 
 export const animals = mysqlTable("animals", {
   id: int("id").autoincrement().primaryKey(),
@@ -62,3 +64,9 @@ export const animals = mysqlTable("animals", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+export const animalsRelations = relations(
+  animals,
+  ({ many }) => ({
+    movements: many(animalMovements),
+  })
+);

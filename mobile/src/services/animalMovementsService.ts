@@ -1,10 +1,17 @@
 import api from "./api";
 
-export type MovementType = "ENTRY" | "EXIT" | "DEATH" | "SALE" | "PURCHASE";
+export type MovementType =
+  | "ENTRY"
+  | "EXIT"
+  | "DEATH"
+  | "SALE"
+  | "PURCHASE";
 
-export interface AnimalMovement {
+ export interface AnimalMovement {
   id: number;
   animalId: number;
+  animalRfid: string | null;
+  animalName: string | null;
   type: MovementType;
   date: string;
   reason: string | null;
@@ -21,14 +28,26 @@ export type Pagination = {
 };
 
 function extractError(err: any): string {
+  console.log("========== AXIOS ERROR ==========");
+  console.log(err);
+  console.log("status :", err?.response?.status);
+  console.log("data :", err?.response?.data);
+  console.log("message :", err?.message);
+  console.log("================================");
+
   const apiError = err?.response?.data?.error;
-  if (typeof apiError === "string") return apiError;
-  return err?.response?.data?.message ?? "Impossible de contacter le serveur.";
+
+  if (typeof apiError === "string") {
+    return apiError;
+  }
+
+  return (
+    err?.response?.data?.message ??
+    err?.message ??
+    "Impossible de contacter le serveur."
+  );
 }
 
-/**
- * Récupère la liste des mouvements de troupeau.
- */
 export async function listMovements(
   params: {
     page?: number;
@@ -44,19 +63,20 @@ export async function listMovements(
       data: AnimalMovement[];
       pagination: Pagination;
     }>("/movements", { params });
+
     return {
       success: true as const,
       movements: response.data.data,
       pagination: response.data.pagination,
     };
   } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
+    return {
+      success: false as const,
+      message: extractError(err),
+    };
   }
 }
 
-/**
- * Crée un nouveau mouvement de troupeau.
- */
 export async function createMovement(input: {
   animalId: number;
   type: MovementType;
@@ -66,9 +86,25 @@ export async function createMovement(input: {
   price?: number;
 }) {
   try {
-    const response = await api.post<{ data: AnimalMovement }>("/movements", input);
-    return { success: true as const, movement: response.data.data };
+    console.log("===== REQUEST =====");
+    console.log(input);
+
+    const response = await api.post<{
+      data: AnimalMovement;
+    }>("/movements", input);
+
+    console.log("===== RESPONSE =====");
+    console.log(response.status);
+    console.log(response.data);
+
+    return {
+      success: true as const,
+      movement: response.data.data,
+    };
   } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
+    return {
+      success: false as const,
+      message: extractError(err),
+    };
   }
 }

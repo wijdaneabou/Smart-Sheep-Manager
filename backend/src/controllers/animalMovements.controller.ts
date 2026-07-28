@@ -19,11 +19,22 @@ export async function createMovementHandler(c: Context) {
 
 export async function listMovementsHandler(c: Context) {
   const parsed = listMovementsQuerySchema.safeParse(c.req.query());
-  if (!parsed.success) return c.json({ error: parsed.error.flatten() }, 400);
+
+  if (!parsed.success) {
+    return c.json({ error: parsed.error.flatten() }, 400);
+  }
 
   const result = await animalMovementsService.listMovements(parsed.data);
+
+  console.log("========== MOVEMENTS ==========");
+  console.log(JSON.stringify(result.movements, null, 2));
+  console.log("===============================");
+
   return c.json(
-    { data: result.movements, pagination: result.pagination },
+    {
+      data: result.movements,
+      pagination: result.pagination,
+    },
     result.status
   );
 }

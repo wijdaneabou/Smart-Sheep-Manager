@@ -278,6 +278,20 @@ export default function AnimalDetailScreen() {
               onPress={() => router.push(`/herd/${animal.id}/history` as any)}
             />
             <ActionCard
+              icon="swap-horizontal"
+              iconBg="#ECFEFF"
+              iconColor="#0891B2"
+              label="Mouvements"
+              onPress={() =>
+                router.push({
+                  pathname: "/herd/movements",
+                  params: {
+                    animalId: String(animal.id),
+                  },
+                } as any)
+              }
+            />
+            <ActionCard
               icon="analytics"
               iconBg="#ECFDF5"
               iconColor={GREEN_EMERALD}

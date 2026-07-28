@@ -303,20 +303,6 @@ export default function EditAnimalScreen() {
               })}
             </View>
           </View>
-
-           {/* --- Exploitation --- */}
-           <View style={styles.fieldGroup}>
-             <Text style={styles.label}>Exploitation (ID)</Text>
-             <TextInput
-               style={styles.input}
-               placeholder="Optionnel"
-               placeholderTextColor="#aaa"
-               keyboardType="numeric"
-               value={exploitationId}
-               onChangeText={setExploitationId}
-             />
-           </View>
-
            {/* --- 2. Caractéristiques --- */}
            <SectionTitle index={2} label="Caractéristiques" />
 
@@ -397,6 +383,7 @@ export default function EditAnimalScreen() {
                 onChangeText={setFatherId}
               />
             </View>
+
             <View style={[styles.fieldGroup, styles.rowItem]}>
               <Text style={styles.label}>Mère (ID)</Text>
               <TextInput
@@ -406,6 +393,18 @@ export default function EditAnimalScreen() {
                 keyboardType="numeric"
                 value={motherId}
                 onChangeText={setMotherId}
+              />
+            </View>
+
+            <View style={[styles.fieldGroup, styles.rowItem]}>
+              <Text style={styles.label}>Exploitation</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Optionnel"
+                placeholderTextColor="#aaa"
+                keyboardType="numeric"
+                value={exploitationId}
+                onChangeText={setExploitationId}
               />
             </View>
           </View>
@@ -487,7 +486,7 @@ const styles = StyleSheet.create({
   typeChipIcon: { fontSize: 18, marginBottom: 4, color: "#555" },
   typeChipLabel: { fontSize: 12, fontWeight: "700", color: "#555" },
 
-  row: { flexDirection: "row", gap: 12 },
+  row: { flexDirection: "row", gap: 8 },
   rowItem: { flex: 1 },
 
   error: {

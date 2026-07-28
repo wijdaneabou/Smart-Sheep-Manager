@@ -27,6 +27,7 @@ export interface GrowthCurveData {
     breed: string;
     sex: string;
     birthDate: string | null;
+    photoUrl: string | null;
   };
   dataPoints: GrowthDataPoint[];
   averageGmq: number;

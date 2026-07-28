@@ -6,10 +6,11 @@ import { eq, and, desc, gte, lte, SQL } from "drizzle-orm";
 type CreateWeightData = typeof animalWeightRecords.$inferInsert;
 
 export async function findWeightRecordById(id: number) {
-  const result = await db.query.animalWeightRecords.findFirst({
-    where: eq(animalWeightRecords.id, id),
-    with: { animal: true },
-  });
+  const [result] = await db
+    .select()
+    .from(animalWeightRecords)
+    .where(eq(animalWeightRecords.id, id));
+
   return result ?? null;
 }
 

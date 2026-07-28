@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
@@ -17,6 +18,7 @@ import {
   type GrowthDataPoint,
 } from "@/services/animalWeightsService";
 import { getBreedInfo } from "@/constants/breeds";
+import { API_URL } from "@/services/api";
 
 export default function GrowthCurveScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -133,7 +135,18 @@ export default function GrowthCurveScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         {/* Animal info */}
         <View style={styles.animalInfo}>
-          <Text style={styles.animalIcon}>{breedInfo.icon}</Text>
+          {data.animal.photoUrl ? (
+            <Image
+              source={{
+                uri: data.animal.photoUrl.startsWith("http")
+                  ? data.animal.photoUrl
+                  : `${API_URL}${data.animal.photoUrl}`,
+              }}
+              style={styles.animalPhoto}
+            />
+          ) : (
+            <Text style={styles.animalIcon}>{breedInfo.icon}</Text>
+          )}
           <Text style={styles.animalName}>{data.animal.name}</Text>
         </View>
 
@@ -292,6 +305,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   animalIcon: { fontSize: 32 },
+  animalPhoto: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
   animalName: { fontSize: 18, fontWeight: "700", color: "#0F2A1D" },
 
   statsRow: {
