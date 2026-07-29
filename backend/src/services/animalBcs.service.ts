@@ -159,6 +159,7 @@ export async function getBcsHistory(animalId: number) {
       officialId: animal.rfid,
       breed: animal.breed,
       sex: animal.sex,
+      photoUrl: animal.photoUrl,
     },
     records: formattedRecords,
     latestRecord: formattedRecords[0] ?? null,
@@ -182,6 +183,7 @@ export async function getLatestBcs(animalId: number) {
         name: animal.name,
         officialId: animal.rfid,
         breed: animal.breed,
+        photoUrl: animal.photoUrl,
       },
       latestRecord: null,
     };
@@ -198,6 +200,7 @@ export async function getLatestBcs(animalId: number) {
       name: animal.name,
       officialId: animal.rfid,
       breed: animal.breed,
+      photoUrl: animal.photoUrl,
     },
     latestRecord: {
       id: record.id,

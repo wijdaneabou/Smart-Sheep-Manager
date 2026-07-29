@@ -32,6 +32,7 @@ export interface BcsHistoryResponse {
     officialId: string;
     breed: string;
     sex: string;
+    photoUrl: string | null;
   };
   records: BcsRecord[];
   latestRecord: BcsRecord | null;

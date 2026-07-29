@@ -103,8 +103,8 @@ export async function createAnimal(input: {
   breed: Breed;
   sex: Sex;
   birthDate?: string;
-  fatherId?: number;
-  motherId?: number;
+  fatherRfid?: string;
+  motherRfid?: string;
   weight?: number;
   bcs?: number;
   healthStatus?: HealthStatus;
@@ -131,12 +131,11 @@ export async function createAnimal(input: {
     if (input.healthStatus)
       formData.append("healthStatus", input.healthStatus);
 
-    if (input.fatherId !== undefined)
-      formData.append("fatherId", String(input.fatherId));
+    if (input.fatherRfid)
+      formData.append("fatherRfid", input.fatherRfid);
 
-    if (input.motherId !== undefined)
-      formData.append("motherId", String(input.motherId));
-
+    if (input.motherRfid)
+      formData.append("motherRfid", input.motherRfid);
     if (input.exploitationId !== undefined)
       formData.append("exploitationId", String(input.exploitationId));
 
@@ -178,8 +177,8 @@ export async function updateAnimal(
     breed: Breed;
     sex: Sex;
     birthDate: string | null;
-    fatherId: number |null;
-    motherId: number |null;
+    fatherRfid: string | null;
+    motherRfid: string | null;
     weight: number |null;
     bcs: number |null;
     healthStatus: HealthStatus;
@@ -208,11 +207,11 @@ export async function updateAnimal(
     if (input.healthStatus)
       formData.append("healthStatus", input.healthStatus);
 
-    if (input.fatherId != null)
-      formData.append("fatherId", String(input.fatherId));
+    if (input.fatherRfid)
+      formData.append("fatherRfid", input.fatherRfid);
 
-    if (input.motherId != null)
-      formData.append("motherId", String(input.motherId));
+    if (input.motherRfid)
+      formData.append("motherRfid", input.motherRfid);
 
     if (input.exploitationId != null)
       formData.append("exploitationId", String(input.exploitationId));

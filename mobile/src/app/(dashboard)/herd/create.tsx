@@ -44,8 +44,8 @@ export default function CreateAnimalScreen() {
   const [healthStatus, setHealthStatus] = useState<HealthStatus>("HEALTHY");
 
   // --- Pedigree ---
-  const [fatherId, setFatherId] = useState("");
-  const [motherId, setMotherId] = useState("");
+  const [fatherRfid, setFatherRfid] = useState("");
+  const [motherRfid, setMotherRfid] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,8 +105,11 @@ export default function CreateAnimalScreen() {
     if (name.trim().length < 1) return "Le nom est requis.";
     if (weight && Number.isNaN(Number(weight))) return "Le poids doit être un nombre.";
     if (bcs && Number.isNaN(Number(bcs))) return "Le BCS doit être un nombre.";
-    if (fatherId && Number.isNaN(Number(fatherId))) return "L'ID du père doit être un nombre.";
-    if (motherId && Number.isNaN(Number(motherId))) return "L'ID de la mère doit être un nombre.";
+    if (fatherRfid.length > 0 && fatherRfid.length < 5)
+      return "Le RFID du père est invalide.";
+
+    if (motherRfid.length > 0 && motherRfid.length < 5)
+      return "Le RFID de la mère est invalide.";
     if (exploitationId && Number.isNaN(Number(exploitationId))) return "L'exploitation doit être un nombre.";
     return null;
   }
@@ -130,8 +133,8 @@ export default function CreateAnimalScreen() {
       weight: weight ? Number(weight) : undefined,
       bcs: bcs ? Number(bcs) : undefined,
       healthStatus,
-      fatherId: fatherId ? Number(fatherId) : undefined,
-      motherId: motherId ? Number(motherId) : undefined,
+      fatherRfid: fatherRfid || undefined,
+      motherRfid: motherRfid || undefined,
       exploitationId: exploitationId ? Number(exploitationId) : undefined,
       // NOTE: `photoUri` is a local file URI for now. If your backend accepts
       // photo uploads, replace this with the uploaded file's URL, or switch
@@ -327,26 +330,25 @@ export default function CreateAnimalScreen() {
 
           <View style={styles.row}>
             <View style={[styles.fieldGroup, styles.rowItem]}>
-              <Text style={styles.label}>Père (ID)</Text>
+              <Text style={styles.label}>Père (RFID)</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Optionnel"
+                placeholder="Ex : MA202600001245"
                 placeholderTextColor="#aaa"
-                keyboardType="numeric"
-                value={fatherId}
-                onChangeText={setFatherId}
+                value={fatherRfid}
+                onChangeText={setFatherRfid}
               />
             </View>
 
             <View style={[styles.fieldGroup, styles.rowItem]}>
-              <Text style={styles.label}>Mère (ID)</Text>
+              <Text style={styles.label}>Mère (RFID)</Text>
+
               <TextInput
                 style={styles.input}
-                placeholder="Optionnel"
+                placeholder="Ex : MA202600001210"
                 placeholderTextColor="#aaa"
-                keyboardType="numeric"
-                value={motherId}
-                onChangeText={setMotherId}
+                value={motherRfid}
+                onChangeText={setMotherRfid}
               />
             </View>
 

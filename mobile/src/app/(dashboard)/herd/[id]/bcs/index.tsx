@@ -6,7 +6,7 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-  Alert,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
@@ -101,7 +101,12 @@ export default function AnimalBcsHistoryScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         {/* ENTÊTE ANIMAL */}
         <View style={styles.animalCard}>
-          <Text style={styles.animalIcon}>{breedInfo.icon}</Text>
+          <Image
+              source={{
+                uri: `http://172.27.182.10:3000${data.animal.photoUrl}`,
+              }}
+              style={styles.animalImage}
+            />
           <View style={{ flex: 1 }}>
             <Text style={styles.animalName}>{data.animal.name}</Text>
             <Text style={styles.animalSubtitle}>
@@ -243,6 +248,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E7EB",
     gap: 12,
+  },
+  animalImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    resizeMode: "cover",
+    backgroundColor: "#E5E7EB",
   },
   animalIcon: { fontSize: 32 },
   animalName: { fontSize: 17, fontWeight: "700", color: "#0F2A1D" },
