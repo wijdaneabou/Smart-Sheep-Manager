@@ -9,6 +9,10 @@ import exploitationsRoutes from "./routes/exploitations.routes .js";
 
 import sessionsRoutes from "./routes/sessions.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
+import batimentsRoutes from "./routes/batiments.routes.js";
+import teamsRoutes from "./routes/teams.routes.js";
+import calendarRoutes from "./routes/calendar.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 
 
 const app = new Hono();
@@ -37,6 +41,10 @@ app.route("/api/exploitations", exploitationsRoutes);
 
 app.route("/api/sessions", sessionsRoutes);
 app.route("/api/audit", auditRoutes);
+app.route("/api/batiments", batimentsRoutes);
+app.route("/api/teams", teamsRoutes);
+app.route("/api/calendar", calendarRoutes);
+app.route("/api/exploitation-dashboard", dashboardRoutes);
 
 
 export default app;

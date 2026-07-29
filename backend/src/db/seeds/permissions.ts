@@ -5,6 +5,8 @@ import { permissions } from "../schema/permissions.js";
 const MODULES = [
   "USERS",
   "EXPLOITATIONS",
+  "TEAMS",
+  "CALENDAR",
   "HERD",
   "IOT",
   "HEALTH",

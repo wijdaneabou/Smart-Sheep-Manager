@@ -1,0 +1,5 @@
+import api from "./api";
+export type AgriculturalEvent = { id: number; exploitationId: number; type: "VACCINATION" | "TRAITEMENT" | "PESEE" | "MISE_BAS" | "AUTRE"; title: string; eventDate: string; weekOfYear: number; gestationWeek: number | null; notes: string | null };
+const message = (e: any) => e?.response?.data?.message ?? "Impossible de contacter le serveur.";
+export async function listAgriculturalEvents(exploitationId: number) { try { const r = await api.get<{ data: AgriculturalEvent[] }>("/calendar/events", { params: { exploitationId } }); return { success: true as const, data: r.data.data }; } catch (e) { return { success: false as const, message: message(e) }; } }
+export async function createAgriculturalEvent(input: Omit<AgriculturalEvent, "id" | "weekOfYear" | "gestationWeek" | "notes"> & { gestationWeek?: number; notes?: string }) { try { await api.post("/calendar/events", input); return { success: true as const }; } catch (e) { return { success: false as const, message: message(e) }; } }

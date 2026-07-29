@@ -1,0 +1,3 @@
+CREATE TABLE `agricultural_events` (`id` int AUTO_INCREMENT NOT NULL, `exploitation_id` int NOT NULL, `type` enum('VACCINATION','TRAITEMENT','PESEE','MISE_BAS','AUTRE') NOT NULL, `title` varchar(150) NOT NULL, `event_date` date NOT NULL, `gestation_week` int, `notes` text, `created_at` timestamp DEFAULT (now()), `updated_at` timestamp DEFAULT (now()), CONSTRAINT `agricultural_events_id` PRIMARY KEY(`id`));
+--> statement-breakpoint
+ALTER TABLE `agricultural_events` ADD CONSTRAINT `agricultural_events_exploitation_id_exploitations_id_fk` FOREIGN KEY (`exploitation_id`) REFERENCES `exploitations`(`id`) ON DELETE cascade ON UPDATE no action;

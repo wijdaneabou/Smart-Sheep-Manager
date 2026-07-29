@@ -1,0 +1,15 @@
+import type { Context } from "hono";
+import { and, asc, eq, gte, lte } from "drizzle-orm";
+import { z } from "zod";
+import { db } from "../db/connection.js";
+import { agriculturalEvents } from "../db/schema/index.js";
+
+const eventSchema = z.object({ exploitationId: z.number().int().positive(), type: z.enum(["VACCINATION", "TRAITEMENT", "PESEE", "MISE_BAS", "AUTRE"]), title: z.string().min(2).max(150), eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), gestationWeek: z.number().int().min(1).max(25).optional(), notes: z.string().max(2000).optional() });
+const validId = (c: Context) => { const value = Number(c.req.param("id")); return Number.isInteger(value) && value > 0 ? value : null; };
+function isoWeek(dateValue: string) { const date = new Date(`${dateValue}T00:00:00Z`); const day = date.getUTCDay() || 7; date.setUTCDate(date.getUTCDate() + 4 - day); const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1)); return Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7); }
+function serialize(event: typeof agriculturalEvents.$inferSelect) { return { ...event, weekOfYear: isoWeek(event.eventDate) }; }
+
+export async function listEvents(c: Context) { const exploitationId = Number(c.req.query("exploitationId")); const from = c.req.query("from"); const to = c.req.query("to"); if (!Number.isInteger(exploitationId) || exploitationId <= 0) return c.json({ error: "exploitationId invalide." }, 400); const conditions = [eq(agriculturalEvents.exploitationId, exploitationId)]; if (from) conditions.push(gte(agriculturalEvents.eventDate, from)); if (to) conditions.push(lte(agriculturalEvents.eventDate, to)); const rows = await db.select().from(agriculturalEvents).where(and(...conditions)).orderBy(asc(agriculturalEvents.eventDate)); return c.json({ data: rows.map(serialize) }); }
+export async function createEvent(c: Context) { const parsed = eventSchema.safeParse(await c.req.json()); if (!parsed.success) return c.json({ error: parsed.error.flatten() }, 400); const [created] = await db.insert(agriculturalEvents).values(parsed.data).$returningId(); const event = await db.query.agriculturalEvents.findFirst({ where: eq(agriculturalEvents.id, created.id) }); return c.json({ data: event ? serialize(event) : null }, 201); }
+export async function updateEvent(c: Context) { const eventId = validId(c); if (!eventId) return c.json({ error: "Identifiant invalide." }, 400); const parsed = eventSchema.partial().omit({ exploitationId: true }).safeParse(await c.req.json()); if (!parsed.success) return c.json({ error: parsed.error.flatten() }, 400); await db.update(agriculturalEvents).set({ ...parsed.data, updatedAt: new Date() }).where(eq(agriculturalEvents.id, eventId)); const event = await db.query.agriculturalEvents.findFirst({ where: eq(agriculturalEvents.id, eventId) }); return c.json({ data: event ? serialize(event) : null }); }
+export async function deleteEvent(c: Context) { const eventId = validId(c); if (!eventId) return c.json({ error: "Identifiant invalide." }, 400); await db.delete(agriculturalEvents).where(eq(agriculturalEvents.id, eventId)); return c.json({ data: { deleted: true } }); }
