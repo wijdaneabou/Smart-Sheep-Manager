@@ -11,7 +11,7 @@ export const listAuditLogs = async (c: Context) => {
     module,
     action,
     result,
-    search, // ✅ nouveau
+    search,
     from: from ? new Date(from) : undefined,
     to: to ? new Date(to) : undefined,
   };
@@ -21,39 +21,15 @@ export const listAuditLogs = async (c: Context) => {
 };
 
 export const exportAuditCsv = async (c: Context) => {
-
-  const csv =
-    await auditService.exportCsv({});
-
-  c.header(
-    "Content-Type",
-    "text/csv"
-  );
-
-  c.header(
-    "Content-Disposition",
-    "attachment; filename=audit_logs.csv"
-  );
-
+  const csv = await auditService.exportCsv({});
+  c.header("Content-Type", "text/csv");
+  c.header("Content-Disposition", "attachment; filename=audit_logs.csv");
   return c.body(csv);
-
 };
 
 export const exportAuditPdf = async (c: Context) => {
-
-  const pdf =
-    await auditService.exportPdf({});
-
-  c.header(
-    "Content-Type",
-    "application/pdf"
-  );
-
-  c.header(
-    "Content-Disposition",
-    "attachment; filename=audit_logs.pdf"
-  );
-
+  const pdf = await auditService.exportPdf({});
+  c.header("Content-Type", "application/pdf");
+  c.header("Content-Disposition", "attachment; filename=audit_logs.pdf");
   return c.body(new Uint8Array(pdf));
-
 };

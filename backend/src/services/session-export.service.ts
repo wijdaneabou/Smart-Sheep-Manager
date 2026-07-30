@@ -52,7 +52,7 @@ export const sessionExportService = {
   doc.fontSize(13).text("Journal des connexions", { align: "center" });
   doc.moveDown(1);
 
-  // ✅ 8 colonnes, largeurs recalculées pour tenir sur A4 paysage (~792pt utiles)
+  // 8 colonnes, largeurs recalculées pour tenir sur A4 paysage (~792pt utiles)
   const columns = [
     { key: "id", label: "ID", width: 35 },
     { key: "user", label: "Utilisateur", width: 130 },

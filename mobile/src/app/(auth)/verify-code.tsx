@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { router } from "expo-router";
+import { BackButton } from "@/components/BackButton";
 import api from "@/services/api";
 import {
   ActivityIndicator,
@@ -12,7 +13,7 @@ import {
 } from "react-native";
 
 
-const API_URL = "http://192.168.1.8:3000/api";
+const API_URL = "http://172.27.182.251:3000/api";
   
 
 export default function VerifyCodeScreen() {
@@ -66,6 +67,7 @@ export default function VerifyCodeScreen() {
 
   return (
     <View style={styles.container}>
+      <BackButton variant="light" style={styles.backButton} />
       <Text style={styles.title}>
         Vérification
       </Text>
@@ -123,16 +125,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
 
+  backButton: {
+    position: "absolute",
+    top: 18,
+    left: 18,
+  },
+
   title: {
     fontSize: 28,
     fontWeight: "700",
     textAlign: "center",
-    color: "#222",
+    color: "#0F2A1D",
   },
 
   subtitle: {
     textAlign: "center",
-    color: "#666",
+    color: "#5C8A72",
     marginVertical: 20,
     lineHeight: 22,
   },

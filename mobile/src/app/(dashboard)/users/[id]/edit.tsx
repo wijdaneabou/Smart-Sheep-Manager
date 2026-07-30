@@ -169,7 +169,7 @@ export default function EditUserScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: "#f5f5f5", flexGrow: 1 },
+  container: { padding: 20, backgroundColor: "#F2FAF5", flexGrow: 1 },
   title: { fontSize: 20, fontWeight: "700", marginBottom: 16 },
   input: {
     backgroundColor: "#fff",
@@ -181,8 +181,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontSize: 15,
   },
-  hint: { fontSize: 11, color: "#888", marginBottom: 14, marginTop: -4 },
-  error: { color: "#dc2626", marginBottom: 12, fontSize: 13 },
+  hint: { fontSize: 11, color: "#7EAB91", marginBottom: 14, marginTop: -4 },
+  error: { color: "#166534", marginBottom: 12, fontSize: 13 },
   button: {
     backgroundColor: "#2563eb",
     borderRadius: 8,

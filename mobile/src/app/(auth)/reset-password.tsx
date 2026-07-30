@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
+import { BackButton } from "@/components/BackButton";
 import api from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -13,7 +14,7 @@ import {
 } from "react-native";
 
 
-const API_URL = "http://192.168.1.8:3000/api";
+const API_URL = "http://172.27.182.251:3000/api";
 
 export default function ResetPasswordScreen() {
   const { code } = useLocalSearchParams<{
@@ -97,6 +98,7 @@ export default function ResetPasswordScreen() {
 
   return (
     <View style={styles.container}>
+      <BackButton variant="light" style={styles.backButton} />
       <Text style={styles.title}>
         Nouveau mot de passe
       </Text>
@@ -223,16 +225,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
 
+  backButton: {
+    position: "absolute",
+    top: 18,
+    left: 18,
+  },
+
   title: {
     fontSize: 28,
     fontWeight: "700",
     textAlign: "center",
-    color: "#222",
+    color: "#0F2A1D",
   },
 
   subtitle: {
     textAlign: "center",
-    color: "#666",
+    color: "#5C8A72",
     marginTop: 10,
     marginBottom: 35,
     lineHeight: 22,
@@ -241,7 +249,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#444",
+    color: "#2F6B46",
     marginBottom: 8,
   },
 
@@ -263,7 +271,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: "#222",
+    color: "#0F2A1D",
   },
 
   button: {

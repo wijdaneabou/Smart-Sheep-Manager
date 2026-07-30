@@ -1,18 +1,23 @@
 import { serve } from "@hono/node-server";
 import app from "./app.js";
+import { ensureAuditAndSessionTables } from "./db/bootstrap.js";
 
-const PORT = 3000; //
+async function main() {
+  await ensureAuditAndSessionTables();
 
+  serve(
+    {
+      fetch: app.fetch,
+      port: 3000,
+      hostname: "0.0.0.0",
+    },
+    () => {
+      console.log("🚀 Server running on http://172.27.182.10:3000");
+    }
+  );
+}
 
-serve(
-  {
-    fetch: app.fetch,
-    port: 3000,
-    hostname: "0.0.0.0",
-  },
-  () => {
-
-    console.log(`🚀 Server is running on http://172.27.182.251:${PORT}`);
-
-  }
-);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

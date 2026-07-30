@@ -57,7 +57,7 @@ export default function PermissionsListScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#f5f5f5" },
+  container: { flex: 1, padding: 16, backgroundColor: "#F2FAF5" },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   card: {
     backgroundColor: "white",
@@ -67,5 +67,5 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   roleName: { fontSize: 18, fontWeight: "bold" },
-  roleDesc: { fontSize: 14, color: "#666", marginTop: 4 },
+  roleDesc: { fontSize: 14, color: "#5C8A72", marginTop: 4 },
 });

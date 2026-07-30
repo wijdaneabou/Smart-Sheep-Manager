@@ -9,6 +9,7 @@ import {
   TextInput,
   RefreshControl,
   Alert,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
@@ -17,6 +18,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import * as SecureStore from "expo-secure-store";
 import api from "../../../services/api";
+import SubTabBar from "@/components/SubTabBar";
 
 type AuditLog = {
   id: number;
@@ -45,6 +47,18 @@ const MODULE_COLORS: Record<string, { bg: string; text: string }> = {
 function moduleStyle(module: string) {
   return MODULE_COLORS[module] ?? { bg: "#F0FDF4", text: "#166534" };
 }
+
+const getToken = async (): Promise<string | null> => {
+  if (typeof window !== "undefined" && window.localStorage) {
+    return localStorage.getItem("accessToken");
+  }
+  try {
+    return await SecureStore.getItemAsync("accessToken");
+  } catch (error) {
+    console.error("Erreur lors de la récupération du token :", error);
+    return null;
+  }
+};
 
 export default function AuditScreen() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -118,28 +132,62 @@ export default function AuditScreen() {
     try {
       setExporting(type);
 
-      const token = await SecureStore.getItemAsync("accessToken");
+      const token = await getToken();
       if (!token) {
         Alert.alert("Erreur", "Token introuvable.");
         return;
       }
 
-      const url = `${api.defaults.baseURL}/audit/export/${type}`;
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(PAGE_LIMIT),
+      });
+      if (search.trim()) params.set("search", search.trim());
 
-      const download = await FileSystem.downloadAsync(
+      const url = `${api.defaults.baseURL}/audit/export/${type}?${params.toString()}`;
+      console.log("🌐 Export URL:", url);
+
+      if (Platform.OS === "web") {
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = `audit_${Date.now()}.${type}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(downloadUrl);
+        Alert.alert("Succès", "Fichier téléchargé.");
+        return;
+      }
+
+      const fileUri = FileSystem.documentDirectory + `audit_${Date.now()}.${type}`;
+      console.log("📁 Destination:", fileUri);
+
+      const downloadResult = await FileSystem.downloadAsync(
         url,
-        `${FileSystem.documentDirectory}audit_${Date.now()}.${type}`,
+        fileUri,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      console.log("✅ Téléchargé:", downloadResult.uri, "status:", downloadResult.status);
+
+      if (downloadResult.status !== 200) {
+        throw new Error(`HTTP ${downloadResult.status}`);
+      }
+
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
-        await Sharing.shareAsync(download.uri);
+        await Sharing.shareAsync(downloadResult.uri);
       } else {
         Alert.alert("Succès", "Le fichier a été enregistré.");
       }
     } catch (err: any) {
-      console.log("Erreur export :", err.response?.data || err.message);
+      console.error("❌ Erreur export:", err);
       Alert.alert("Erreur", err.message ?? "Impossible d'exporter.");
     } finally {
       setExporting(null);
@@ -201,6 +249,8 @@ export default function AuditScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        <SubTabBar />
 
         <TextInput
           style={styles.searchInput}
@@ -370,6 +420,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   headerContainer: {
+    position: "relative",
     paddingHorizontal: 18,
     paddingTop: 12,
     paddingBottom: 14,

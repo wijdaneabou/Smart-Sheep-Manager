@@ -1,38 +1,51 @@
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
-export async function saveTokens(
-  accessToken: string,
-  refreshToken: string
-) {
-  await SecureStore.setItemAsync(
-    "accessToken",
-    accessToken
-  );
+function canUseWebStorage() {
+  return Platform.OS === "web" && typeof window !== "undefined" && !!window.localStorage;
+}
 
-  await SecureStore.setItemAsync(
-    "refreshToken",
-    refreshToken
-  );
+export async function saveToken(key: string, value: string) {
+  if (canUseWebStorage()) {
+    window.localStorage.setItem(key, value);
+    return;
+  }
+
+  await SecureStore.setItemAsync(key, value);
+}
+
+export async function saveAccessToken(accessToken: string) {
+  await saveToken("accessToken", accessToken);
+}
+
+export async function saveTokens(accessToken: string, refreshToken: string) {
+  await saveToken("accessToken", accessToken);
+  await saveToken("refreshToken", refreshToken);
 }
 
 export async function getAccessToken() {
-  return await SecureStore.getItemAsync(
-    "accessToken"
-  );
+  if (canUseWebStorage()) {
+    return window.localStorage.getItem("accessToken");
+  }
+
+  return await SecureStore.getItemAsync("accessToken");
 }
 
 export async function getRefreshToken() {
-  return await SecureStore.getItemAsync(
-    "refreshToken"
-  );
+  if (canUseWebStorage()) {
+    return window.localStorage.getItem("refreshToken");
+  }
+
+  return await SecureStore.getItemAsync("refreshToken");
 }
 
 export async function removeTokens() {
-  await SecureStore.deleteItemAsync(
-    "accessToken"
-  );
+  if (canUseWebStorage()) {
+    window.localStorage.removeItem("accessToken");
+    window.localStorage.removeItem("refreshToken");
+    return;
+  }
 
-  await SecureStore.deleteItemAsync(
-    "refreshToken"
-  );
+  await SecureStore.deleteItemAsync("accessToken");
+  await SecureStore.deleteItemAsync("refreshToken");
 }

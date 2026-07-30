@@ -54,7 +54,7 @@ export default function LoginHistoryScreen() {
             <View
               style={[
                 styles.dot,
-                { backgroundColor: item.success ? "#16a34a" : "#dc2626" },
+                { backgroundColor: item.success ? "#16a34a" : "#166534" },
               ]}
             />
             <View style={{ flex: 1 }}>
@@ -79,10 +79,10 @@ export default function LoginHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5", padding: 16 },
+  container: { flex: 1, backgroundColor: "#F2FAF5", padding: 16 },
   title: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
-  error: { color: "#dc2626", marginBottom: 8, fontSize: 13 },
-  empty: { textAlign: "center", color: "#888", marginTop: 24 },
+  error: { color: "#166534", marginBottom: 8, fontSize: 13 },
+  empty: { textAlign: "center", color: "#7EAB91", marginTop: 24 },
   row: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -93,6 +93,6 @@ const styles = StyleSheet.create({
   },
   dot: { width: 8, height: 8, borderRadius: 4, marginTop: 5, marginRight: 10 },
   date: { fontSize: 13, fontWeight: "600" },
-  meta: { fontSize: 12, color: "#666", marginTop: 2 },
-  userAgent: { fontSize: 11, color: "#aaa", marginTop: 2 },
+  meta: { fontSize: 12, color: "#5C8A72", marginTop: 2 },
+  userAgent: { fontSize: 11, color: "#A6C8B2", marginTop: 2 },
 });

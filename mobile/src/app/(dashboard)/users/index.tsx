@@ -8,7 +8,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
-  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, router, useFocusEffect, usePathname } from "expo-router";
@@ -20,23 +19,7 @@ import {
   type User,
 } from "../../../services/userService";
 import { getRoleName } from "../../../constants/roles";
-import { logout } from "../../../services/authService";
-
-type NavItem = {
-  key: string;
-  icon: string;
-  label: string;
-  route?: string;
-  isLogout?: boolean;
-};
-
-const NAV_ITEMS: NavItem[] = [
-  { key: "dashboard", icon: "🏠", label: "Dashboard", route: "/" },
-  { key: "users", icon: "👥", label: "Users", route: "/users" },
-  { key: "sessions", icon: "🔐", label: "Sessions", route: "/audit/sessions" },
-  { key: "audit", icon: "🧾", label: "Audit", route: "/audit" },
-  { key: "profile", icon: "👤", label: "Profile", isLogout: true },
-];
+import SubTabBar from "@/components/SubTabBar"; // ✅ import du composant partagé
 
 export default function UsersListScreen() {
   const { hasPermission } = usePermissions();
@@ -47,7 +30,6 @@ export default function UsersListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
-  const [loggingOut, setLoggingOut] = useState(false);
 
   async function fetchUsers() {
     setError(null);
@@ -89,33 +71,6 @@ export default function UsersListScreen() {
     setActionLoadingId(null);
   }
 
-  function handleLogoutPress() {
-    Alert.alert(
-      "Déconnexion",
-      "Voulez-vous vraiment vous déconnecter ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Se déconnecter",
-          style: "destructive",
-          onPress: async () => {
-            setLoggingOut(true);
-            await logout();
-            setLoggingOut(false);
-          },
-        },
-      ]
-    );
-  }
-
-  function handleNavPress(item: NavItem) {
-    if (item.isLogout) {
-      handleLogoutPress();
-    } else if (item.route) {
-      router.push(item.route as any);
-    }
-  }
-
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.container}>
@@ -131,7 +86,7 @@ export default function UsersListScreen() {
         <TextInput
           style={styles.searchInput}
           placeholder="Rechercher (nom, email)..."
-          placeholderTextColor="#999"
+          placeholderTextColor="#A6C8B2"
           value={search}
           onChangeText={setSearch}
           onSubmitEditing={() => {
@@ -148,6 +103,9 @@ export default function UsersListScreen() {
           </Link>
         )}
 
+        {/* ✅ Barre d'onglets partagée */}
+        <SubTabBar />
+
         {error && <Text style={styles.error}>{error}</Text>}
 
         {loading ? (
@@ -161,7 +119,7 @@ export default function UsersListScreen() {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
             ListEmptyComponent={
-              <Text style={styles.empty}>Aucun utilisateur trouve.</Text>
+              <Text style={styles.empty}>Aucun utilisateur trouvé.</Text>
             }
             renderItem={({ item }) => (
               <View style={styles.card}>
@@ -216,7 +174,7 @@ export default function UsersListScreen() {
                     <ActivityIndicator size="small" color="#2563eb" />
                   ) : (
                     <Text style={styles.toggleButtonText}>
-                      {item.status === "ACTIVE" ? "Desactiver" : "Reactiver"}
+                      {item.status === "ACTIVE" ? "Désactiver" : "Réactiver"}
                     </Text>
                   )}
                 </Pressable>
@@ -225,49 +183,21 @@ export default function UsersListScreen() {
           />
         )}
       </View>
-
-      {/* Barre de navigation en bas */}
-      <View style={styles.bottomNav}>
-        {NAV_ITEMS.map((item) => {
-          const isActive = !item.isLogout && pathname === item.route;
-          return (
-            <Pressable
-              key={item.key}
-              style={styles.navItem}
-              onPress={() => handleNavPress(item)}
-              disabled={item.isLogout && loggingOut}
-            >
-              {item.isLogout && loggingOut ? (
-                <ActivityIndicator size="small" color="#DC2626" />
-              ) : (
-                <Text style={[styles.navIcon, isActive && styles.navIconActive]}>
-                  {item.icon}
-                </Text>
-              )}
-              <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
-                {item.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
-  container: { flex: 1, paddingHorizontal: 16, paddingBottom: 90 },
-
+  safeArea: { flex: 1, backgroundColor: "#F2FAF5" },
+  container: { flex: 1, paddingHorizontal: 16, paddingBottom: 12 },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 8,
   },
-  title: { fontSize: 22, fontWeight: "700" },
-  subtitle: { fontSize: 13, color: "#888", marginTop: 2 },
-
+  title: { fontSize: 22, fontWeight: "700", marginTop: 8 },
+  subtitle: { fontSize: 13, color: "#7EAB91", marginTop: 2, marginBottom: 14 },
   searchInput: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -279,9 +209,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 14,
   },
-  error: { color: "#dc2626", marginBottom: 8, fontSize: 13 },
-  empty: { textAlign: "center", color: "#888", marginTop: 24 },
+  error: { color: "#166534", marginBottom: 8, fontSize: 13 },
+  empty: { textAlign: "center", color: "#7EAB91", marginTop: 24 },
   listContent: { paddingBottom: 12 },
+
   card: {
     backgroundColor: "#fff",
     borderRadius: 12,
@@ -303,7 +234,7 @@ const styles = StyleSheet.create({
   },
   avatarInitials: { fontSize: 15, fontWeight: "700", color: "#4f46e5" },
   name: { fontSize: 15, fontWeight: "600" },
-  email: { fontSize: 13, color: "#666", marginTop: 1 },
+  email: { fontSize: 13, color: "#5C8A72", marginTop: 1 },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -349,45 +280,4 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   addButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-
-  bottomNav: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderTopColor: "#e2e8f0",
-    paddingTop: 8,
-    paddingBottom: 10,
-    paddingHorizontal: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  navItem: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 3,
-  },
-  navIcon: {
-    fontSize: 20,
-    opacity: 0.5,
-  },
-  navIconActive: {
-    opacity: 1,
-  },
-  navLabel: {
-    fontSize: 10,
-    color: "#94a3b8",
-    fontWeight: "500",
-  },
-  navLabelActive: {
-    color: "#15803D",
-    fontWeight: "700",
-  },
 });

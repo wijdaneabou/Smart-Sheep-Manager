@@ -1,6 +1,6 @@
 import { db } from "../db/connection.js";
 import { userSessions, users } from "../db/schema/index.js";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, like, or, SQL } from "drizzle-orm";
 
 export async function createSession(data: {
   userId: number;
@@ -51,18 +51,33 @@ const selectFields = {
   isActive: userSessions.isActive,
 };
 
-// ✅ nouveau : liste paginée des sessions (utilisée par la route GET /sessions)
-export async function findAllSessions(page = 1, limit = 20) {
+function buildWhere(search?: string): SQL | undefined {
+  if (!search) return undefined;
+  const term = `%${search}%`;
+  return or(
+    like(userSessions.ip, term),
+    like(userSessions.userAgent, term),
+    like(users.firstName, term),
+    like(users.lastName, term),
+    like(users.email, term)
+  )!;
+}
+
+// ✅ paginée : utilisée par la route GET /sessions
+export async function findAllSessions(page = 1, limit = 20, search?: string) {
+  const where = buildWhere(search);
+
   return db
     .select(selectFields)
     .from(userSessions)
     .leftJoin(users, eq(userSessions.userId, users.id))
+    .where(where)
     .orderBy(desc(userSessions.loginAt))
     .limit(limit)
     .offset((page - 1) * limit);
 }
 
-// ✅ nouveau : toutes les sessions sans pagination (utilisée pour les exports CSV/PDF)
+// ✅ NOUVELLE : export complet sans pagination (utilisée par CSV/PDF)
 export async function exportAllSessions() {
   return db
     .select(selectFields)

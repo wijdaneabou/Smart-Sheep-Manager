@@ -1,4 +1,11 @@
-import { getPermissionNamesForRole } from "../repositories/permissions.repository.js";
+import {
+  getAllPermissionNames,
+  getPermissionNamesForRole,
+} from "../repositories/permissions.repository.js";
+
+export function isAdminRole(roleId: number, roleName?: string | null): boolean {
+  return roleId === 1 || roleName?.toUpperCase() === "ADMIN";
+}
 
 /**
  * Check if a role has a specific permission.
@@ -12,6 +19,10 @@ export async function hasPermission(
   module: string,
   action: string
 ): Promise<boolean> {
+  if (roleId === 1) {
+    return true;
+  }
+
   const permissionName = `${module}:${action}`;
   const permissions = await getPermissionNamesForRole(roleId);
   return permissions.includes(permissionName);
@@ -21,5 +32,9 @@ export async function hasPermission(
  * Get all permission names for a role (useful for debugging or UI).
  */
 export async function getPermissionsForRole(roleId: number): Promise<string[]> {
+  if (roleId === 1) {
+    return getAllPermissionNames();
+  }
+
   return getPermissionNamesForRole(roleId);
 }

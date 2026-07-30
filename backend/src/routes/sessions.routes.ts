@@ -1,8 +1,6 @@
 import { Hono } from "hono";
-import { db } from "../db/connection.js";
-import { userSessions, users } from "../db/schema/index.js";
-import { eq, or, like, desc } from "drizzle-orm";
 import { sessionExportService } from "../services/session-export.service.js";
+import { findAllSessions } from "../repositories/sessions.repository.js";
 
 const sessionsRoutes = new Hono();
 
@@ -10,44 +8,10 @@ sessionsRoutes.get("/", async (c) => {
   try {
     const page = Number(c.req.query("page") ?? "1");
     const limit = Number(c.req.query("limit") ?? "20");
-    const search = c.req.query("search");
+    const search = c.req.query("search") ?? undefined;
 
-    let query = db
-      .select({
-        id: userSessions.id,
-        userId: userSessions.userId,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        email: users.email,
-        ip: userSessions.ip,
-        userAgent: userSessions.userAgent,
-        loginAt: userSessions.loginAt,
-        logoutAt: userSessions.logoutAt,
-        isActive: userSessions.isActive,
-      })
-      .from(userSessions)
-      .leftJoin(users, eq(userSessions.userId, users.id))
-      .$dynamic();
+    const sessions = await findAllSessions(page, limit, search);
 
-    if (search) {
-      const term = `%${search}%`;
-      query = query.where(
-        or(
-          like(userSessions.ip, term),
-          like(userSessions.userAgent, term),
-          like(users.firstName, term),
-          like(users.lastName, term),
-          like(users.email, term)
-        )
-      );
-    }
-
-    const sessions = await query
-      .orderBy(desc(userSessions.loginAt))
-      .limit(limit)
-      .offset((page - 1) * limit);
-    console.log("Nombre de sessions :", sessions.length);
-    console.log(sessions);
     return c.json({
       success: true,
       sessions,
@@ -68,6 +32,9 @@ sessionsRoutes.get("/", async (c) => {
 // Export CSV
 sessionsRoutes.get("/export/csv", async (c) => {
   try {
+    const page = Number(c.req.query("page") ?? "1");
+    const limit = Number(c.req.query("limit") ?? "20");
+    const search = c.req.query("search") ?? undefined;
     const csv = await sessionExportService.exportCsv();
     c.header("Content-Type", "text/csv");
     c.header("Content-Disposition", "attachment; filename=sessions.csv");
@@ -81,6 +48,9 @@ sessionsRoutes.get("/export/csv", async (c) => {
 // Export PDF
 sessionsRoutes.get("/export/pdf", async (c) => {
   try {
+    const page = Number(c.req.query("page") ?? "1");
+    const limit = Number(c.req.query("limit") ?? "20");
+    const search = c.req.query("search") ?? undefined;
     const pdf = await sessionExportService.exportPdf();
     c.header("Content-Type", "application/pdf");
     c.header("Content-Disposition", "attachment; filename=sessions.pdf");

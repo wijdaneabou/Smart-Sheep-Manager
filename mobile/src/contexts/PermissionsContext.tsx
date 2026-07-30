@@ -89,11 +89,13 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   }, [applySnapshot]);
 
   const value = useMemo<PermissionsContextValue>(() => {
+    const isAdmin = userRole === "ADMIN";
+
     const hasPermission = (module: string, action: string) =>
-      permissions.includes(`${module}:${action}`);
+      isAdmin || permissions.includes(`${module}:${action}`);
 
     const hasAnyPermission = (module: string) =>
-      permissions.includes(`${module}:READ`);
+      isAdmin || permissions.includes(`${module}:READ`);
 
     return {
       permissions,
@@ -101,7 +103,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       loading,
       hasPermission,
       hasAnyPermission,
-      isAdmin: userRole === "ADMIN",
+      isAdmin,
       refreshPermissions,
       clearPermissions,
     };

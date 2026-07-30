@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { BackButton } from "@/components/BackButton";
 import {
   Alert,
   Image,
@@ -15,13 +16,13 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import api, { saveToken } from "@/services/api";
-import { fetchAndCachePermissions } from "@/services/permissionsCache";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 type Language = "fr" | "en" | "ar";
 
 const COPY = {
   fr: {
-    subtitle: "Connectez-vous pour gérer vos utilisateurs et permissions.",
+    subtitle: "",
     sectionTitle: "Connexion",
     email: "Adresse Email",
     password: "Mot de passe",
@@ -33,7 +34,7 @@ const COPY = {
     language: "Langue",
   },
   en: {
-    subtitle: "Sign in to manage users and permissions.",
+    subtitle: "",
     sectionTitle: "Sign in",
     email: "Email Address",
     password: "Password",
@@ -45,7 +46,7 @@ const COPY = {
     language: "Language",
   },
   ar: {
-    subtitle: "سجّل الدخول لإدارة المستخدمين والصلاحيات.",
+    subtitle: "",
     sectionTitle: "تسجيل الدخول",
     email: "البريد الإلكتروني",
     password: "كلمة المرور",
@@ -66,6 +67,7 @@ export default function LoginScreen() {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [language, setLanguage] = useState<Language>("fr");
+  const { refreshPermissions } = usePermissions();
 
   const copy = COPY[language];
   const isArabic = language === "ar";
@@ -85,10 +87,14 @@ export default function LoginScreen() {
       await saveToken("accessToken", response.data.accessToken);
       await saveToken("refreshToken", response.data.refreshToken);
 
-      await fetchAndCachePermissions().catch(() => null);
+      await refreshPermissions();
 
       router.replace("/(dashboard)");
     } catch (error: any) {
+      console.log("LOGIN ERROR STATUS:", error.response?.status);
+      console.log("LOGIN ERROR DATA:", error.response?.data);
+      console.log("LOGIN ERROR MESSAGE:", error.message);
+      
       const data = error.response?.data;
 
       if (data?.errors) {
@@ -107,6 +113,7 @@ export default function LoginScreen() {
     <View style={styles.screen}>
       <View style={styles.bgShapeTop} />
       <View style={styles.bgShapeBottom} />
+      <BackButton variant="light" style={styles.backButton} />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -218,10 +225,16 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  flex: { flex: 1 }, // ✅ unique définition de flex
   screen: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F2FAF5",
+  },
+  backButton: {
+    position: "absolute",
+    top: 18,
+    left: 18,
+    zIndex: 10,
   },
   bgShapeTop: {
     position: "absolute",
@@ -230,7 +243,7 @@ const styles = StyleSheet.create({
     borderRadius: 240,
     top: -100,
     right: -90,
-    backgroundColor: "rgba(37, 99, 235, 0.08)",
+    backgroundColor: "rgba(21, 128, 61, 0.08)",
   },
   bgShapeBottom: {
     position: "absolute",
@@ -239,7 +252,7 @@ const styles = StyleSheet.create({
     borderRadius: 260,
     bottom: -110,
     left: -110,
-    backgroundColor: "rgba(34, 197, 94, 0.08)",
+    backgroundColor: "rgba(21, 128, 61, 0.08)",
   },
   scrollContent: {
     flexGrow: 1,
@@ -293,13 +306,13 @@ const styles = StyleSheet.create({
     width: 118,
     height: 118,
     borderRadius: 34,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#DDEFE4",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
-    shadowColor: "#000",
+    shadowColor: "#0F2A1D",
     shadowOpacity: 0.08,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
@@ -312,7 +325,7 @@ const styles = StyleSheet.create({
   brandSubtitle: {
     marginTop: 8,
     fontSize: 14,
-    color: "#64748B",
+    color: "#5C8A72",
     textAlign: "center",
     lineHeight: 20,
     maxWidth: 280,
@@ -330,8 +343,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 22,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#000",
+    borderColor: "#DDEFE4",
+    shadowColor: "#0F2A1D",
     shadowOpacity: 0.06,
     shadowRadius: 22,
     shadowOffset: { width: 0, height: 12 },
@@ -346,7 +359,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#334155",
+    color: "#2F6B46",
     marginBottom: 8,
   },
   passwordHeader: {
@@ -365,7 +378,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#D6DEE8",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     height: 56,
     paddingHorizontal: 14,
@@ -376,10 +389,10 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
-    color: "#0F172A",
+    color: "#0F2A1D",
   },
   errorText: {
-    color: "#DC2626",
+    color: "#166534",
     fontSize: 12,
     marginTop: 7,
     marginLeft: 4,

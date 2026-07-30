@@ -12,7 +12,10 @@
     "seed:roles": "tsx src/db/seeds/roles.ts",
     "seed:admin": "tsx src/db/seeds/admin.ts",
     "seed:permissions": "tsx src/db/seeds/permissions.ts",
-    "seed:role-permissions": "tsx src/db/seeds/role-permissions.ts"
+    "seed:role-permissions": "tsx src/db/seeds/role-permissions.ts",
+    "seed:animal-history": "tsx src/db/seeds/animal-history.ts",
+    "seed:animal-movements": "tsx src/db/seeds/animal-movements.ts",
+    "seed:pedigree": "tsx src/db/seeds/animal-pedigree.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.8",
@@ -22,6 +25,7 @@
     "hono": "^4.12.29",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0",
     "mysql2": "^3.23.0",
     "nodemailer": "^9.0.3",
     "pdfkit": "^0.19.1",
@@ -32,6 +36,7 @@
     "@types/bcrypt": "^6.0.0",
     "@types/json2csv": "^5.0.7",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.2.0",
     "@types/node": "^26.1.1",
     "@types/pdfkit": "^0.17.6",
     "drizzle-kit": "^0.31.10",
