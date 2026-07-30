@@ -15,7 +15,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
+
 import * as ImagePicker from "expo-image-picker";
+
 import {
   createAnimal,
   type Breed,
@@ -35,6 +37,7 @@ export default function CreateAnimalScreen() {
   const [name, setName] = useState("");
   const [breed, setBreed] = useState<Breed>("Sardi");
   const [sex, setSex] = useState<Sex>("FEMALE");
+
   const [exploitationId, setExploitationId] = useState("");
 
   // --- Caractéristiques ---
@@ -105,12 +108,16 @@ export default function CreateAnimalScreen() {
     if (name.trim().length < 1) return "Le nom est requis.";
     if (weight && Number.isNaN(Number(weight))) return "Le poids doit être un nombre.";
     if (bcs && Number.isNaN(Number(bcs))) return "Le BCS doit être un nombre.";
+
     if (fatherRfid.length > 0 && fatherRfid.length < 5)
       return "Le RFID du père est invalide.";
 
     if (motherRfid.length > 0 && motherRfid.length < 5)
       return "Le RFID de la mère est invalide.";
-    if (exploitationId && Number.isNaN(Number(exploitationId))) return "L'exploitation doit être un nombre.";
+
+    if (exploitationId && Number.isNaN(Number(exploitationId)))
+      return "L'exploitation doit être un nombre.";
+
     return null;
   }
 
@@ -136,13 +143,8 @@ export default function CreateAnimalScreen() {
       fatherRfid: fatherRfid || undefined,
       motherRfid: motherRfid || undefined,
       exploitationId: exploitationId ? Number(exploitationId) : undefined,
-      // NOTE: `photoUri` is a local file URI for now. If your backend accepts
-      // photo uploads, replace this with the uploaded file's URL, or switch
-      // this call to a multipart/form-data request that includes the file.
-      // You'll also need to add `photoUrl`/`photoUri` to the `createAnimal`
-      // payload type in animalsService.ts.
       ...(photoUri ? { photoUri } : {}),
-    } as any);
+    });
 
     setLoading(false);
 
@@ -260,8 +262,9 @@ export default function CreateAnimalScreen() {
               })}
             </View>
           </View>
-           {/* --- 2. Caractéristiques --- */}
-           <SectionTitle index={2} label="Caractéristiques" />
+
+          {/* --- 2. Caractéristiques --- */}
+          <SectionTitle index={2} label="Caractéristiques" />
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Date de naissance</Text>
@@ -302,26 +305,28 @@ export default function CreateAnimalScreen() {
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Statut santé</Text>
             <View style={styles.typeRow}>
-              {HEALTH_STATUSES.map((h: { id: HealthStatus; label: string; icon: string; color: string }) => {
-                const selected = healthStatus === h.id;
-                return (
-                  <Pressable
-                    key={h.id}
-                    onPress={() => setHealthStatus(h.id)}
-                    style={[
-                      styles.typeChip,
-                      selected && { backgroundColor: h.color, borderColor: h.color },
-                    ]}
-                  >
-                    <Text style={[styles.typeChipIcon, selected && { color: "#fff" }]}>
-                      {h.icon}
-                    </Text>
-                    <Text style={[styles.typeChipLabel, selected && { color: "#fff" }]}>
-                      {h.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+              {HEALTH_STATUSES.map(
+                (h: { id: HealthStatus; label: string; icon: string; color: string }) => {
+                  const selected = healthStatus === h.id;
+                  return (
+                    <Pressable
+                      key={h.id}
+                      onPress={() => setHealthStatus(h.id)}
+                      style={[
+                        styles.typeChip,
+                        selected && { backgroundColor: h.color, borderColor: h.color },
+                      ]}
+                    >
+                      <Text style={[styles.typeChipIcon, selected && { color: "#fff" }]}>
+                        {h.icon}
+                      </Text>
+                      <Text style={[styles.typeChipLabel, selected && { color: "#fff" }]}>
+                        {h.label}
+                      </Text>
+                    </Pressable>
+                  );
+                }
+              )}
             </View>
           </View>
 
@@ -342,7 +347,6 @@ export default function CreateAnimalScreen() {
 
             <View style={[styles.fieldGroup, styles.rowItem]}>
               <Text style={styles.label}>Mère (RFID)</Text>
-
               <TextInput
                 style={styles.input}
                 placeholder="Ex : MA202600001210"

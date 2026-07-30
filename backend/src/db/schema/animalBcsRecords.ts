@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import {
   mysqlTable,
   int,
@@ -41,3 +42,15 @@ export const animalBcsRecords = mysqlTable("animal_bcs_records", {
 
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+
+
+export const animalBcsRecordsRelations = relations(
+  animalBcsRecords,
+  ({ one }) => ({
+    animal: one(animals, {
+      fields: [animalBcsRecords.animalId],
+      references: [animals.id],
+    }),
+  })
+);

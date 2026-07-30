@@ -9,8 +9,11 @@ import {
   type AnyMySqlColumn,
 } from "drizzle-orm/mysql-core";
 import { exploitations } from "./exploitations.js";
+
 import { relations } from "drizzle-orm";
 import { animalMovements } from "./animalMovements.js";
+import { animalBcsRecords } from "./animalBcsRecords.js";
+
 
 export const animals = mysqlTable("animals", {
   id: int("id").autoincrement().primaryKey(),
@@ -53,8 +56,10 @@ export const animals = mysqlTable("animals", {
     .notNull()
     .default("HEALTHY"),
 
+
   // Chemin/URL de la photo de l'animal (ex: /uploads/animals/xxx.jpg)
   photoUrl: varchar("photo_url", { length: 255 }),
+
 
   // Exploitation propriétaire (optionnelle)
   exploitationId: int("exploitation_id").references(
@@ -64,9 +69,12 @@ export const animals = mysqlTable("animals", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
 export const animalsRelations = relations(
   animals,
   ({ many }) => ({
     movements: many(animalMovements),
+    bcsRecords: many(animalBcsRecords),
   })
 );
+

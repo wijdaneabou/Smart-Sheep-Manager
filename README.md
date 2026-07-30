@@ -1,56 +1,84 @@
-# Welcome to your Expo app 👋
+# Smart Sheep Manager (SSM)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## 📌 About the Project
 
-## Get started
+**Smart Sheep Manager** is a digital platform for intelligent sheep farming in Morocco.  
+It helps farmers, cooperatives, and veterinarians manage their herds, health, reproduction, feeding, finances, and more — all in one place.
 
-1. Install dependencies
+- **Built with:** Node.js, Hono, Drizzle ORM, MySQL, React Native + Expo, TypeScript.
+- **Core features:** User management, RBAC (roles & permissions), authentication, and a modular dashboard.
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## 🚀 Getting Started (Local Development)
 
-   ```bash
-   npx expo start
-   ```
+### Prerequisites
+- Node.js (v18+)
+- MySQL (XAMPP recommended)
+- Expo CLI (`npm install -g expo-cli`)
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+### 1. Clone the repository
 ```bash
-npm run reset-project
-```
+git clone https://github.com/your-org/Smart-Sheep-Manager.git
+cd Smart-Sheep-Manager
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Backend Setup
+bash
+cd backend
+npm install
+Create a .env file:
 
-### Other setup steps
+env
+DATABASE_URL=mysql://root:@localhost:3306/smart_sheep_manager
+JWT_SECRET=ssm2026
+JWT_REFRESH_SECRET=ssm_refresh_2026
+PORT=5000
+Start MySQL (XAMPP):
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+bash
+sudo /opt/lampp/lampp startmysql
+Create the database:
 
-## Learn more
+bash
+sudo mysql -e "CREATE DATABASE IF NOT EXISTS smart_sheep_manager;"
+Run migrations & seed data:
 
-To learn more about developing your project with Expo, look at the following resources:
+bash
+npm run db:generate
+npm run db:migrate
+npm run seed:roles
+npm run seed:permissions
+npm run seed:role-permissions
+npm run seed:exploitations
+Start the backend:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+bash
+npm run dev
+The server will run on http://localhost:5000.
 
-## Join the community
+3. Mobile App Setup
+bash
+cd ../mobile
+npm install
+Create a .env file:
 
-Join our community of developers creating universal apps.
+env
+# For web testing (same machine)
+EXPO_PUBLIC_API_URL=http://localhost:5000
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# For physical device (Expo Go) – use your LAN IP
+# EXPO_PUBLIC_API_URL=http://192.168.x.x:5000
+Start the app:
+
+bash
+npx expo start -c
+Press w for web.
+
+Scan the QR code with Expo Go on your phone (same Wi‑Fi).
+
+4. Default Admin Credentials
+Role	: Email	         Password
+Super Admin	: f.laassiri0988@uca.ac.ma	Admin@2026
+Admin : 	admin@ssm.com	admin123

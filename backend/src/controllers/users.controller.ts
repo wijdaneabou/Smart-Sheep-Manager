@@ -1,4 +1,6 @@
 import type { Context } from "hono";
+import fs from "fs";
+import path from "path";
 import {
   createUserSchema,
   updateUserSchema,
@@ -6,7 +8,6 @@ import {
   loginHistoryQuerySchema,
 } from "../validators/users.validator.js";
 import * as usersService from "../services/users.service.js";
-import { saveAvatarFile } from "../utils/upload.js";
 import { auditService } from "../services/audit.service.js";
 
 function getRequestMeta(c: Context) {
@@ -30,7 +31,6 @@ export async function createUserHandler(c: Context) {
   }
 
   const result = await usersService.createUser(parsed.data);
-
   if (!result.success) {
     return c.json({ error: result.message }, result.status);
   }
@@ -53,7 +53,7 @@ export async function createUserHandler(c: Context) {
 
 export async function updateUserHandler(c: Context) {
   const id = Number(c.req.param("id"));
-  if (Number.isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
+  if (isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
 
   const body = await c.req.json();
   const parsed = updateUserSchema.safeParse(body);
@@ -65,7 +65,6 @@ export async function updateUserHandler(c: Context) {
   }
 
   const currentUser = c.get("user") as { id: number } | undefined;
-
   await auditService.log({
     userId: currentUser?.id,
     module: "Utilisateurs",
@@ -79,7 +78,7 @@ export async function updateUserHandler(c: Context) {
 
 export async function deactivateUserHandler(c: Context) {
   const id = Number(c.req.param("id"));
-  if (Number.isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
+  if (isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
 
   const result = await usersService.deactivateUser(id);
   if (!result.success) {
@@ -87,7 +86,6 @@ export async function deactivateUserHandler(c: Context) {
   }
 
   const currentUser = c.get("user") as { id: number } | undefined;
-
   await auditService.log({
     userId: currentUser?.id,
     module: "Utilisateurs",
@@ -101,7 +99,7 @@ export async function deactivateUserHandler(c: Context) {
 
 export async function reactivateUserHandler(c: Context) {
   const id = Number(c.req.param("id"));
-  if (Number.isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
+  if (isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
 
   const result = await usersService.reactivateUser(id);
   if (!result.success) {
@@ -109,7 +107,6 @@ export async function reactivateUserHandler(c: Context) {
   }
 
   const currentUser = c.get("user") as { id: number } | undefined;
-
   await auditService.log({
     userId: currentUser?.id,
     module: "Utilisateurs",
@@ -123,7 +120,7 @@ export async function reactivateUserHandler(c: Context) {
 
 export async function getUserByIdHandler(c: Context) {
   const id = Number(c.req.param("id"));
-  if (Number.isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
+  if (isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
 
   const result = await usersService.getUserById(id);
   if (!result.success) return c.json({ error: result.message }, result.status);
@@ -140,7 +137,7 @@ export async function listUsersHandler(c: Context) {
 
 export async function getLoginHistoryHandler(c: Context) {
   const id = Number(c.req.param("id"));
-  if (Number.isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
+  if (isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
 
   const parsed = loginHistoryQuerySchema.safeParse(c.req.query());
   if (!parsed.success) return c.json({ error: parsed.error.flatten() }, 400);
@@ -155,24 +152,58 @@ export async function getLoginHistoryHandler(c: Context) {
 }
 
 export async function uploadUserPhotoHandler(c: Context) {
-  const id = Number(c.req.param("id"));
-  if (Number.isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
-
-  const body = await c.req.parseBody();
-  const file = body["photo"];
-  if (!file || !(file instanceof File)) {
-    return c.json({ error: "Aucun fichier 'photo' recu." }, 400);
-  }
-
   try {
-    const photoPath = await saveAvatarFile(file);
+    const id = Number(c.req.param("id"));
+    if (isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
+
+    const formData = await c.req.formData();
+    const file = formData.get("photo");
+
+    // Debug logs – will appear in backend console
+    console.log("📦 FormData keys:", Array.from(formData.keys()));
+    console.log("📄 File type:", typeof file);
+    console.log("📄 File constructor:", file?.constructor?.name);
+
+    if (!file) {
+      return c.json({ error: "Aucun fichier 'photo' reçu." }, 400);
+    }
+
+    if (typeof file === "string") {
+      return c.json({ error: "Le champ 'photo' doit être un fichier." }, 400);
+    }
+
+    const userResult = await usersService.getUserById(id);
+    if (!userResult.success) {
+      return c.json({ error: "Utilisateur introuvable." }, 404);
+    }
+
+    let buffer: Buffer;
+    let filename: string;
+
+    if (typeof file.arrayBuffer === "function") {
+      const arrayBuffer = await file.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      filename = file.name || "profile.jpg";
+    } else {
+      return c.json({ error: "Format de fichier non reconnu." }, 400);
+    }
+
+    const ext = filename.split('.').pop() || 'jpg';
+    const uniqueName = `user-${id}-${Date.now()}.${ext}`;
+    const uploadDir = path.join(process.cwd(), 'uploads', 'avatars');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const filePath = path.join(uploadDir, uniqueName);
+    fs.writeFileSync(filePath, buffer);
+    const photoPath = `/uploads/avatars/${uniqueName}`;
+
     const result = await usersService.updatePhoto(id, photoPath);
     if (!result.success) {
       return c.json({ error: result.message }, result.status);
     }
 
     const currentUser = c.get("user") as { id: number } | undefined;
-
     await auditService.log({
       userId: currentUser?.id,
       module: "Utilisateurs",
@@ -183,6 +214,7 @@ export async function uploadUserPhotoHandler(c: Context) {
 
     return c.json({ data: result.user }, result.status);
   } catch (err) {
+    console.error("❌ Upload error:", err);
     const message = err instanceof Error ? err.message : "Erreur lors de l'upload.";
     return c.json({ error: message }, 400);
   }

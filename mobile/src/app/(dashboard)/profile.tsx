@@ -1,140 +1,195 @@
-import { useMemo } from "react";
-import { StyleSheet, Text, View, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/contexts/PermissionsContext";
+import { getFileUrl } from "@/services/api";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function ProfileScreen() {
-  const { user, getFullName, getInitials } = useAuth();
-  const { userRole, isAdmin, permissions } = usePermissions();
+  const { user, userRole } = usePermissions();
+  const photoUrl = getFileUrl(user?.photo);
 
-  const roleLabel = useMemo(() => userRole || "USER", [userRole]);
+  // Format date if available
+  const joinedDate = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString("fr-FR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "—";
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={22} color="#0F2A1D" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Mon profil</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <View style={styles.container}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{getInitials()}</Text>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Mon profil</Text>
         </View>
 
-        <Text style={styles.name}>{getFullName() || "Utilisateur"}</Text>
-        <Text style={styles.email}>{user?.email || "email@ssm.ma"}</Text>
+        {/* Profile Card */}
+        <View style={styles.card}>
+          <View style={styles.avatarContainer}>
+            {photoUrl ? (
+              <Image source={{ uri: photoUrl }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatarPlaceholder, { backgroundColor: "#E6F8ED" }]}>
+                <Ionicons name="person-outline" size={50} color="#15803D" />
+              </View>
+            )}
+          </View>
 
-        <View style={[styles.roleBadge, isAdmin && styles.roleBadgeAdmin]}>
-          <Text style={[styles.roleBadgeText, isAdmin && styles.roleBadgeTextAdmin]}>
-            {roleLabel}
+          <Text style={styles.name}>
+            {user?.firstName || "Utilisateur"} {user?.lastName || ""}
           </Text>
+          <Text style={styles.email}>{user?.email || "email@exemple.com"}</Text>
+
+          <View style={styles.roleBadge}>
+            <Text style={styles.roleText}>{userRole || "Rôle"}</Text>
+          </View>
         </View>
 
+        {/* Information List */}
         <View style={styles.infoCard}>
-          <InfoRow label="Prénom" value={user?.firstName || "—"} />
-          <InfoRow label="Nom" value={user?.lastName || "—"} />
-          <InfoRow label="Email" value={user?.email || "—"} />
-          <InfoRow label="Téléphone" value={user?.phone || "—"} />
-          <InfoRow label="Rôle" value={roleLabel} />
-          <InfoRow label="Permissions" value={String(permissions.length)} />
+          <View style={styles.infoRow}>
+            <Ionicons name="person-outline" size={20} color="#0F2A1D" />
+            <Text style={styles.infoLabel}>Prénom</Text>
+            <Text style={styles.infoValue}>{user?.firstName || "—"}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Ionicons name="person-outline" size={20} color="#0F2A1D" />
+            <Text style={styles.infoLabel}>Nom</Text>
+            <Text style={styles.infoValue}>{user?.lastName || "—"}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Ionicons name="mail-outline" size={20} color="#0F2A1D" />
+            <Text style={styles.infoLabel}>Email</Text>
+            <Text style={styles.infoValue}>{user?.email || "—"}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Ionicons name="call-outline" size={20} color="#0F2A1D" />
+            <Text style={styles.infoLabel}>Téléphone</Text>
+            <Text style={styles.infoValue}>{user?.phone || "Non renseigné"}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Ionicons name="shield-checkmark-outline" size={20} color="#0F2A1D" />
+            <Text style={styles.infoLabel}>Rôle</Text>
+            <Text style={styles.infoValue}>{userRole || "—"}</Text>
+          </View>
+
+          <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+            <Ionicons name="calendar-outline" size={20} color="#0F2A1D" />
+            <Text style={styles.infoLabel}>Membre depuis</Text>
+            <Text style={styles.infoValue}>{joinedDate}</Text>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F2FAF5" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F2FAF5",
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  header: {
+    marginTop: 12,
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#0F2A1D",
+  },
+  card: {
     backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 20,
     alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#0F2A1D",
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
     shadowRadius: 12,
-    elevation: 2,
-  },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#0F2A1D" },
-  container: { flex: 1, alignItems: "center", paddingTop: 12, paddingHorizontal: 16 },
-  avatar: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    backgroundColor: "#166534",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-    shadowColor: "#0F2A1D",
-    shadowOpacity: 0.16,
-    shadowRadius: 20,
     elevation: 3,
   },
-  avatarText: { color: "#fff", fontSize: 30, fontWeight: "800" },
-  name: { fontSize: 22, fontWeight: "800", color: "#0F2A1D" },
-  email: { fontSize: 14, color: "#5C8A72", marginTop: 4 },
+  avatarContainer: {
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: "#15803D",
+    backgroundColor: "#FFFFFF",
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  name: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#0F2A1D",
+  },
+  email: {
+    fontSize: 14,
+    color: "#5C8A72",
+    marginTop: 4,
+  },
   roleBadge: {
-    marginTop: 10,
-    backgroundColor: "#DDEFE4",
+    backgroundColor: "#E6F8ED",
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 20,
+    marginTop: 8,
   },
-  roleBadgeAdmin: {
-    backgroundColor: "#DFF5E6",
-  },
-  roleBadgeText: {
+  roleText: {
     fontSize: 12,
-    fontWeight: "800",
-    color: "#2F6B46",
-    letterSpacing: 0.3,
-  },
-  roleBadgeTextAdmin: {
-    color: "#166534",
+    fontWeight: "600",
+    color: "#15803D",
   },
   infoCard: {
-    width: "100%",
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 6,
-    marginTop: 24,
-    shadowColor: "#0F2A1D",
-    shadowOpacity: 0.06,
-    shadowRadius: 18,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
     elevation: 2,
   },
   infoRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 14,
+    alignItems: "center",
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5F4EA",
+    borderBottomColor: "#F3F4F6",
   },
-  infoLabel: { fontSize: 14, color: "#5C8A72" },
-  infoValue: { fontSize: 14, fontWeight: "700", color: "#0F2A1D", flexShrink: 1, textAlign: "right" },
+  infoLabel: {
+    fontSize: 14,
+    color: "#5C8A72",
+    marginLeft: 10,
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#0F2A1D",
+  },
 });

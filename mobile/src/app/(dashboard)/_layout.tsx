@@ -1,44 +1,93 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Tabs, router, usePathname, Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, TouchableOpacity, Image } from "react-native";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { getTabModules } from "@/constants/modules";
+import ProfileModal from "@/components/ProfileModal";
+import { getFileUrl } from "@/services/api";
 
-function DashboardTopBar() {
+// ----- Header (top) with brand title and avatar -----
+function DashboardHeader() {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { user } = usePermissions();
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
+  const getInitials = () => {
+    if (!user) return "U";
+    const first = user.firstName?.[0] || "";
+    const last = user.lastName?.[0] || "";
+    return `${first}${last}`.toUpperCase() || "U";
+  };
+
+  const photoUrl = getFileUrl(user?.photo);
+
+  return (
+    <View style={styles.header}>
+      <Text style={styles.brandTitle}>Smart Sheep Manager</Text>
+      <TouchableOpacity onPress={() => setModalVisible(true)}>
+        {photoUrl ? (
+          <Image source={{ uri: photoUrl }} style={styles.avatarImage} />
+        ) : (
+          <View style={styles.avatarPlaceholder}>
+            <Text style={styles.avatarInitials}>{getInitials()}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+      <ProfileModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        isDarkMode={isDarkMode}
+        toggleDarkMode={toggleDarkMode}
+      />
+    </View>
+  );
+}
+
+// ----- Bottom navigation bar (unchanged) -----
+function DashboardBottomBar() {
   const pathname = usePathname();
   const { permissions, isAdmin } = usePermissions();
 
-  const { tabModules } = useMemo(
+  const { tabModules, moreModules } = useMemo(
     () => getTabModules(permissions, isAdmin),
     [isAdmin, permissions]
   );
 
-  const navItems = [
-    {
-      key: "home",
-      icon: "home-outline",
-      href: "/(dashboard)",
-      active: pathname === "/(dashboard)" || pathname === "/(dashboard)/" || pathname === "/",
-    },
-    ...tabModules.map((module) => ({
-      key: module.key,
-      icon: module.ionicon,
-      href: module.route,
-      active: pathname.includes(module.route),
-    })),
-    {
-      key: "more",
-      icon: "grid-outline",
-      href: "/(dashboard)/more",
-      active: pathname.includes("/more"),
-    },
-  ];
+  const navItems = useMemo(() => {
+    const items = [
+      {
+        key: "home",
+        icon: "home-outline",
+        href: "/(dashboard)",
+        active: pathname === "/(dashboard)" || pathname === "/(dashboard)/" || pathname === "/",
+      },
+      ...tabModules.map((module) => ({
+        key: module.key,
+        icon: module.ionicon,
+        href: module.route,
+        active: pathname.includes(module.route),
+      })),
+    ];
+
+    if (moreModules.length > 0) {
+      items.push({
+        key: "more",
+        icon: "grid-outline",
+        href: "/(dashboard)/more",
+        active: pathname.includes("/more"),
+      });
+    }
+
+    return items;
+  }, [pathname, tabModules, moreModules]);
 
   return (
-    <View style={styles.topBar}>
-      <Text style={styles.brandTitle}>Smart Sheep Manager</Text>
-
+    <View style={styles.bottomBar}>
       <View style={styles.navRow}>
         {navItems.map((item) => (
           <Pressable
@@ -64,7 +113,7 @@ function DashboardTopBar() {
 export default function DashboardLayout() {
   return (
     <View style={styles.container}>
-      <DashboardTopBar />
+      <DashboardHeader />
       <View style={styles.content}>
         <Tabs
           screenOptions={{
@@ -93,6 +142,7 @@ export default function DashboardLayout() {
           <Tabs.Screen name="users" />
         </Tabs>
       </View>
+      <DashboardBottomBar />
     </View>
   );
 }
@@ -102,24 +152,54 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-  content: {
-    flex: 1,
-    backgroundColor: "#FFFFFF", // blanc pour tout l'écran
-  },
-  topBar: {
+  header: {
     backgroundColor: "#FFFFFF",
     paddingTop: 54,
     paddingHorizontal: 20,
     paddingBottom: 8,
-    borderBottomWidth: 0, // pas de ligne de séparation
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   brandTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "700",
-    color: "#0F2A1D", // vert foncé
+    color: "#0F2A1D",
     letterSpacing: -0.5,
-    marginBottom: 10,
     fontFamily: "DancingScript_700Bold",
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: "#15803D",
+    backgroundColor: "#FFFFFF",
+  },
+  avatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#15803D",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarInitials: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  content: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  bottomBar: {
+    backgroundColor: "#FFFFFF",
+    paddingTop: 6,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
   },
   navRow: {
     flexDirection: "row",

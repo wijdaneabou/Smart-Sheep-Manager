@@ -12,12 +12,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useFocusEffect } from "expo-router";
-import {
-  listAnimals,
-  type Animal,
-} from "../../../services/animalsService";
+import { listAnimals, type Animal } from "../../../services/animalsService";
 import { API_URL } from "../../../services/api";
-import { BREEDS, SEXES, HEALTH_STATUSES, getBreedInfo, getSexInfo, getHealthStatusInfo } from "../../../constants/breeds";
+import {
+  BREEDS,
+  getBreedInfo,
+  getSexInfo,
+  getHealthStatusInfo,
+} from "../../../constants/breeds";
 
 type FilterType = "TOUT" | "Sardi" | "Timahdite" | "D'man" | "Beni-Guil";
 
@@ -34,7 +36,6 @@ export default function HerdScreen() {
     const result = await listAnimals({ search: search || undefined, limit: 50 });
     if (result.success) {
       setAnimals(result.data);
-      console.log(JSON.stringify(result.data, null, 2));
     } else {
       setError(result.message);
     }
@@ -61,9 +62,12 @@ export default function HerdScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.container}>
-
         <View style={styles.header}>
           <Text style={styles.title}>Mon Troupeau</Text>
+          <Text style={styles.subtitle}>
+            {filteredAnimals.length} animal
+            {filteredAnimals.length > 1 ? "s" : ""}
+          </Text>
         </View>
 
         <View style={styles.searchRow}>
@@ -71,7 +75,7 @@ export default function HerdScreen() {
             <Text style={styles.searchIcon}>🔍</Text>
             <TextInput
               style={styles.searchInput}
-              placeholder="Rechercher un animal..."
+              placeholder="Rechercher par RFID ou nom..."
               placeholderTextColor="#999"
               value={search}
               onChangeText={setSearch}
@@ -118,13 +122,10 @@ export default function HerdScreen() {
               const breedInfo = getBreedInfo(item.breed);
               const sexInfo = getSexInfo(item.sex);
               const healthInfo = getHealthStatusInfo(item.healthStatus);
-              // Optional photo field — add `photoUrl` to your Animal type/service
-              // if you want real photos here; falls back to the breed icon.
-                const photoUrl = item.photoUrl
-                  ? `${API_URL}${item.photoUrl}`
-                  : undefined;
+              const photoUrl = item.photoUrl
+                ? `${API_URL}${item.photoUrl}`
+                : undefined;
 
-                console.log(photoUrl);
               return (
                 <Link
                   href={
@@ -140,13 +141,15 @@ export default function HerdScreen() {
                       <Image source={{ uri: photoUrl }} style={styles.thumb} />
                     ) : (
                       <View style={styles.thumbFallback}>
-                        <Text style={styles.thumbFallbackIcon}>{breedInfo.icon}</Text>
+                        <Text style={styles.thumbFallbackIcon}>
+                          {breedInfo.icon}
+                        </Text>
                       </View>
                     )}
 
                     <View style={styles.cardBody}>
                       <View style={styles.cardTitleRow}>
-                        <Text style={styles.name}>{item.rfid}</Text>
+                        <Text style={styles.name}>{item.name || item.rfid}</Text>
                         <View
                           style={[
                             styles.healthBadge,
@@ -154,9 +157,12 @@ export default function HerdScreen() {
                           ]}
                         >
                           <Text
-                            style={[styles.healthBadgeText, { color: healthInfo.color }]}
+                            style={[
+                              styles.healthBadgeText,
+                              { color: healthInfo.color },
+                            ]}
                           >
-                            {healthInfo.label}
+                            {healthInfo.icon} {healthInfo.label}
                           </Text>
                         </View>
                       </View>
@@ -165,18 +171,34 @@ export default function HerdScreen() {
                         <Text style={styles.infoIcon}>▲</Text>
                         <Text style={styles.infoValue}>{breedInfo.label}</Text>
                       </View>
-                      <View style={styles.infoRow}>
-                        {item.weight ? (
-                          <>
-                            <Text style={styles.infoIcon}>⚖</Text>
-                            <Text style={styles.infoValue}>{item.weight} kg</Text>
-                          </>
-                        ) : null}
-                      </View>
+
                       <View style={styles.infoRow}>
                         <Text style={styles.infoIcon}>{sexInfo.icon}</Text>
                         <Text style={styles.infoValue}>{sexInfo.label}</Text>
                       </View>
+
+                      {item.weight ? (
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoIcon}>⚖</Text>
+                          <Text style={styles.infoValue}>{item.weight} kg</Text>
+                        </View>
+                      ) : null}
+
+                      {item.bcs ? (
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoIcon}>◐</Text>
+                          <Text style={styles.infoValue}>BCS {item.bcs}</Text>
+                        </View>
+                      ) : null}
+
+                      {item.birthDate ? (
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoIcon}>📅</Text>
+                          <Text style={styles.infoValue}>
+                            {new Date(item.birthDate).toLocaleDateString("fr-FR")}
+                          </Text>
+                        </View>
+                      ) : null}
                     </View>
 
                     <Text style={styles.chevron}>›</Text>
@@ -226,20 +248,9 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
   container: { flex: 1, paddingHorizontal: 16 },
 
-  brandHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  brandLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
-  brandIcon: { fontSize: 20 },
-  brandTitle: { fontSize: 16, fontWeight: "800", color: GREEN, letterSpacing: 0.3 },
-  bellIcon: { fontSize: 20 },
-
   header: { marginTop: 12, marginBottom: 14 },
   title: { fontSize: 26, fontWeight: "800", color: "#111" },
+  subtitle: { fontSize: 13, color: "#888", marginTop: 2 },
 
   searchRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
   searchInputWrap: {
@@ -254,17 +265,6 @@ const styles = StyleSheet.create({
   },
   searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.6 },
   searchInput: { flex: 1, paddingVertical: 13, fontSize: 14 },
-  filterButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e5e5e5",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  filterButtonIcon: { fontSize: 18 },
 
   filterRow: { flexDirection: "row", gap: 8, marginBottom: 14, flexWrap: "wrap" },
   filterPill: {
@@ -296,6 +296,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
+
   thumb: { width: 64, height: 64, borderRadius: 14, marginRight: 14 },
   thumbFallback: {
     width: 64,

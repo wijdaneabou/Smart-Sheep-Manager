@@ -5,7 +5,9 @@ import {
   getAnimalByIdHandler,
   listAnimalsHandler,
   deleteAnimalHandler,
+
   getPedigreeHandler,
+
 } from "../controllers/animals.controller.js";
 import { isAuthenticated } from "../middlewares/auth.middleware.js";
 import { requireRole } from "../middlewares/rbac.middleware.js";
@@ -22,11 +24,13 @@ animalsRoutes.get(
   getAnimalByIdHandler
 );
 animalsRoutes.get(
+
   "/:id/pedigree",
   requireRole("ADMIN", "MANAGER", "ELEVEUR", "VETERINAIRE", "OUVRIER"),
   getPedigreeHandler
 );
 animalsRoutes.get(
+
   "/",
   requireRole("ADMIN", "MANAGER", "ELEVEUR", "VETERINAIRE", "OUVRIER"),
   listAnimalsHandler

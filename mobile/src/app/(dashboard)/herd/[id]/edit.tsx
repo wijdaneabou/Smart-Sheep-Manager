@@ -121,10 +121,8 @@ export default function EditAnimalScreen() {
       weight: weight ? Number(weight) : null,
       bcs: bcs ? Number(bcs) : null,
       healthStatus,
-
-      
-      fatherId: fatherId ? Number(fatherId) : null,
-      motherId: motherId ? Number(motherId) : null,
+      fatherRfid: fatherId ? fatherId.trim() : null,
+      motherRfid: motherId ? motherId.trim() : null,
       exploitationId: exploitationId ? Number(exploitationId) : null,
       photoUri: photoUri ?? undefined,
     });
@@ -192,17 +190,18 @@ export default function EditAnimalScreen() {
           >
             {photoUri ? (
               <Image
-                source={{
-                  uri: photoUri.startsWith("http")
-                    ? photoUri
-                    : `${API_URL}${photoUri}`,
-                }}
-                style={{
-                  width: 150,
-                  height: 150,
-                  borderRadius: 75,
-                }}
-              />
+                  source={{
+                    uri:
+                      photoUri && (photoUri.startsWith("http") || photoUri.startsWith("file://"))
+                        ? photoUri
+                        : `${API_URL}${photoUri}`,
+                  }}
+                  style={{
+                    width: 150,
+                    height: 150,
+                    borderRadius: 75,
+                  }}
+                />
             ) : (
               <View
                 style={{

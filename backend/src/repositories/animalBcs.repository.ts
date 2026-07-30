@@ -6,10 +6,12 @@ import { eq, and, desc, gte, lte, SQL } from "drizzle-orm";
 type CreateBcsData = typeof animalBcsRecords.$inferInsert;
 
 export async function findBcsRecordById(id: number) {
-  const result = await db.query.animalBcsRecords.findFirst({
-    where: eq(animalBcsRecords.id, id),
-    with: { animal: true },
-  });
+  const [result] = await db
+    .select()
+    .from(animalBcsRecords)
+    .leftJoin(animals, eq(animalBcsRecords.animalId, animals.id))
+    .where(eq(animalBcsRecords.id, id));
+
   return result ?? null;
 }
 

@@ -10,31 +10,25 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 
+async function savePhotoIfPresent(photo: unknown): Promise<string | undefined> {
+  if (!(photo instanceof File)) return undefined;
+
+  const extension = path.extname(photo.name) || ".jpg";
+  const fileName = `${crypto.randomUUID()}${extension}`;
+
+  const uploadDir = path.join(process.cwd(), "uploads", "animals");
+  await fs.mkdir(uploadDir, { recursive: true });
+
+  const buffer = Buffer.from(await photo.arrayBuffer());
+  await fs.writeFile(path.join(uploadDir, fileName), buffer);
+
+  return `/uploads/animals/${fileName}`;
+}
+
 export async function createAnimalHandler(c: Context) {
   const body = await c.req.parseBody();
 
-  let photoUrl: string | undefined;
-
-  // Vérifier si une image a été envoyée
-  const photo = body.photo;
-
-  if (photo instanceof File) {
-    const extension = path.extname(photo.name) || ".jpg";
-    const fileName = `${crypto.randomUUID()}${extension}`;
-
-    const uploadDir = path.join(process.cwd(), "uploads", "animals");
-
-    await fs.mkdir(uploadDir, { recursive: true });
-
-    const buffer = Buffer.from(await photo.arrayBuffer());
-
-    await fs.writeFile(
-      path.join(uploadDir, fileName),
-      buffer
-    );
-
-    photoUrl = `/uploads/animals/${fileName}`;
-  }
+  const photoUrl = await savePhotoIfPresent(body.photo);
 
   const parsed = createAnimalSchema.safeParse({
     rfid: body.rfid,
@@ -73,42 +67,22 @@ export async function updateAnimalHandler(c: Context) {
 
   const body = await c.req.parseBody();
 
-let photoUrl: string | undefined;
-
-const photo = body.photo;
-
-if (photo instanceof File) {
-  const extension = path.extname(photo.name) || ".jpg";
-  const fileName = `${crypto.randomUUID()}${extension}`;
-
-  const uploadDir = path.join(process.cwd(), "uploads", "animals");
-
-  await fs.mkdir(uploadDir, { recursive: true });
-
-  const buffer = Buffer.from(await photo.arrayBuffer());
-
-  await fs.writeFile(
-    path.join(uploadDir, fileName),
-    buffer
-  );
-
-  photoUrl = `/uploads/animals/${fileName}`;
-}
+  const photoUrl = await savePhotoIfPresent(body.photo);
 
   const parsed = updateAnimalSchema.safeParse({
-  rfid: body.rfid,
-  name: body.name,
-  breed: body.breed,
-  sex: body.sex,
-  birthDate: body.birthDate,
-  fatherRfid: body.fatherRfid,
-  motherRfid: body.motherRfid,
-  weight: body.weight,
-  bcs: body.bcs,
-  healthStatus: body.healthStatus,
-  exploitationId: body.exploitationId,
-  photoUrl,
-});
+    rfid: body.rfid,
+    name: body.name,
+    breed: body.breed,
+    sex: body.sex,
+    birthDate: body.birthDate,
+    fatherRfid: body.fatherRfid,
+    motherRfid: body.motherRfid,
+    weight: body.weight,
+    bcs: body.bcs,
+    healthStatus: body.healthStatus,
+    exploitationId: body.exploitationId,
+    photoUrl,
+  });
 
   if (!parsed.success) {
     return c.json({ error: parsed.error.flatten() }, 400);

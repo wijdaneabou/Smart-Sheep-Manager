@@ -1,0 +1,163 @@
+.
+├── backend
+│   ├── drizzle
+│   │   ├── 0000_outgoing_colossus.sql
+│   │   ├── 0001_sudden_gravity.sql
+│   │   ├── 0002_careful_fat_cobra.sql
+│   │   ├── 0003_first_slayback.sql
+│   │   ├── 0004_mute_rocket_raccoon.sql
+│   │   ├── 0005_strange_gideon.sql
+│   │   └── meta
+│   │       ├── 0000_snapshot.json
+│   │       ├── 0001_snapshot.json
+│   │       ├── 0002_snapshot.json
+│   │       ├── 0003_snapshot.json
+│   │       └── _journal.json
+│   ├── drizzle.config.ts
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── src
+│   │   ├── app.ts
+│   │   ├── controllers
+│   │   │   ├── audit.controller.ts
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── exploitations.controller.ts
+│   │   │   ├── permissions.controller.ts
+│   │   │   └── users.controller.ts
+│   │   ├── db
+│   │   │   ├── bootstrap.ts
+│   │   │   ├── connection.ts
+│   │   │   ├── migrate.ts
+│   │   │   ├── schema
+│   │   │   ├── seeds
+│   │   │   └── test-db.ts
+│   │   ├── index.ts
+│   │   ├── middlewares
+│   │   │   ├── auth.middleware.ts
+│   │   │   ├── permissions.middleware.ts
+│   │   │   └── rbac.middleware.ts
+│   │   ├── repositories
+│   │   │   ├── audit.repository.ts
+│   │   │   ├── auth.repository.ts
+│   │   │   ├── exploitations.repository.ts
+│   │   │   ├── password-reset.repository.ts
+│   │   │   ├── permissions.repository.ts
+│   │   │   ├── refresh-token.repository.ts
+│   │   │   ├── sessions.repository.ts
+│   │   │   └── users.repository.ts
+│   │   ├── routes
+│   │   │   ├── audit.routes.ts
+│   │   │   ├── auth.routes.ts
+│   │   │   ├── exploitations.routes.ts
+│   │   │   ├── permissions.routes.ts
+│   │   │   ├── sessions.routes.ts
+│   │   │   └── users.routes.ts
+│   │   ├── services
+│   │   │   ├── audit.service.ts
+│   │   │   ├── auth.service.ts
+│   │   │   ├── email.service.ts
+│   │   │   ├── exploitations.service.ts
+│   │   │   ├── password-reset.service.ts
+│   │   │   ├── permissions.service.ts
+│   │   │   ├── session-export.service.ts
+│   │   │   └── users.service.ts
+│   │   ├── utils
+│   │   │   ├── jwt.ts
+│   │   │   ├── request.ts
+│   │   │   └── upload.ts
+│   │   └── validators
+│   │       ├── auth.validator.ts
+│   │       ├── exploitations.validator.ts
+│   │       └── users.validator.ts
+│   ├── tsconfig.json
+│   └── uploads
+│       └── avatars
+│           ├── 2eeff001-b38d-4b26-9338-7243c2acca26.jpeg
+│           └── 9e9c88e2-d90a-4c7f-a2b6-e6f26e256eab.jpeg
+├── mobile
+│   ├── AGENTS.md
+│   ├── app.json
+│   ├── assets
+│   │   ├── expo.icon
+│   │   │   ├── Assets
+│   │   │   └── icon.json
+│   │   └── images
+│   │       ├── android-icon-background.png
+│   │       ├── android-icon-foreground.png
+│   │       ├── android-icon-monochrome.png
+│   │       ├── expo-badge.png
+│   │       ├── expo-badge-white.png
+│   │       ├── expo-logo.png
+│   │       ├── favicon.png
+│   │       ├── icon.png
+│   │       ├── logo-glow.png
+│   │       ├── react-logo@2x.png
+│   │       ├── react-logo@3x.png
+│   │       ├── react-logo.png
+│   │       ├── splash-icon.png
+│   │       ├── tabIcons
+│   │       └── tutorial-web.png
+│   ├── CLAUDE.md
+│   ├── expo-env.d.ts
+│   ├── LICENSE
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── scripts
+│   │   └── reset-project.js
+│   ├── src
+│   │   ├── app
+│   │   │   ├── (auth)
+│   │   │   ├── (dashboard)
+│   │   │   ├── explore.tsx
+│   │   │   ├── index.tsx
+│   │   │   ├── _layout.tsx
+│   │   │   └── logo.png
+│   │   ├── components
+│   │   │   ├── animated-icon.module.css
+│   │   │   ├── animated-icon.tsx
+│   │   │   ├── animated-icon.web.tsx
+│   │   │   ├── app-tabs.tsx
+│   │   │   ├── app-tabs.web.tsx
+│   │   │   ├── BackButton.tsx
+│   │   │   ├── ExploitationMap.native.tsx
+│   │   │   ├── ExploitationMap.web.tsx
+│   │   │   ├── external-link.tsx
+│   │   │   ├── hint-row.tsx
+│   │   │   ├── ModulePlaceholder.tsx
+│   │   │   ├── ProfileSheet.tsx
+│   │   │   ├── RolePicker.tsx
+│   │   │   ├── SubTabBar.tsx
+│   │   │   ├── themed-text.tsx
+│   │   │   ├── themed-view.tsx
+│   │   │   ├── ui
+│   │   │   └── web-badge.tsx
+│   │   ├── constants
+│   │   │   ├── exploitationTypes.ts
+│   │   │   ├── modules.ts
+│   │   │   ├── roles.ts
+│   │   │   └── theme.ts
+│   │   ├── contexts
+│   │   │   └── PermissionsContext.tsx
+│   │   ├── global.css
+│   │   ├── hooks
+│   │   │   ├── useAuth.ts
+│   │   │   ├── use-color-scheme.ts
+│   │   │   ├── use-color-scheme.web.ts
+│   │   │   └── use-theme.ts
+│   │   ├── services
+│   │   │   ├── api.ts
+│   │   │   ├── authService.ts
+│   │   │   ├── exploitationservice.ts
+│   │   │   ├── permissions.api.ts
+│   │   │   ├── permissionsCache.ts
+│   │   │   └── userService.ts
+│   │   └── utils
+│   │       ├── auth.ts
+│   │       └── parseUserAgent.ts
+│   └── tsconfig.json
+├── project-structure-full.txt
+├── project-structure.txt
+├── README.md
+└── tree.txt
+
+35 directories, 126 files

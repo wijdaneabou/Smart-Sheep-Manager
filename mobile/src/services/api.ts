@@ -16,6 +16,17 @@ export const API_URL =
   process.env.EXPO_PUBLIC_API_URL || "http://172.27.182.251:3000";
 
 
+// Helper to build a full URL for uploaded files (avatars, etc.)
+export const getFileUrl = (path: string | null | undefined): string | null => {
+  if (!path) return null;
+  // If the path already starts with http, return it as is
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  // Otherwise, prepend the API base URL
+  return `${API_URL}${path}`;
+};
+
 const api = axios.create({
   baseURL: `${API_URL}/api`,
   timeout: 10000,

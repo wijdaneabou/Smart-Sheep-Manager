@@ -83,6 +83,7 @@ export async function listAnimals(params: {
   return { rows, total };
 }
 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Pedigree / Genealogical Tree
 // ─────────────────────────────────────────────────────────────────────────────
@@ -210,3 +211,4 @@ export async function getPedigreeTree(
     mother,
   };
 }
+

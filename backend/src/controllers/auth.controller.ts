@@ -73,15 +73,11 @@ export async function login(c: Context) {
     expiresAt
   );
 
-  // Enregistrement de la session (device, IP, user-agent)
   const ip =
     c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
     c.req.header("x-real-ip") ??
     "UNKNOWN";
 
-  // On privilégie le header custom envoyé par le mobile (X-Device-Info),
-  // qui contient des infos lisibles (OS, marque, modèle) plutôt que le
-  // User-Agent brut du client HTTP (ex: "okhttp/4.12.0")
   const userAgent =
     c.req.header("x-device-info") ??
     c.req.header("user-agent") ??
@@ -119,40 +115,23 @@ export async function login(c: Context) {
 }
 
 export async function getMe(c: Context) {
-  const user = c.get("user") as
+  const userPayload = c.get("user") as
     | { id: number; roleId: number; roleName?: string | null }
     | undefined;
 
-  if (!user) {
+  if (!userPayload || !userPayload.id) {
     return c.json({ success: false, message: "Authentification requise." }, 401);
   }
 
-  try {
-    const fullUser = await findUserById(user.id);
+  const fullUser = await findUserById(userPayload.id);
 
-    if (!fullUser) {
-      return c.json({ success: false, message: "Utilisateur non trouvé." }, 404);
-    }
-
-    return c.json({
-      success: true,
-      data: {
-        id: fullUser.id,
-        firstName: fullUser.firstName,
-        lastName: fullUser.lastName,
-        email: fullUser.email,
-        phone: fullUser.phone,
-        photo: fullUser.photo,
-        roleId: fullUser.roleId,
-        roleName: user.roleName ?? null,
-        status: fullUser.status,
-        createdAt: fullUser.createdAt,
-      },
-    });
-  } catch (error) {
-    console.error("GetMe error:", error);
-    return c.json({ success: false, message: "Erreur serveur." }, 500);
+  if (!fullUser) {
+    return c.json({ success: false, message: "Utilisateur non trouvé." }, 404);
   }
+
+  // Return the user object directly (without a wrapper)
+  const { password, ...safeUser } = fullUser;
+  return c.json(safeUser);
 }
 
 export async function getMyPermissions(c: Context) {
@@ -270,10 +249,7 @@ export async function resetPassword(c: Context) {
       );
     }
 
-    const result = await resetPasswordService(
-      code,
-      password
-    );
+    const result = await resetPasswordService(code, password);
 
     if (!result.success) {
       return c.json(result, 400);
@@ -314,6 +290,7 @@ export async function verifyResetCode(c: Context) {
     );
   }
 }
+
 export async function logout(c: Context) {
   try {
     const body = await c.req.json();

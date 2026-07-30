@@ -9,13 +9,13 @@ import {
   Pressable,
 } from "react-native";
 import { usePermissions } from "@/contexts/PermissionsContext";
-import { getPermittedModules } from "@/constants/modules";
+import { getTabModules } from "@/constants/modules";
 
 export default function MoreScreen() {
   const { permissions, isAdmin } = usePermissions();
 
-  const accessibleModules = useMemo(
-    () => getPermittedModules(permissions, isAdmin),
+  const { moreModules } = useMemo(
+    () => getTabModules(permissions, isAdmin),
     [isAdmin, permissions]
   );
 
@@ -25,15 +25,10 @@ export default function MoreScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={styles.heroCard}>
-        <Text style={styles.title}>Tous les modules</Text>
-        <Text style={styles.subtitle}>
-          {accessibleModules.length} module{accessibleModules.length > 1 ? "s" : ""} visible{accessibleModules.length > 1 ? "s" : ""} selon les droits du rôle.
-        </Text>
-      </View>
+      {/* ✅ Hero card removed */}
 
       <View style={styles.grid}>
-        {accessibleModules.map((mod) => (
+        {moreModules.map((mod) => (
           <Pressable
             key={mod.route}
             style={({ pressed }) => [
@@ -67,28 +62,6 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 28,
-  },
-  heroCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 14,
-    shadowColor: "#0F2A1D",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.06,
-    shadowRadius: 24,
-    elevation: 3,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#0F2A1D",
-  },
-  subtitle: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: "#5C8A72",
-    marginTop: 6,
   },
   grid: {
     flexDirection: "row",

@@ -71,6 +71,13 @@
       "when": 1785410267422,
       "tag": "0009_panoramic_klaw",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1785416709484,
+      "tag": "0010_daffy_shooting_star",
+      "breakpoints": true
     }
   ]
 }

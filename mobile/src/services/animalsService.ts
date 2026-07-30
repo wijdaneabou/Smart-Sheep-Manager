@@ -17,7 +17,6 @@ export type Animal = {
   bcs: string | null;
   healthStatus: HealthStatus;
   exploitationId: number | null;
-
   photoUrl: string | null;
 
   createdAt: string;
@@ -30,6 +29,7 @@ export type Pagination = {
   limit: number;
   totalPages?: number;
 };
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pedigree / Genealogical Tree
@@ -68,7 +68,8 @@ export interface PedigreeResult {
 }
 
 function extractError(err: any): string {
-    //console.log("FULL ERROR RESPONSE DATA:", JSON.stringify(err?.response?.data, null, 2));
+  console.log("FULL ERROR RESPONSE DATA:", JSON.stringify(err?.response?.data, null, 2));
+
   const apiError = err?.response?.data?.error;
   if (typeof apiError === "string") return apiError;
   return err?.response?.data?.message ?? "Impossible de contacter le serveur.";
@@ -103,8 +104,13 @@ export async function createAnimal(input: {
   breed: Breed;
   sex: Sex;
   birthDate?: string;
+
   fatherRfid?: string;
   motherRfid?: string;
+
+  fatherId?: number;
+  motherId?: number;
+
   weight?: number;
   bcs?: number;
   healthStatus?: HealthStatus;
@@ -183,11 +189,10 @@ export async function updateAnimal(
     birthDate: string | null;
     fatherRfid: string | null;
     motherRfid: string | null;
-    weight: number |null;
-    bcs: number |null;
+    weight: number | null;
+    bcs: number | null;
     healthStatus: HealthStatus;
-    exploitationId: number |null;
-
+    exploitationId: number | null;
     photoUri: string;
   }>
 ) {
@@ -258,6 +263,7 @@ export async function deleteAnimal(id: number) {
     return { success: false as const, message: extractError(err) };
   }
 }
+
 
 /**
  * Récupère l'arbre généalogique (3 générations) d'un animal.

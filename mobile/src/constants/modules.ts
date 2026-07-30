@@ -53,6 +53,21 @@ export interface SSMModule {
 }
 
 export const MODULES: SSMModule[] = [
+  // SWAPPED: communication now priority 1, exploitations priority 2
+  {
+    key: "communication",
+    module: "COMMUNICATION",
+    icon: "💬",
+    ionicon: "chatbubbles-outline",
+    title: "Communication",
+    subtitle: "Messages, notifications, canaux",
+    color: "#1F7A4D",
+    bgColor: "#E6F8ED",
+    route: "/communication",
+    available: true,
+    priority: 1,
+    tabLabel: "Comm",
+  },
   {
     key: "exploitations",
     module: "EXPLOITATIONS",
@@ -64,7 +79,7 @@ export const MODULES: SSMModule[] = [
     bgColor: "#E6F8ED",
     route: "/exploitations",
     available: true,
-    priority: 1,
+    priority: 14,
     tabLabel: "Exploit",
   },
   {
@@ -78,6 +93,7 @@ export const MODULES: SSMModule[] = [
     bgColor: "#F3E8FF",
     route: "/herd",
     available: true,
+
     priority: 2,
     tabLabel: "Troupeau",
   },
@@ -92,7 +108,11 @@ export const MODULES: SSMModule[] = [
     bgColor: "#E6F8ED",
     route: "/health",
     available: true,
+
+    
     priority: 3,
+
+
     tabLabel: "Santé",
   },
   {
@@ -105,8 +125,8 @@ export const MODULES: SSMModule[] = [
     color: "#2F855A",
     bgColor: "#E6F8ED",
     route: "/reproduction",
-    available: false,
-    priority: 4,
+    available: true,
+    priority: 5,
     tabLabel: "Repro",
   },
   {
@@ -119,23 +139,9 @@ export const MODULES: SSMModule[] = [
     color: "#15803D",
     bgColor: "#E6F8ED",
     route: "/feeding",
-    available: false,
-    priority: 5,
-    tabLabel: "Alim",
-  },
-  {
-    key: "communication",
-    module: "COMMUNICATION",
-    icon: "💬",
-    ionicon: "chatbubbles-outline",
-    title: "Communication",
-    subtitle: "Messages, notifications, canaux",
-    color: "#1F7A4D",
-    bgColor: "#E6F8ED",
-    route: "/communication",
-    available: false,
+    available: true,
     priority: 6,
-    tabLabel: "Comm",
+    tabLabel: "Alim",
   },
   {
     key: "fattening",
@@ -147,7 +153,7 @@ export const MODULES: SSMModule[] = [
     color: "#2F855A",
     bgColor: "#E6F8ED",
     route: "/fattening",
-    available: false,
+    available: true,
     priority: 7,
     tabLabel: "Engrais",
   },
@@ -161,7 +167,7 @@ export const MODULES: SSMModule[] = [
     color: "#1F7A4D",
     bgColor: "#E6F8ED",
     route: "/iot",
-    available: false,
+    available: true,
     priority: 8,
     tabLabel: "IoT",
   },
@@ -175,7 +181,7 @@ export const MODULES: SSMModule[] = [
     color: "#15803D",
     bgColor: "#E6F8ED",
     route: "/finance",
-    available: false,
+    available: true,
     priority: 9,
     tabLabel: "Finance",
   },
@@ -189,7 +195,7 @@ export const MODULES: SSMModule[] = [
     color: "#15803D",
     bgColor: "#E6F8ED",
     route: "/commercial",
-    available: false,
+    available: true,
     priority: 10,
     tabLabel: "Ventes",
   },
@@ -203,7 +209,7 @@ export const MODULES: SSMModule[] = [
     color: "#166534",
     bgColor: "#E6F8ED",
     route: "/bi",
-    available: false,
+    available: true,
     priority: 11,
     tabLabel: "BI",
   },
@@ -217,7 +223,7 @@ export const MODULES: SSMModule[] = [
     color: "#2F855A",
     bgColor: "#E6F8ED",
     route: "/reporting",
-    available: false,
+    available: true,
     priority: 12,
     tabLabel: "Rapports",
   },
@@ -231,7 +237,7 @@ export const MODULES: SSMModule[] = [
     color: "#166534",
     bgColor: "#E6F8ED",
     route: "/ai",
-    available: false,
+    available: true,
     priority: 13,
     tabLabel: "IA",
   },
@@ -245,8 +251,8 @@ export const MODULES: SSMModule[] = [
     color: "#1B7A4B",
     bgColor: "#E6F8ED",
     route: "/ai-assistant",
-    available: false,
-    priority: 14,
+    available: true,
+    priority: 2,
     tabLabel: "Coach",
   },
   {
@@ -311,17 +317,14 @@ export const getTabModules = (
 } => {
   const permitted = getPermittedModules(permissions, isAdmin);
 
-  if (isAdmin) {
-    const exploitationsModule = permitted.find((mod) => mod.key === "exploitations");
-    const usersModule = permitted.find((mod) => mod.key === "users");
-    const adminModule = permitted.find((mod) => mod.key === "permissions");
-    const tabModules = [exploitationsModule, usersModule, adminModule].filter(Boolean) as SSMModule[];
-    const tabKeys = new Set(tabModules.map((mod) => mod.key));
-    const moreModules = permitted.filter((mod) => !tabKeys.has(mod.key));
-    return { tabModules, moreModules };
-  }
+  // For tab selection, we exclude adminOnly modules (they go to More)
+  const tabCandidates = permitted.filter((mod) => !mod.adminOnly);
 
-  const tabModules = permitted.slice(0, 2);
-  const moreModules = permitted.slice(2);
+  // Take first 3 as tabs, rest as more
+  const tabModules = tabCandidates.slice(0, 3);
+  const moreModules = permitted.filter(
+    (mod) => !tabModules.includes(mod)
+  );
+
   return { tabModules, moreModules };
 };

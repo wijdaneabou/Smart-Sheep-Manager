@@ -21,3 +21,9 @@ export * from "./animalMovements.js";
 export * from "./animalBcsRecords.js";
 
 
+export * from "./animals.js";
+export * from './healthRecords.js';
+export * from './treatments.js';
+export * from './vaccinations.js';
+export * from './veterinaryInterventions.js';
+

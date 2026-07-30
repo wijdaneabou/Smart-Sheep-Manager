@@ -14,10 +14,8 @@ import { requirePermission } from "../middlewares/permissions.middleware.js";
 
 const usersRoutes = new Hono();
 
-// All routes require authentication
 usersRoutes.use("*", isAuthenticated);
 
-// User management endpoints with granular permissions
 usersRoutes.post("/", requirePermission("USERS", "CREATE"), createUserHandler);
 usersRoutes.put("/:id", requirePermission("USERS", "UPDATE"), updateUserHandler);
 usersRoutes.patch("/:id/deactivate", requirePermission("USERS", "UPDATE"), deactivateUserHandler);
