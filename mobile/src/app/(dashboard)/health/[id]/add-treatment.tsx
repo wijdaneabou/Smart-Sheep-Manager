@@ -1,331 +1,61 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  ActivityIndicator,
-  ScrollView,
-  Alert,
-} from "react-native";
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import api from "../../../../services/api";
 
-const FREQUENCIES = [
-  { id: "ONCE_DAILY", label: "1×/jour" },
-  { id: "TWICE_DAILY", label: "2×/jour" },
-  { id: "THREE_TIMES_DAILY", label: "3×/jour" },
-  { id: "WEEKLY", label: "1×/semaine" },
-  { id: "MONTHLY", label: "1×/mois" },
-];
+const FREQUENCIES = [{id:'ONCE_DAILY',label:'1×/jour'}, {id:'TWICE_DAILY',label:'2×/jour'}, {id:'THREE_TIMES_DAILY',label:'3×/jour'}, {id:'WEEKLY',label:'1×/semaine'}, {id:'MONTHLY',label:'1×/mois'}];
+const ROUTES = [{id:'ORAL',label:'Oral'}, {id:'INTRAMUSCULAR',label:'Intramusculaire'}, {id:'INTRAVENOUS',label:'Intraveineux'}, {id:'SUBCUTANEOUS',label:'Sous-cutané'}, {id:'TOPICAL',label:'Topique'}];
 
-const ROUTES = [
-  { id: "ORAL", label: "Oral" },
-  { id: "INTRAMUSCULAR", label: "Intramusculaire" },
-  { id: "INTRAVENOUS", label: "Intraveineux" },
-  { id: "SUBCUTANEOUS", label: "Sous-cutané" },
-  { id: "TOPICAL", label: "Topique" },
-];
-
-export default function AddTreatmentScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const healthRecordId = Number(id);
+export default function AddTreatment() {
+  const { id } = useLocalSearchParams();
   const router = useRouter();
-
-  const [form, setForm] = useState({
-    medicationName: "",
-    dosage: "",
-    frequency: "ONCE_DAILY",
-    route: "ORAL",
-    startDate: "",
-    durationDays: "",
-    endDate: "",
-    nextDoseDate: "",
-    notes: "",
-  });
-
+  const [form, setForm] = useState({ medicationName:'', dosage:'', frequency:'ONCE_DAILY', route:'ORAL', startDate:'', durationDays:'', endDate:'', nextDoseDate:'', notes:'' });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit() {
-    if (!form.medicationName.trim()) {
-      setError("Le nom du médicament est requis");
-      return;
-    }
-    if (!form.dosage.trim()) {
-      setError("Le dosage est requis");
-      return;
-    }
-    if (!form.startDate.trim()) {
-      setError("La date de début est requise");
-      return;
-    }
-
+  const handleSubmit = async () => {
+    if (!form.medicationName || !form.dosage || !form.startDate) return Alert.alert('Erreur', 'Champs obligatoires');
     setLoading(true);
-    setError(null);
-
     try {
-      const payload = {
-        healthRecordId,
-        medicationName: form.medicationName.trim(),
-        dosage: form.dosage.trim(),
-        frequency: form.frequency,
-        route: form.route,
-        startDate: new Date(form.startDate + "T00:00:00.000Z").toISOString(),
-        durationDays: form.durationDays ? Number(form.durationDays) : undefined,
-        endDate: form.endDate ? new Date(form.endDate + "T00:00:00.000Z").toISOString() : undefined,
-        nextDoseDate: form.nextDoseDate ? new Date(form.nextDoseDate + "T00:00:00.000Z").toISOString() : undefined,
-        notes: form.notes || undefined,
-      };
-
-      await api.post("/health/treatments", payload);
-      Alert.alert("Succès", "Traitement ajouté");
+      await api.post('/health/treatments', { healthRecordId: Number(id), ...form, durationDays: form.durationDays?Number(form.durationDays):undefined, startDate: new Date(form.startDate+'T00:00:00.000Z').toISOString(), endDate: form.endDate?new Date(form.endDate+'T00:00:00.000Z').toISOString():undefined, nextDoseDate: form.nextDoseDate?new Date(form.nextDoseDate+'T00:00:00.000Z').toISOString():undefined });
+      Alert.alert('Succès', 'Traitement ajouté');
       router.back();
-    } catch (err) {
-      setError("Erreur lors de l'ajout du traitement");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
+    } catch (e) { Alert.alert('Erreur', 'Échec'); } finally { setLoading(false); }
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-          <Ionicons name="arrow-back" size={22} color="#14532d" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Nouveau traitement</Text>
-        <View style={{ width: 32 }} />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Médicament</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Nom du médicament"
-            value={form.medicationName}
-            onChangeText={(text) => setForm({ ...form, medicationName: text })}
-          />
-
-          <Text style={styles.sectionTitle}>Dosage</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ex: 10 ml, 2 comprimés"
-            value={form.dosage}
-            onChangeText={(text) => setForm({ ...form, dosage: text })}
-          />
-
-          <Text style={styles.sectionTitle}>Fréquence</Text>
-          <View style={styles.optionsRow}>
-            {FREQUENCIES.map((f) => (
-              <Pressable
-                key={f.id}
-                style={[
-                  styles.optionChip,
-                  form.frequency === f.id && styles.optionChipSelected,
-                ]}
-                onPress={() => setForm({ ...form, frequency: f.id })}
-              >
-                <Text
-                  style={[
-                    styles.optionChipText,
-                    form.frequency === f.id && styles.optionChipTextSelected,
-                  ]}
-                >
-                  {f.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Text style={styles.sectionTitle}>Voie d'administration</Text>
-          <View style={styles.optionsRow}>
-            {ROUTES.map((r) => (
-              <Pressable
-                key={r.id}
-                style={[
-                  styles.optionChip,
-                  form.route === r.id && styles.optionChipSelected,
-                ]}
-                onPress={() => setForm({ ...form, route: r.id })}
-              >
-                <Text
-                  style={[
-                    styles.optionChipText,
-                    form.route === r.id && styles.optionChipTextSelected,
-                  ]}
-                >
-                  {r.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Text style={styles.sectionTitle}>Date de début</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="AAAA-MM-JJ"
-            value={form.startDate}
-            onChangeText={(text) => setForm({ ...form, startDate: text })}
-          />
-
-          <Text style={styles.sectionTitle}>Durée (jours) - optionnel</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ex: 5"
-            keyboardType="numeric"
-            value={form.durationDays}
-            onChangeText={(text) => setForm({ ...form, durationDays: text })}
-          />
-
-          <Text style={styles.sectionTitle}>Date de fin - optionnel</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="AAAA-MM-JJ"
-            value={form.endDate}
-            onChangeText={(text) => setForm({ ...form, endDate: text })}
-          />
-
-          <Text style={styles.sectionTitle}>Prochaine dose - optionnel</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="AAAA-MM-JJ"
-            value={form.nextDoseDate}
-            onChangeText={(text) => setForm({ ...form, nextDoseDate: text })}
-          />
-
-          <Text style={styles.sectionTitle}>Notes - optionnel</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Notes supplémentaires"
-            multiline
-            numberOfLines={3}
-            value={form.notes}
-            onChangeText={(text) => setForm({ ...form, notes: text })}
-          />
-
-          {error && <Text style={styles.error}>{error}</Text>}
-
-          <View style={styles.actionsRow}>
-            <Pressable style={styles.cancelButton} onPress={() => router.back()}>
-              <Text style={styles.cancelButtonText}>ANNULER</Text>
-            </Pressable>
-            <Pressable style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.submitButtonText}>AJOUTER</Text>
-              )}
-            </Pressable>
-          </View>
-        </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}><Pressable onPress={()=>router.back()}><Text style={styles.back}>‹</Text></Pressable><Text style={styles.headerTitle}>Ajouter un traitement</Text><View style={{width:32}}/></View>
+      <ScrollView style={styles.container}>
+        <Text style={styles.label}>Médicament *</Text><TextInput style={styles.input} value={form.medicationName} onChangeText={t=>setForm({...form, medicationName:t})} />
+        <Text style={styles.label}>Dosage *</Text><TextInput style={styles.input} value={form.dosage} onChangeText={t=>setForm({...form, dosage:t})} />
+        <Text style={styles.label}>Fréquence</Text>
+        <View style={styles.row}>{FREQUENCIES.map(f=><Pressable key={f.id} style={[styles.chip, form.frequency===f.id&&styles.chipActive]} onPress={()=>setForm({...form, frequency:f.id})}><Text>{f.label}</Text></Pressable>)}</View>
+        <Text style={styles.label}>Voie</Text>
+        <View style={styles.row}>{ROUTES.map(r=><Pressable key={r.id} style={[styles.chip, form.route===r.id&&styles.chipActive]} onPress={()=>setForm({...form, route:r.id})}><Text>{r.label}</Text></Pressable>)}</View>
+        <Text style={styles.label}>Date de début *</Text><TextInput style={styles.input} placeholder="YYYY-MM-DD" value={form.startDate} onChangeText={t=>setForm({...form, startDate:t})} />
+        <Text style={styles.label}>Durée (jours)</Text><TextInput style={styles.input} keyboardType="numeric" value={form.durationDays} onChangeText={t=>setForm({...form, durationDays:t})} />
+        <Text style={styles.label}>Date de fin</Text><TextInput style={styles.input} placeholder="YYYY-MM-DD" value={form.endDate} onChangeText={t=>setForm({...form, endDate:t})} />
+        <Text style={styles.label}>Prochaine dose</Text><TextInput style={styles.input} placeholder="YYYY-MM-DD" value={form.nextDoseDate} onChangeText={t=>setForm({...form, nextDoseDate:t})} />
+        <Text style={styles.label}>Notes</Text><TextInput style={[styles.input, styles.textArea]} multiline value={form.notes} onChangeText={t=>setForm({...form, notes:t})} />
+        <Pressable style={styles.submit} onPress={handleSubmit} disabled={loading}>{loading?<ActivityIndicator/>:<Text style={styles.submitText}>AJOUTER</Text>}</Pressable>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const GREEN = "#14532d";
-const BORDER = "#e5e0d8";
-
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#faf6f1" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: GREEN },
-  container: { padding: 16, paddingTop: 4 },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#444",
-    marginTop: 12,
-    marginBottom: 6,
-  },
-  input: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 15,
-    color: "#1f2937",
-    marginBottom: 6,
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: "top",
-  },
-  optionsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 4,
-  },
-  optionChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  optionChipSelected: {
-    backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
-  optionChipText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#555",
-  },
-  optionChipTextSelected: {
-    color: "#fff",
-  },
-  error: {
-    color: "#dc2626",
-    backgroundColor: "#fee2e2",
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 8,
-    fontSize: 13,
-  },
-  actionsRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 16,
-  },
-  cancelButton: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    borderRadius: 10,
-    paddingVertical: 15,
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-  cancelButtonText: { color: "#444", fontWeight: "700", fontSize: 13 },
-  submitButton: {
-    flex: 2,
-    backgroundColor: GREEN,
-    borderRadius: 10,
-    paddingVertical: 15,
-    alignItems: "center",
-  },
-  submitButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  safeArea: { flex:1, backgroundColor:'#faf6f1' },
+  header: { flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingHorizontal:16, paddingVertical:12 },
+  back: { fontSize:28, color:'#1a1a1a' },
+  headerTitle: { fontSize:17, fontWeight:'700', color:'#14532d' },
+  container: { padding:16 },
+  label: { fontWeight:'600', marginTop:12, marginBottom:4 },
+  input: { backgroundColor:'#fff', borderWidth:1, borderColor:'#e5e0d8', borderRadius:10, padding:12, fontSize:15 },
+  textArea: { height:80, textAlignVertical:'top' },
+  row: { flexDirection:'row', flexWrap:'wrap', gap:8, marginVertical:4 },
+  chip: { paddingHorizontal:12, paddingVertical:8, borderRadius:20, backgroundColor:'#fff', borderWidth:1, borderColor:'#ddd' },
+  chipActive: { backgroundColor:'#14532d', borderColor:'#14532d' },
+  submit: { backgroundColor:'#14532d', borderRadius:10, padding:16, alignItems:'center', marginTop:20 },
+  submitText: { color:'#fff', fontWeight:'700', fontSize:15 },
 });

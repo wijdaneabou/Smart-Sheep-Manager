@@ -8,8 +8,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -40,10 +38,13 @@ export default function HealthRecordsList() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function fetchRecords() {
+  // ⚠️ Remplacez cet ID par un paramètre dynamique si besoin (ex: useLocalSearchParams)
+  const animalId = 2;
+
+  const fetchRecords = useCallback(async () => {
     setError(null);
     try {
-      const response = await api.get('/health/animals/2/records');
+      const response = await api.get(`/health/animals/${animalId}/records`);
       setRecords(response.data.data);
     } catch (err) {
       setError("Erreur de chargement des dossiers");
@@ -51,27 +52,26 @@ export default function HealthRecordsList() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [animalId]);
 
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
       fetchRecords();
-    }, [])
+    }, [fetchRecords])
   );
 
-  async function onRefresh() {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchRecords();
     setRefreshing(false);
-  }
+  }, [fetchRecords]);
 
   const filteredRecords = records.filter((r) =>
     r.diagnosis?.toLowerCase().includes(search.toLowerCase()) ||
     String(r.animalId).includes(search)
   );
 
-  // Live stat calculation for the Report Banner
   const attentionCount = records.filter((r) =>
     ['SURVEILLANCE', 'SICK', 'UNDER_TREATMENT'].includes(r.status)
   ).length;
@@ -99,10 +99,7 @@ export default function HealthRecordsList() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}
-      >
+      <View style={styles.container}>
         {/* Modern Header */}
         <View style={styles.header}>
           <View style={styles.headerTitles}>
@@ -111,8 +108,6 @@ export default function HealthRecordsList() {
               {filteredRecords.length} dossier{filteredRecords.length > 1 ? "s" : ""} enregistré{filteredRecords.length > 1 ? "s" : ""}
             </Text>
           </View>
-
-          {/* Elevated Rapport Pill Button */}
           <Pressable
             style={({ pressed }) => [
               styles.reportHeaderPill,
@@ -165,7 +160,6 @@ export default function HealthRecordsList() {
             />
           }
           ListHeaderComponent={
-            /* Interactive Report Analytics Card Banner */
             <Pressable
               style={({ pressed }) => [
                 styles.reportBannerCard,
@@ -186,7 +180,6 @@ export default function HealthRecordsList() {
                   </Text>
                 </View>
               </View>
-
               <View style={styles.reportBannerCTA}>
                 <Text style={styles.reportBannerCTAText}>Voir →</Text>
               </View>
@@ -230,11 +223,8 @@ export default function HealthRecordsList() {
                 ]}
                 onPress={() => router.push(`/health/${item.id}/detail`)}
               >
-                {/* Status accent strip */}
                 <View style={[styles.cardAccent, { backgroundColor: statusInfo.color }]} />
-
                 <View style={styles.cardInner}>
-                  {/* Top Row */}
                   <View style={styles.cardTop}>
                     <View style={styles.animalMeta}>
                       <View style={[styles.animalAvatar, { backgroundColor: statusInfo.bg }]}>
@@ -251,7 +241,6 @@ export default function HealthRecordsList() {
                         )}
                       </View>
                     </View>
-
                     <View style={styles.badgeStack}>
                       <View style={[styles.badge, { backgroundColor: statusInfo.bg }]}>
                         <Text style={[styles.badgeText, { color: statusInfo.color }]}>
@@ -268,10 +257,8 @@ export default function HealthRecordsList() {
                     </View>
                   </View>
 
-                  {/* Divider */}
                   <View style={styles.divider} />
 
-                  {/* Info Grid */}
                   <View style={styles.infoGrid}>
                     {item.symptoms && (
                       <View style={styles.infoItem}>
@@ -293,7 +280,6 @@ export default function HealthRecordsList() {
                     </View>
                   </View>
 
-                  {/* Actions */}
                   <View style={styles.cardActions}>
                     <Pressable
                       style={({ pressed }) => [
@@ -322,16 +308,16 @@ export default function HealthRecordsList() {
             );
           }}
         />
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }
 
-/* ─── Modern White & Emerald Theme Styles ─── */
+// ─── Styles ────────────────────────────────────────────────────
 const WHITE = "#FFFFFF";
 const LIGHT_BG = "#F9FAFB";
 const BORDER_LIGHT = "#F3F4F6";
-const PRIMARY_GREEN = "#10B981"; // Vibrant Emerald
+const PRIMARY_GREEN = "#10B981";
 const DARK_EMERALD = "#047857";
 const SOFT_GREEN_BG = "#ECFDF5";
 const DARK_GREEN = "#064E3B";
@@ -341,8 +327,6 @@ const TEXT_MUTED = "#6B7280";
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: WHITE },
   container: { flex: 1, backgroundColor: WHITE },
-
-  /* Loading */
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -370,8 +354,6 @@ const styles = StyleSheet.create({
     color: TEXT_MUTED,
     fontWeight: "600",
   },
-
-  /* Header */
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -394,8 +376,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: "500",
   },
-
-  /* Upgraded Header Rapport Pill */
   reportHeaderPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -441,8 +421,6 @@ const styles = StyleSheet.create({
     top: 6,
     right: 8,
   },
-
-  /* Search */
   searchWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -471,8 +449,6 @@ const styles = StyleSheet.create({
     color: TEXT_MUTED,
     fontWeight: "700",
   },
-
-  /* Error */
   errorBanner: {
     backgroundColor: "#FEF2F2",
     marginHorizontal: 24,
@@ -488,15 +464,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-
-  /* List */
   listContent: {
     paddingHorizontal: 24,
     paddingBottom: 40,
     gap: 16,
   },
-
-  /* Report Hero Banner (List Header) */
   reportBannerCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -555,8 +527,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
   },
-
-  /* Card */
   card: {
     backgroundColor: WHITE,
     borderRadius: 20,
@@ -581,8 +551,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-
-  /* Card Top */
   cardTop: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -623,8 +591,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontStyle: "italic",
   },
-
-  /* Badges */
   badgeStack: {
     gap: 6,
     alignItems: "flex-end",
@@ -639,15 +605,11 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     textTransform: "uppercase",
   },
-
-  /* Divider */
   divider: {
     height: 1,
     backgroundColor: BORDER_LIGHT,
     marginVertical: 16,
   },
-
-  /* Info Grid */
   infoGrid: {
     gap: 10,
   },
@@ -671,8 +633,6 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginLeft: 12,
   },
-
-  /* Card Actions */
   cardActions: {
     flexDirection: "row",
     gap: 12,
@@ -709,8 +669,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: TEXT_MAIN,
   },
-
-  /* Empty State */
   emptyState: {
     alignItems: "center",
     marginTop: 48,
@@ -738,8 +696,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
-
-  /* Add Card */
   addCard: {
     marginTop: 8,
     borderWidth: 2,

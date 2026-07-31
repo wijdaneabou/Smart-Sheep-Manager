@@ -5,78 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1784301999837,
-      "tag": "0000_outgoing_colossus",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1784323495123,
-      "tag": "0001_sudden_gravity",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1784323967827,
-      "tag": "0002_careful_fat_cobra",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1784630918392,
-      "tag": "0003_first_slayback",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1784907014424,
-      "tag": "0004_mute_rocket_raccoon",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "5",
-      "when": 1784998829869,
-      "tag": "0009_last_hiroim",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "5",
-      "when": 1785200000000,
-      "tag": "00012_animal_movements",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "5",
-      "when": 1785103203288,
-      "tag": "00010_aberrant_venom",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "5",
-      "when": 1785162904724,
-      "tag": "00011_grey_james_howlett",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "5",
-      "when": 1785410267422,
-      "tag": "0009_panoramic_klaw",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "5",
-      "when": 1785416709484,
-      "tag": "0010_daffy_shooting_star",
+      "when": 1785454067009,
+      "tag": "0000_grey_scalphunter",
       "breakpoints": true
     }
   ]

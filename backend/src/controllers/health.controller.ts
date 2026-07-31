@@ -18,7 +18,6 @@ import { eq } from 'drizzle-orm';
 const healthService = new HealthService();
 
 export const HealthController = {
-
   // ============================================
   // Health Records (US-5.1)
   // ============================================
@@ -118,7 +117,6 @@ export const HealthController = {
       if (error.message === 'Animal non trouvé') {
         return c.json({ success: false, message: 'Animal non trouvé' }, 404);
       }
-
       return c.json({ success: false, message: 'Erreur lors du chargement du carnet sanitaire', errors: error.message }, 400);
     }
   },

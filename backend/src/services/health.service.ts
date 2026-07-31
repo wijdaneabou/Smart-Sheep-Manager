@@ -6,9 +6,9 @@ import {
   vaccinations,
   veterinaryInterventions,
   NewHealthRecord,
-  NewTreatment
+  NewTreatment,
 } from '../db/schema/index.js';
-import { eq, desc, inArray, sql, or } from 'drizzle-orm';
+import { eq, desc, inArray, sql } from 'drizzle-orm';
 
 export type CarnetEvent = {
   type: 'health_record' | 'treatment' | 'vaccination';
@@ -60,6 +60,7 @@ export class HealthService {
   }
 
   async createHealthRecord(data: NewHealthRecord) {
+    // Insérer le nouveau dossier
     const [recordId] = await db
       .insert(healthRecords)
       .values({
@@ -69,11 +70,11 @@ export class HealthService {
       })
       .$returningId();
 
+    // Récupérer l'enregistrement complet
     const [created] = await db
       .select()
       .from(healthRecords)
       .where(eq(healthRecords.id, recordId.id));
-
     return created;
   }
 
@@ -90,7 +91,6 @@ export class HealthService {
       .select()
       .from(healthRecords)
       .where(eq(healthRecords.id, id));
-
     return record;
   }
 
@@ -99,14 +99,10 @@ export class HealthService {
       .select()
       .from(healthRecords)
       .where(eq(healthRecords.id, id));
-
     if (!record) {
       throw new Error('Dossier médical non trouvé');
     }
-
-    await db
-      .delete(healthRecords)
-      .where(eq(healthRecords.id, id));
+    await db.delete(healthRecords).where(eq(healthRecords.id, id));
   }
 
   // ============================================
@@ -143,7 +139,6 @@ export class HealthService {
       .select()
       .from(treatments)
       .where(eq(treatments.id, treatmentId.id));
-
     return created;
   }
 
@@ -160,7 +155,6 @@ export class HealthService {
       .select()
       .from(treatments)
       .where(eq(treatments.id, id));
-
     return treatment;
   }
 
@@ -179,7 +173,6 @@ export class HealthService {
       .select()
       .from(treatments)
       .where(eq(treatments.id, id));
-
     return treatment;
   }
 
@@ -188,14 +181,10 @@ export class HealthService {
       .select()
       .from(treatments)
       .where(eq(treatments.id, id));
-
     if (!treatment) {
       throw new Error('Traitement non trouvé');
     }
-
-    await db
-      .delete(treatments)
-      .where(eq(treatments.id, id));
+    await db.delete(treatments).where(eq(treatments.id, id));
   }
 
   // ============================================
@@ -232,7 +221,6 @@ export class HealthService {
       .select()
       .from(vaccinations)
       .where(eq(vaccinations.id, vaccinationId.id));
-
     return created;
   }
 
@@ -249,7 +237,6 @@ export class HealthService {
       .select()
       .from(vaccinations)
       .where(eq(vaccinations.id, id));
-
     return vaccination;
   }
 
@@ -267,7 +254,6 @@ export class HealthService {
       .select()
       .from(vaccinations)
       .where(eq(vaccinations.id, id));
-
     return vaccination;
   }
 
@@ -276,14 +262,10 @@ export class HealthService {
       .select()
       .from(vaccinations)
       .where(eq(vaccinations.id, id));
-
     if (!vaccination) {
       throw new Error('Vaccination non trouvée');
     }
-
-    await db
-      .delete(vaccinations)
-      .where(eq(vaccinations.id, id));
+    await db.delete(vaccinations).where(eq(vaccinations.id, id));
   }
 
   // ============================================
@@ -291,6 +273,7 @@ export class HealthService {
   // ============================================
 
   async getAnimalCarnet(animalId: number): Promise<AnimalCarnet> {
+    // ✅ Récupérer l'animal sans filtre deleted_at
     const [animal] = await db
       .select()
       .from(animals)
@@ -374,37 +357,29 @@ export class HealthService {
   // ============================================
 
   async getHealthReport() {
-    // Total des animaux
-    const [totalAnimalsResult] = await db
+    // ✅ Plus de filtre deleted_at
+    const totalAnimalsResult = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(animals);
+    const totalAnimals = totalAnimalsResult[0]?.count || 0;
 
-    const totalAnimals = totalAnimalsResult?.count || 0;
-
-    // Animaux décédés
-    const [deceasedResult] = await db
+    const deceasedResult = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(animals)
       .where(eq(animals.healthStatus, 'DECEASED'));
+    const deceased = deceasedResult[0]?.count || 0;
 
-    const deceased = deceasedResult?.count || 0;
-
-    // Animaux malades (SICK uniquement)
-    const [sickResult] = await db
+    const sickResult = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(animals)
       .where(eq(animals.healthStatus, 'SICK'));
+    const sick = sickResult[0]?.count || 0;
 
-    const sick = sickResult?.count || 0;
-
-    // Total des dossiers médicaux
-    const [totalRecordsResult] = await db
+    const totalRecordsResult = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(healthRecords);
+    const totalHealthRecords = totalRecordsResult[0]?.count || 0;
 
-    const totalHealthRecords = totalRecordsResult?.count || 0;
-
-    // Distribution par statut
     const statusDistribution = await db
       .select({
         status: healthRecords.status,
@@ -414,21 +389,18 @@ export class HealthService {
       .groupBy(healthRecords.status);
 
     const distribution: Record<string, number> = {};
-    statusDistribution.forEach(row => {
+    statusDistribution.forEach((row) => {
       distribution[row.status] = Number(row.count);
     });
 
-    // Temps de guérison moyen
-    const [avgRecoveryResult] = await db
+    const avgRecoveryResult = await db
       .select({
         avgDays: sql<number>`AVG(DATEDIFF(${healthRecords.updatedAt}, ${healthRecords.createdAt}))`,
       })
       .from(healthRecords)
       .where(eq(healthRecords.status, 'RECOVERED'));
+    const avgRecoveryDays = Math.round(avgRecoveryResult[0]?.avgDays || 0);
 
-    const avgRecoveryDays = Math.round(avgRecoveryResult?.avgDays || 0);
-
-    // Dernières activités
     const recentHealthRecords = await db
       .select({
         type: sql<string>`'health_record'`,
@@ -443,10 +415,9 @@ export class HealthService {
       .select({
         type: sql<string>`'treatment'`,
         date: treatments.createdAt,
-        description: sql<string>`CONCAT('Traitement: ', ${treatments.medicationName}, ' pour animal #', ${healthRecords.animalId})`,
+        description: sql<string>`CONCAT('Traitement: ', ${treatments.medicationName}, ' pour dossier #', ${treatments.healthRecordId})`,
       })
       .from(treatments)
-      .innerJoin(healthRecords, eq(treatments.healthRecordId, healthRecords.id))
       .orderBy(desc(treatments.createdAt))
       .limit(5);
 
@@ -469,21 +440,19 @@ export class HealthService {
     const recentActivities = allActivities
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5)
-      .map(activity => ({
+      .map((activity) => ({
         type: activity.type,
         date: activity.date,
         description: activity.description,
       }));
 
-    // Calcul des taux
     const morbidityRate = totalAnimals > 0 ? (sick / totalAnimals) * 100 : 0;
     const mortalityRate = totalAnimals > 0 ? (deceased / totalAnimals) * 100 : 0;
 
-    // Coût moyen (proxy)
-    const [treatmentsCountResult] = await db
+    const treatmentsCountResult = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(treatments);
-    const treatmentsCount = treatmentsCountResult?.count || 0;
+    const treatmentsCount = treatmentsCountResult[0]?.count || 0;
     const avgCostPerAnimal = totalAnimals > 0 ? (treatmentsCount / totalAnimals) * 10 : 0;
 
     return {
@@ -534,7 +503,6 @@ export class HealthService {
       .select()
       .from(veterinaryInterventions)
       .where(eq(veterinaryInterventions.id, interventionId.id));
-
     return created;
   }
 
@@ -551,7 +519,6 @@ export class HealthService {
       .select()
       .from(veterinaryInterventions)
       .where(eq(veterinaryInterventions.id, id));
-
     return intervention;
   }
 
@@ -560,13 +527,9 @@ export class HealthService {
       .select()
       .from(veterinaryInterventions)
       .where(eq(veterinaryInterventions.id, id));
-
     if (!intervention) {
       throw new Error('Intervention non trouvée');
     }
-
-    await db
-      .delete(veterinaryInterventions)
-      .where(eq(veterinaryInterventions.id, id));
+    await db.delete(veterinaryInterventions).where(eq(veterinaryInterventions.id, id));
   }
 }

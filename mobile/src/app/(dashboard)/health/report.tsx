@@ -48,7 +48,7 @@ export default function HealthReportScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchReport = async () => {
+  const fetchReport = useCallback(async () => {
     setError(null);
     try {
       const response = await api.get("/health/reports/summary");
@@ -59,20 +59,20 @@ export default function HealthReportScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
       fetchReport();
-    }, [])
+    }, [fetchReport])
   );
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchReport();
     setRefreshing(false);
-  };
+  }, [fetchReport]);
 
   const getStatusInfo = (status: string) => {
     return statusConfig[status] || {
@@ -131,7 +131,6 @@ export default function HealthReportScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      {/* Header */}
       <View style={styles.header}>
         <Pressable
           onPress={() => router.back()}
@@ -140,12 +139,10 @@ export default function HealthReportScreen() {
         >
           <Ionicons name="arrow-back" size={18} color="#0F172A" />
         </Pressable>
-
         <View style={styles.headerTitleBlock}>
           <Text style={styles.headerTag}>ANALYTIQUE</Text>
           <Text style={styles.headerTitle}>Rapport sanitaire</Text>
         </View>
-
         <View style={{ width: 40 }} />
       </View>
 
@@ -161,7 +158,6 @@ export default function HealthReportScreen() {
           />
         }
       >
-        {/* KPI Metrics Grid */}
         <View style={styles.kpiGrid}>
           {kpiItems.map((kpi, idx) => (
             <View key={idx} style={styles.kpiCard}>
@@ -175,7 +171,6 @@ export default function HealthReportScreen() {
           ))}
         </View>
 
-        {/* Status Distribution */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Répartition des statuts</Text>
@@ -201,7 +196,6 @@ export default function HealthReportScreen() {
                       <Text style={styles.statusPercentageText}>({percentage}%)</Text>
                     </View>
                   </View>
-
                   <View style={styles.progressBarBg}>
                     <View
                       style={[
@@ -219,7 +213,6 @@ export default function HealthReportScreen() {
           )}
         </View>
 
-        {/* Recent Activities */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Dernières activités</Text>
@@ -247,7 +240,6 @@ export default function HealthReportScreen() {
                   <View style={styles.activityAvatar}>
                     <Text style={{ fontSize: 16 }}>{icon}</Text>
                   </View>
-
                   <View style={styles.activityContent}>
                     <Text style={styles.activityDescription}>{activity.description}</Text>
                     <Text style={styles.activityDate}>
@@ -270,19 +262,17 @@ export default function HealthReportScreen() {
   );
 }
 
-/* ─── Modern Ultra White & Emerald Palette ─── */
+// ─── Styles ────────────────────────────────────────────────────
 const COLOR_BG = "#FFFFFF";
 const COLOR_SURFACE = "#FFFFFF";
 const COLOR_BORDER = "#F1F5F9";
-const COLOR_PRIMARY = "#10B981"; // Emerald
-const COLOR_TEXT_DARK = "#0F172A"; // Slate 900
-const COLOR_TEXT_MUTED = "#64748B"; // Slate 500
+const COLOR_PRIMARY = "#10B981";
+const COLOR_TEXT_DARK = "#0F172A";
+const COLOR_TEXT_MUTED = "#64748B";
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: COLOR_BG },
   container: { paddingHorizontal: 20, paddingBottom: 40, gap: 20 },
-
-  /* Loading & Error */
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -313,8 +303,6 @@ const styles = StyleSheet.create({
     color: "#991B1B",
     fontWeight: "600",
   },
-
-  /* Header */
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -334,12 +322,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  btnPressed: {
-    opacity: 0.8,
-  },
-  headerTitleBlock: {
-    alignItems: "center",
-  },
+  btnPressed: { opacity: 0.8 },
+  headerTitleBlock: { alignItems: "center" },
   headerTag: {
     fontSize: 10,
     fontWeight: "800",
@@ -353,8 +337,6 @@ const styles = StyleSheet.create({
     color: COLOR_TEXT_DARK,
     letterSpacing: -0.4,
   },
-
-  /* KPI Grid */
   kpiGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -379,9 +361,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 8,
   },
-  kpiIcon: {
-    fontSize: 14,
-  },
+  kpiIcon: { fontSize: 14 },
   kpiLabel: {
     fontSize: 11,
     fontWeight: "700",
@@ -400,8 +380,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: "500",
   },
-
-  /* Section Card */
   sectionCard: {
     backgroundColor: COLOR_SURFACE,
     borderRadius: 20,
@@ -446,8 +424,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingVertical: 16,
   },
-
-  /* Status Row */
   statusRow: {
     marginBottom: 14,
   },
@@ -499,8 +475,6 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 4,
   },
-
-  /* Activity Timeline */
   activityItem: {
     flexDirection: "row",
     alignItems: "flex-start",
