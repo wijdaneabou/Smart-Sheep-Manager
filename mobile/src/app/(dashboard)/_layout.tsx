@@ -92,7 +92,7 @@ function DashboardBottomBar() {
         {navItems.map((item) => (
           <Pressable
             key={item.key}
-            onPress={() => router.replace(item.href as Href)}
+            onPress={() => router.navigate(item.href as Href)}
             style={({ pressed }) => [
               styles.navItem,
               pressed && styles.navItemPressed,
@@ -116,6 +116,7 @@ export default function DashboardLayout() {
       <DashboardHeader />
       <View style={styles.content}>
         <Tabs
+          backBehavior="history"
           screenOptions={{
             headerShown: false,
             tabBarStyle: { display: "none" },
