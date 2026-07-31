@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -34,7 +35,11 @@ const SEVERITIES = [
 export default function CreateHealthRecord() {
   const router = useRouter();
   const [animals, setAnimals] = useState<any[]>([]);
+  const [filteredAnimals, setFilteredAnimals] = useState<any[]>([]);
   const [loadingAnimals, setLoadingAnimals] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedAnimal, setSelectedAnimal] = useState<any | null>(null);
+
   const [form, setForm] = useState({
     animalId: "",
     status: "HEALTHY",
@@ -45,6 +50,7 @@ export default function CreateHealthRecord() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Charger la liste des animaux une fois
   useEffect(() => {
     api.get("/animals")
       .then(res => {
@@ -53,6 +59,36 @@ export default function CreateHealthRecord() {
       })
       .catch(() => setLoadingAnimals(false));
   }, []);
+
+  // Filtrer les animaux en fonction de la recherche (RFID ou nom)
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredAnimals([]);
+      return;
+    }
+    const query = searchQuery.toLowerCase().trim();
+    const filtered = animals.filter((a) =>
+      a.rfid.toLowerCase().includes(query) ||
+      a.name.toLowerCase().includes(query)
+    );
+    setFilteredAnimals(filtered);
+  }, [searchQuery, animals]);
+
+  // Sélectionner un animal
+  const selectAnimal = (animal: any) => {
+    setSelectedAnimal(animal);
+    setForm({ ...form, animalId: String(animal.id) });
+    setSearchQuery(animal.rfid); // Affiche le RFID dans la barre
+    setFilteredAnimals([]); // Cache la liste
+  };
+
+  // Effacer la sélection
+  const clearSelection = () => {
+    setSelectedAnimal(null);
+    setForm({ ...form, animalId: "" });
+    setSearchQuery("");
+    setFilteredAnimals([]);
+  };
 
   function validate(): string | null {
     if (!form.animalId) return "Veuillez sélectionner un animal.";
@@ -78,7 +114,7 @@ export default function CreateHealthRecord() {
         severity: form.severity,
       });
       Alert.alert("Succès", "Dossier médical créé");
-      router.back();
+      router.replace("/health");
     } catch (err) {
       setError("Erreur lors de la création");
       console.error(err);
@@ -108,57 +144,78 @@ export default function CreateHealthRecord() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          {/* 1. Animal */}
-          <SectionTitle index={1} label="Animal" />
+          {/* 1. Recherche et sélection de l'animal */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Sélectionner un animal</Text>
-            {loadingAnimals ? (
-              <ActivityIndicator style={{ marginTop: 12 }} />
-            ) : (
-              <View style={styles.animalGrid}>
-                {animals.map((animal) => {
-                  const selected = form.animalId === String(animal.id);
-                  return (
+            <Text style={styles.label}>Rechercher un animal par RFID ou nom</Text>
+            <View style={styles.searchWrapper}>
+              <Ionicons name="search-outline" size={20} color="#6B7280" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Ex: MA202600001245 ou Shahin"
+                placeholderTextColor="#9CA3AF"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {selectedAnimal && (
+                <Pressable onPress={clearSelection} style={styles.clearButton}>
+                  <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+                </Pressable>
+              )}
+            </View>
+
+            {/* Liste des résultats */}
+            {filteredAnimals.length > 0 && (
+              <View style={styles.resultsContainer}>
+                <FlatList
+                  data={filteredAnimals}
+                  keyExtractor={(item) => String(item.id)}
+                  renderItem={({ item }) => (
                     <Pressable
-                      key={animal.id}
-                      onPress={() => setForm({ ...form, animalId: String(animal.id) })}
-                      style={[
-                        styles.animalChip,
-                        selected && styles.animalChipSelected,
-                      ]}
+                      style={styles.resultItem}
+                      onPress={() => selectAnimal(item)}
                     >
-                      <Text style={[styles.animalChipIcon, selected && { color: "#fff" }]}>
-                        🐑
-                      </Text>
-                      <Text style={[styles.animalChipLabel, selected && { color: "#fff" }]}>
-                        {animal.name}
-                      </Text>
-                      <Text style={[styles.animalChipSub, selected && { color: "#fff" }]}>
-                        {animal.rfid}
-                      </Text>
+                      <Text style={styles.resultRfid}>{item.rfid}</Text>
+                      <Text style={styles.resultName}>{item.name}</Text>
                     </Pressable>
-                  );
-                })}
+                  )}
+                  keyboardShouldPersistTaps="handled"
+                />
+              </View>
+            )}
+
+            {/* Animal sélectionné */}
+            {selectedAnimal && (
+              <View style={styles.selectedCard}>
+                <View style={styles.selectedContent}>
+                  <Text style={styles.selectedIcon}>🐑</Text>
+                  <View style={styles.selectedInfo}>
+                    <Text style={styles.selectedName}>{selectedAnimal.name}</Text>
+                    <Text style={styles.selectedRfid}>{selectedAnimal.rfid}</Text>
+                  </View>
+                </View>
+                <Pressable onPress={clearSelection} style={styles.selectedClear}>
+                  <Text style={styles.selectedClearText}>✕</Text>
+                </Pressable>
               </View>
             )}
           </View>
 
-          {/* 2. Statut */}
+          {/* 2. Statut (compact) */}
           <SectionTitle index={2} label="Statut" />
           <View style={styles.fieldGroup}>
-            <View style={styles.optionsRow}>
+            <View style={styles.optionsRowSmall}>
               {STATUSES.map((s) => {
                 const selected = form.status === s.id;
                 return (
                   <Pressable
                     key={s.id}
                     onPress={() => setForm({ ...form, status: s.id })}
-                    style={[styles.optionChip, selected && styles.optionChipSelected]}
+                    style={[styles.optionChipSmall, selected && styles.optionChipSelectedSmall]}
                   >
-                    <Text style={[styles.optionChipIcon, selected && { color: "#fff" }]}>
+                    <Text style={[styles.optionChipIconSmall, selected && { color: "#fff" }]}>
                       {s.icon}
                     </Text>
-                    <Text style={[styles.optionChipLabel, selected && { color: "#fff" }]}>
+                    <Text style={[styles.optionChipLabelSmall, selected && { color: "#fff" }]}>
                       {s.label}
                     </Text>
                   </Pressable>
@@ -167,10 +224,10 @@ export default function CreateHealthRecord() {
             </View>
           </View>
 
-          {/* 3. Gravité */}
+          {/* 3. Gravité (compact) */}
           <SectionTitle index={3} label="Gravité" />
           <View style={styles.fieldGroup}>
-            <View style={styles.optionsRow}>
+            <View style={styles.optionsRowSmall}>
               {SEVERITIES.map((s) => {
                 const selected = form.severity === s.id;
                 return (
@@ -178,11 +235,11 @@ export default function CreateHealthRecord() {
                     key={s.id}
                     onPress={() => setForm({ ...form, severity: s.id })}
                     style={[
-                      styles.optionChip,
+                      styles.optionChipSmall,
                       selected && { backgroundColor: s.color, borderColor: s.color },
                     ]}
                   >
-                    <Text style={[styles.optionChipLabel, selected && { color: "#fff" }]}>
+                    <Text style={[styles.optionChipLabelSmall, selected && { color: "#fff" }]}>
                       {s.label}
                     </Text>
                   </Pressable>
@@ -280,41 +337,117 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1f2937" },
   fieldGroup: { marginBottom: 14 },
   label: { fontSize: 13, fontWeight: "600", color: "#444", marginBottom: 6 },
-  animalGrid: {
+
+  // Search
+  searchWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    fontSize: 15,
+    color: "#1f2937",
+  },
+  clearButton: {
+    padding: 4,
+  },
+  resultsContainer: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 10,
+    marginTop: 4,
+    maxHeight: 150,
+  },
+  resultItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  resultRfid: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1f2937",
+  },
+  resultName: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+  selectedCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E6F8ED",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+    justifyContent: "space-between",
+  },
+  selectedContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  selectedIcon: { fontSize: 24, marginRight: 12 },
+  selectedInfo: { flex: 1 },
+  selectedName: { fontSize: 16, fontWeight: "700", color: "#0F2A1D" },
+  selectedRfid: { fontSize: 13, color: "#6B7280", marginTop: 2 },
+  selectedClear: {
+    padding: 6,
+  },
+  selectedClearText: {
+    fontSize: 16,
+    color: "#6B7280",
+    fontWeight: "700",
+  },
+
+  // Options compactes (Statuts et Gravités)
+  optionsRowSmall: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginTop: 4,
+    gap: 6,
+    marginBottom: 4,
   },
-  animalChip: {
-    width: "48%",
-    backgroundColor: "#fff",
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    borderRadius: 12,
-    padding: 10,
-    alignItems: "center",
-  },
-  animalChipSelected: { backgroundColor: GREEN, borderColor: GREEN },
-  animalChipIcon: { fontSize: 22, marginBottom: 2 },
-  animalChipLabel: { fontSize: 13, fontWeight: "700", color: "#333" },
-  animalChipSub: { fontSize: 10, color: "#888" },
-  optionsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },
-  optionChip: {
+  optionChipSmall: {
     flex: 1,
-    minWidth: "28%",
+    minWidth: "18%",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#fff",
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: BORDER,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
   },
-  optionChipSelected: { backgroundColor: GREEN, borderColor: GREEN },
-  optionChipIcon: { fontSize: 18, marginBottom: 4, color: "#555" },
-  optionChipLabel: { fontSize: 12, fontWeight: "700", color: "#555" },
+  optionChipSelectedSmall: {
+    backgroundColor: GREEN,
+    borderColor: GREEN,
+  },
+  optionChipIconSmall: {
+    fontSize: 14,
+    marginBottom: 2,
+    color: "#555",
+  },
+  optionChipLabelSmall: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#555",
+  },
+
+  // Champs texte
   textArea: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -327,6 +460,7 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: "top",
   },
+
   error: {
     color: "#dc2626",
     backgroundColor: "#fee2e2",

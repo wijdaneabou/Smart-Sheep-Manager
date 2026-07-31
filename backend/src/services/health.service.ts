@@ -33,11 +33,58 @@ export class HealthService {
   // US-5.1: Dossiers médicaux
   // ============================================
 
+  // Récupère les dossiers d'un animal spécifique AVEC les infos de l'animal
   async getHealthRecords(animalId: number) {
+    return await db
+      .select({
+        id: healthRecords.id,
+        animalId: healthRecords.animalId,
+        status: healthRecords.status,
+        symptoms: healthRecords.symptoms,
+        diagnosis: healthRecords.diagnosis,
+        severity: healthRecords.severity,
+        recordedBy: healthRecords.recordedBy,
+        createdAt: healthRecords.createdAt,
+        updatedAt: healthRecords.updatedAt,
+        // Champs de l'animal
+        animalName: animals.name,
+        animalRfid: animals.rfid,
+        animalPhotoUrl: animals.photoUrl,
+      })
+      .from(healthRecords)
+      .leftJoin(animals, eq(healthRecords.animalId, animals.id))
+      .where(eq(healthRecords.animalId, animalId))
+      .orderBy(desc(healthRecords.createdAt));
+  }
+
+  // Récupère TOUS les dossiers AVEC les infos de l'animal
+  async getAllHealthRecordsWithAnimals() {
+    return await db
+      .select({
+        id: healthRecords.id,
+        animalId: healthRecords.animalId,
+        status: healthRecords.status,
+        symptoms: healthRecords.symptoms,
+        diagnosis: healthRecords.diagnosis,
+        severity: healthRecords.severity,
+        recordedBy: healthRecords.recordedBy,
+        createdAt: healthRecords.createdAt,
+        updatedAt: healthRecords.updatedAt,
+        // Champs de l'animal
+        animalName: animals.name,
+        animalRfid: animals.rfid,
+        animalPhotoUrl: animals.photoUrl,
+      })
+      .from(healthRecords)
+      .leftJoin(animals, eq(healthRecords.animalId, animals.id))
+      .orderBy(desc(healthRecords.createdAt));
+  }
+
+  // Récupère TOUS les dossiers (sans jointure) – gardé pour compatibilité
+  async getAllHealthRecords() {
     return await db
       .select()
       .from(healthRecords)
-      .where(eq(healthRecords.animalId, animalId))
       .orderBy(desc(healthRecords.createdAt));
   }
 
@@ -60,7 +107,6 @@ export class HealthService {
   }
 
   async createHealthRecord(data: NewHealthRecord) {
-    // Insérer le nouveau dossier
     const [recordId] = await db
       .insert(healthRecords)
       .values({
@@ -70,7 +116,6 @@ export class HealthService {
       })
       .$returningId();
 
-    // Récupérer l'enregistrement complet
     const [created] = await db
       .select()
       .from(healthRecords)
@@ -273,7 +318,6 @@ export class HealthService {
   // ============================================
 
   async getAnimalCarnet(animalId: number): Promise<AnimalCarnet> {
-    // ✅ Récupérer l'animal sans filtre deleted_at
     const [animal] = await db
       .select()
       .from(animals)
@@ -357,7 +401,6 @@ export class HealthService {
   // ============================================
 
   async getHealthReport() {
-    // ✅ Plus de filtre deleted_at
     const totalAnimalsResult = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(animals);

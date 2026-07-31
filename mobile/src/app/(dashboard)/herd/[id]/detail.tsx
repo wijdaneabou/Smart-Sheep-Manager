@@ -30,6 +30,7 @@ const BORDER = "#e5e7eb";
 const TEXT_DARK = "#1f2937";
 const TEXT_MUTED = "#6b7280";
 
+
 // ── Helpers ────────────────────────────────────────────────────
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "—";

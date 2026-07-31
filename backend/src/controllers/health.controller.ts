@@ -22,13 +22,21 @@ export const HealthController = {
   // Health Records (US-5.1)
   // ============================================
 
+  // ✅ MODIFIÉ : utilise la méthode avec jointure pour récupérer les infos animal
   async getHealthRecords(c: Context) {
-    const animalId = Number(c.req.param('animalId'));
-    if (isNaN(animalId)) {
-      return c.json({ success: false, message: 'ID de l\'animal invalide' }, 400);
+    const animalIdParam = c.req.param('animalId');
+    if (animalIdParam) {
+      const animalId = Number(animalIdParam);
+      if (isNaN(animalId)) {
+        return c.json({ success: false, message: 'ID de l\'animal invalide' }, 400);
+      }
+      const records = await healthService.getHealthRecords(animalId);
+      return c.json({ success: true, data: records });
+    } else {
+      // ✅ Tous les dossiers avec infos animal
+      const records = await healthService.getAllHealthRecordsWithAnimals();
+      return c.json({ success: true, data: records });
     }
-    const records = await healthService.getHealthRecords(animalId);
-    return c.json({ success: true, data: records });
   },
 
   async getLatestHealthRecord(c: Context) {

@@ -1,8 +1,14 @@
 import { Hono } from 'hono';
+import { isAuthenticated } from '../middlewares/auth.middleware.js';
 import { requirePermission } from '../middlewares/permissions.middleware.js';
 import { HealthController } from '../controllers/health.controller.js';
 
 const healthRoutes = new Hono();
+
+healthRoutes.use('*', isAuthenticated);
+
+// ✅ Route pour tous les dossiers (sans animalId)
+healthRoutes.get('/records', requirePermission('HEALTH', 'READ'), HealthController.getHealthRecords);
 
 // Health Records (US-5.1)
 healthRoutes.get('/animals/:animalId/records', requirePermission('HEALTH', 'READ'), HealthController.getHealthRecords);
