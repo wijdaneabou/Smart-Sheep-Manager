@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import api, { API_URL } from "../../../services/api";
+import { BackButton } from "../../../components/BackButton";
 
 type HealthStatus = 'HEALTHY' | 'SURVEILLANCE' | 'SICK' | 'UNDER_TREATMENT' | 'RECOVERED';
 
@@ -94,11 +95,15 @@ export default function HealthRecordsList() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Dossiers médicaux</Text>
-          <Text style={styles.subtitle}>
-            {filteredRecords.length} dossier{filteredRecords.length > 1 ? "s" : ""}
-          </Text>
+        {/* Header with Back Button */}
+        <View style={styles.headerRow}>
+          <BackButton variant="dark" style={styles.backButton} />
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.title}>Dossiers médicaux</Text>
+            <Text style={styles.subtitle}>
+              {filteredRecords.length} dossier{filteredRecords.length > 1 ? "s" : ""}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.searchRow}>
@@ -256,7 +261,20 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
   container: { flex: 1, paddingHorizontal: 16 },
 
-  header: { marginTop: 12, marginBottom: 14 },
+  // --- New header with back button ---
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  backButton: {
+    marginRight: 8,
+  },
+  headerTitleContainer: {
+    flex: 1,
+  },
+
   title: { fontSize: 26, fontWeight: "800", color: "#111" },
   subtitle: { fontSize: 13, color: "#888", marginTop: 2 },
 

@@ -20,6 +20,7 @@ import {
 import { exportAnimalHistoryPdf } from "../../../../services/animalHistoryService";
 import { getBreedInfo, getSexInfo, getHealthStatusInfo } from "../../../../constants/breeds";
 import { API_URL } from "../../../../services/api";
+import { BackButton } from "../../../../components/BackButton";
 
 // ── Design tokens ──────────────────────────────────────────────
 const GREEN = "#14532d";
@@ -29,7 +30,6 @@ const CARD_BG = "#ffffff";
 const BORDER = "#e5e7eb";
 const TEXT_DARK = "#1f2937";
 const TEXT_MUTED = "#6b7280";
-
 
 // ── Helpers ────────────────────────────────────────────────────
 function formatDate(dateStr: string | null): string {
@@ -123,9 +123,7 @@ export default function AnimalDetailScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
-          </Pressable>
+          <BackButton variant="dark" style={styles.backButton} />
           <Text style={styles.headerTitle}>Fiche Animal</Text>
           <View style={{ width: 32 }} />
         </View>
@@ -141,9 +139,7 @@ export default function AnimalDetailScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
-          </Pressable>
+          <BackButton variant="dark" style={styles.backButton} />
           <Text style={styles.headerTitle}>Fiche Animal</Text>
           <View style={{ width: 32 }} />
         </View>
@@ -168,9 +164,7 @@ export default function AnimalDetailScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       {/* ── Header ── */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
-        </Pressable>
+        <BackButton variant="dark" style={styles.backButton} />
         <Text style={styles.headerTitle}>Fiche Animal</Text>
         <View style={{ width: 32 }} />
       </View>
@@ -496,10 +490,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
+    marginRight: 0,
   },
   headerTitle: {
     fontSize: 18,

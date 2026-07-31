@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import api from "../../../services/api";
+import { BackButton } from "../../../components/BackButton";
 
 const STATUSES = [
   { id: "HEALTHY", label: "Sain", icon: "✅" },
@@ -131,9 +132,7 @@ export default function CreateHealthRecord() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color="#14532d" />
-          </Pressable>
+          <BackButton variant="dark" style={styles.backButton} />
           <Text style={styles.headerTitle}>Nouveau dossier médical</Text>
           <View style={styles.headerAvatar}>
             <Ionicons name="medical" size={18} color="#fff" />
@@ -321,7 +320,9 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     paddingTop: 8,
   },
-  backButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+  backButton: {
+    marginRight: 0,
+  },
   headerTitle: { fontSize: 18, fontWeight: "700", color: GREEN },
   headerAvatar: {
     width: 36,

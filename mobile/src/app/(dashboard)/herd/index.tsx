@@ -20,6 +20,7 @@ import {
   getSexInfo,
   getHealthStatusInfo,
 } from "../../../constants/breeds";
+import { BackButton } from "../../../components/BackButton";
 
 type FilterType = "TOUT" | "Sardi" | "Timahdite" | "D'man" | "Beni-Guil";
 
@@ -62,12 +63,16 @@ export default function HerdScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Mon Troupeau</Text>
-          <Text style={styles.subtitle}>
-            {filteredAnimals.length} animal
-            {filteredAnimals.length > 1 ? "s" : ""}
-          </Text>
+        {/* Header with Back Button */}
+        <View style={styles.headerRow}>
+          <BackButton variant="dark" style={styles.backButton} />
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.title}>Mon Troupeau</Text>
+            <Text style={styles.subtitle}>
+              {filteredAnimals.length} animal
+              {filteredAnimals.length > 1 ? "s" : ""}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.searchRow}>
@@ -248,8 +253,21 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
   container: { flex: 1, paddingHorizontal: 16 },
 
-  header: { marginTop: 12, marginBottom: 14 },
-  title: { fontSize: 26, fontWeight: "800", color: "#111" },
+  // --- New header with back button ---
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  backButton: {
+    marginRight: 8,
+  },
+  headerTitleContainer: {
+    flex: 1,
+  },
+
+  title: { fontSize: 22, fontWeight: "800", color: "#111" },
   subtitle: { fontSize: 13, color: "#888", marginTop: 2 },
 
   searchRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },

@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../../services/api";
+import { BackButton } from "../../../../components/BackButton";
 
 type HealthStatus = 'HEALTHY' | 'SURVEILLANCE' | 'SICK' | 'UNDER_TREATMENT' | 'RECOVERED';
 
@@ -284,9 +285,7 @@ export default function HealthRecordDetail() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-          <Text style={styles.backButtonText}>‹</Text>
-        </Pressable>
+        <BackButton variant="dark" style={styles.backButton} />
         <Text style={styles.headerTitle}>Dossier médical</Text>
         <View style={{ width: 32 }} />
       </View>
@@ -627,8 +626,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 8,
   },
-  backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  backButtonText: { fontSize: 26, color: "#1a1a1a", fontWeight: "400" },
+  backButton: {
+    marginRight: 0,
+  },
   headerTitle: { fontSize: 16, fontWeight: "700" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   error: { color: "#dc2626" },
