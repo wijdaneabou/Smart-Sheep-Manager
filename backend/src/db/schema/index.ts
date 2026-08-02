@@ -27,3 +27,5 @@ export * from './treatments.js';
 export * from './vaccinations.js';
 export * from './veterinaryInterventions.js';
 
+export * from './reproductionCycles.js';
+export * from './matingServices.js';

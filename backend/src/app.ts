@@ -23,6 +23,9 @@ import animalMovementsRoutes from "./routes/animalMovements.routes.js";
 import animalWeightsRoutes from "./routes/animalWeights.routes.js";
 import animalBcsRoutes from "./routes/animalBcs.routes.js";
 
+import reproductionRoutes from './routes/reproductionRoutes.js';
+import matingRoutes from './routes/matingRoutes.js';
+
 const app = new Hono();
 
 app.use(cors({
@@ -67,6 +70,8 @@ app.route("/api/movements", animalMovementsRoutes);
 app.route('/api/animals', animalsRoutes); 
 app.route('/api/health', healthRoutes);
 
+app.route('/api/reproduction-cycles', reproductionRoutes);
+app.route('/api/mating-services', matingRoutes);
 
 
 export default app;

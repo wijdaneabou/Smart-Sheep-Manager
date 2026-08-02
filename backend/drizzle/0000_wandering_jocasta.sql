@@ -361,6 +361,22 @@ CREATE TABLE `veterinary_interventions` (
 	CONSTRAINT `veterinary_interventions_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
+CREATE TABLE `reproduction_cycles` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`animal_id` int NOT NULL,
+	`heat_date` date NOT NULL,
+	`mating_type` varchar(20) NOT NULL,
+	`male_id` int,
+	`semen_reference` varchar(100),
+	`pregnancy_confirmed` boolean DEFAULT false,
+	`confirmation_date` date,
+	`notes` text,
+	`created_by` int,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `reproduction_cycles_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
 ALTER TABLE `password_resets` ADD CONSTRAINT `password_resets_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `exploitations` ADD CONSTRAINT `exploitations_owner_id_users_id_fk` FOREIGN KEY (`owner_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `login_history` ADD CONSTRAINT `login_history_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -390,4 +406,9 @@ ALTER TABLE `treatments` ADD CONSTRAINT `treatments_administered_by_users_id_fk`
 ALTER TABLE `vaccinations` ADD CONSTRAINT `vaccinations_animal_id_animals_id_fk` FOREIGN KEY (`animal_id`) REFERENCES `animals`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `vaccinations` ADD CONSTRAINT `vaccinations_administered_by_users_id_fk` FOREIGN KEY (`administered_by`) REFERENCES `users`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `veterinary_interventions` ADD CONSTRAINT `veterinary_interventions_animal_id_animals_id_fk` FOREIGN KEY (`animal_id`) REFERENCES `animals`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `veterinary_interventions` ADD CONSTRAINT `veterinary_interventions_performed_by_users_id_fk` FOREIGN KEY (`performed_by`) REFERENCES `users`(`id`) ON DELETE set null ON UPDATE no action;
+ALTER TABLE `veterinary_interventions` ADD CONSTRAINT `veterinary_interventions_performed_by_users_id_fk` FOREIGN KEY (`performed_by`) REFERENCES `users`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `reproduction_cycles` ADD CONSTRAINT `reproduction_cycles_animal_id_animals_id_fk` FOREIGN KEY (`animal_id`) REFERENCES `animals`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `reproduction_cycles` ADD CONSTRAINT `reproduction_cycles_male_id_animals_id_fk` FOREIGN KEY (`male_id`) REFERENCES `animals`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `reproduction_cycles` ADD CONSTRAINT `reproduction_cycles_created_by_users_id_fk` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX `repro_cycle_animal_idx` ON `reproduction_cycles` (`animal_id`);--> statement-breakpoint
+CREATE INDEX `repro_cycle_heat_date_idx` ON `reproduction_cycles` (`heat_date`);

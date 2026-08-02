@@ -15,7 +15,9 @@
     "seed:role-permissions": "tsx src/db/seeds/role-permissions.ts",
     "seed:animal-history": "tsx src/db/seeds/animal-history.ts",
     "seed:animal-movements": "tsx src/db/seeds/animal-movements.ts",
-    "seed:pedigree": "tsx src/db/seeds/animal-pedigree.ts"
+    "seed:pedigree": "tsx src/db/seeds/animal-pedigree.ts",
+    "seed:reproduction": "tsx src/db/seeds/seedReproductionCycles.ts",
+    "seed:all": "tsx src/db/seeds/seedAll.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.8",
@@ -30,7 +32,8 @@
     "nodemailer": "^9.0.3",
     "pdfkit": "^0.19.1",
     "resend": "^6.17.2",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "zod-validation-error": "^5.0.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

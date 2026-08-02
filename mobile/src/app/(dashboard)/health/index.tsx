@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import api, { API_URL } from "../../../services/api";
 import { BackButton } from "../../../components/BackButton";
+import { getBreedInfo, getSexInfo } from "../../../constants/breeds";
 
 type HealthStatus = 'HEALTHY' | 'SURVEILLANCE' | 'SICK' | 'UNDER_TREATMENT' | 'RECOVERED';
 
@@ -153,6 +154,10 @@ export default function HealthRecordsList() {
             const photoUrl = item.animalPhotoUrl
               ? `${API_URL}${item.animalPhotoUrl}`
               : undefined;
+            
+            // Récupération des infos de race et sexe
+            const breedInfo = item.breed ? getBreedInfo(item.breed) : null;
+            const sexInfo = item.sex ? getSexInfo(item.sex) : null;
 
             return (
               <Pressable
@@ -163,7 +168,9 @@ export default function HealthRecordsList() {
                   <Image source={{ uri: photoUrl }} style={styles.thumb} />
                 ) : (
                   <View style={styles.thumbFallback}>
-                    <Text style={styles.thumbFallbackIcon}>🐑</Text>
+                    <Text style={styles.thumbFallbackIcon}>
+                      {breedInfo?.icon || '🐑'}
+                    </Text>
                   </View>
                 )}
 
@@ -190,6 +197,42 @@ export default function HealthRecordsList() {
                   </View>
 
                   <Text style={styles.rfid}>{item.animalRfid}</Text>
+
+                  {/* Race et sexe */}
+                  <View style={styles.infoRow}>
+                    {breedInfo && (
+                      <>
+                        <Text style={styles.infoIcon}>🐑</Text>
+                        <Text style={styles.infoValue}>{breedInfo.label}</Text>
+                        <Text style={styles.separator}>·</Text>
+                      </>
+                    )}
+                    {sexInfo && (
+                      <>
+                        <Text style={styles.infoIcon}>{sexInfo.icon}</Text>
+                        <Text style={styles.infoValue}>{sexInfo.label}</Text>
+                      </>
+                    )}
+                  </View>
+
+                  {/* Poids et BCS si disponibles */}
+                  {(item.weight || item.bcs) && (
+                    <View style={styles.infoRow}>
+                      {item.weight && (
+                        <>
+                          <Text style={styles.infoIcon}>⚖</Text>
+                          <Text style={styles.infoValue}>{item.weight} kg</Text>
+                        </>
+                      )}
+                      {item.weight && item.bcs && <Text style={styles.separator}>·</Text>}
+                      {item.bcs && (
+                        <>
+                          <Text style={styles.infoIcon}>◐</Text>
+                          <Text style={styles.infoValue}>BCS {item.bcs}</Text>
+                        </>
+                      )}
+                    </View>
+                  )}
 
                   {item.diagnosis && (
                     <Text style={styles.diagnosis} numberOfLines={1}>
@@ -261,19 +304,15 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
   container: { flex: 1, paddingHorizontal: 16 },
 
-  // --- New header with back button ---
+  // --- Header ---
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 12,
     marginBottom: 8,
   },
-  backButton: {
-    marginRight: 8,
-  },
-  headerTitleContainer: {
-    flex: 1,
-  },
+  backButton: { marginRight: 8 },
+  headerTitleContainer: { flex: 1 },
 
   title: { fontSize: 26, fontWeight: "800", color: "#111" },
   subtitle: { fontSize: 13, color: "#888", marginTop: 2 },
@@ -343,8 +382,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   name: { fontSize: 17, fontWeight: "800", color: GREEN },
-  rfid: { fontSize: 12, color: "#888", marginBottom: 4 },
-  diagnosis: { fontSize: 14, color: "#333", marginBottom: 4 },
+  rfid: { fontSize: 12, color: "#888", marginBottom: 2 },
+  diagnosis: { fontSize: 14, color: "#333", marginBottom: 2 },
   healthBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -352,9 +391,10 @@ const styles = StyleSheet.create({
   },
   healthBadgeText: { fontSize: 11, fontWeight: "700" },
 
-  infoRow: { flexDirection: "row", alignItems: "center", minHeight: 18 },
+  infoRow: { flexDirection: "row", alignItems: "center", minHeight: 18, flexWrap: "wrap" },
   infoIcon: { fontSize: 12, width: 20, color: "#666" },
   infoValue: { fontSize: 13, fontWeight: "600", color: "#333" },
+  separator: { fontSize: 13, color: "#ccc", marginHorizontal: 4 },
 
   chevron: { fontSize: 24, color: "#ccc", marginLeft: 6 },
 

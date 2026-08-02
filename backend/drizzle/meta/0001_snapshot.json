@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "fc643e18-c853-4f58-97e7-d005a1b0e63f",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "ddf4d23d-7786-4ae0-84df-26a793604f6e",
+  "prevId": "fc643e18-c853-4f58-97e7-d005a1b0e63f",
   "tables": {
     "roles": {
       "name": "roles",
@@ -2869,6 +2869,194 @@
       "compositePrimaryKeys": {
         "reproduction_cycles_id": {
           "name": "reproduction_cycles_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "mating_services": {
+      "name": "mating_services",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "animal_id": {
+          "name": "animal_id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cycle_id": {
+          "name": "cycle_id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "service_date": {
+          "name": "service_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "male_id": {
+          "name": "male_id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "semen_reference": {
+          "name": "semen_reference",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "service_number": {
+          "name": "service_number",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "result": {
+          "name": "result",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'pending'"
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "mating_animal_idx": {
+          "name": "mating_animal_idx",
+          "columns": [
+            "animal_id"
+          ],
+          "isUnique": false
+        },
+        "mating_cycle_idx": {
+          "name": "mating_cycle_idx",
+          "columns": [
+            "cycle_id"
+          ],
+          "isUnique": false
+        },
+        "mating_date_idx": {
+          "name": "mating_date_idx",
+          "columns": [
+            "service_date"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "mating_services_animal_id_animals_id_fk": {
+          "name": "mating_services_animal_id_animals_id_fk",
+          "tableFrom": "mating_services",
+          "tableTo": "animals",
+          "columnsFrom": [
+            "animal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "mating_services_cycle_id_reproduction_cycles_id_fk": {
+          "name": "mating_services_cycle_id_reproduction_cycles_id_fk",
+          "tableFrom": "mating_services",
+          "tableTo": "reproduction_cycles",
+          "columnsFrom": [
+            "cycle_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "mating_services_male_id_animals_id_fk": {
+          "name": "mating_services_male_id_animals_id_fk",
+          "tableFrom": "mating_services",
+          "tableTo": "animals",
+          "columnsFrom": [
+            "male_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "mating_services_created_by_users_id_fk": {
+          "name": "mating_services_created_by_users_id_fk",
+          "tableFrom": "mating_services",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "mating_services_id": {
+          "name": "mating_services_id",
           "columns": [
             "id"
           ]
