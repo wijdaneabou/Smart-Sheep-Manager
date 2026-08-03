@@ -18,6 +18,12 @@ export const reproductionCycles = mysqlTable(
     semenReference: varchar('semen_reference', { length: 100 }),
     pregnancyConfirmed: boolean('pregnancy_confirmed').default(false),
     confirmationDate: date('confirmation_date'),
+    expectedLambingDate: date('expected_lambing_date'),
+    ultrasoundNotes: text('ultrasound_notes'),
+    lambingDate: date('lambing_date'),
+    lambingType: varchar('lambing_type', { length: 10 }).$type<'single' | 'multiple'>(),
+    liveBorn: int('live_born'),
+    stillBorn: int('still_born'),
     notes: text('notes'),
     createdBy: int('created_by')
       .references(() => users.id, { onDelete: 'set null' }),

@@ -16,7 +16,7 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getAnimalById, type Animal } from "../../../../services/animalsService";
 import { reproductionService, ReproductionCycle } from "../../../../services/reproductionService";
-import { matingService, MatingService } from "../../../../services/matingService"; // ✅ Import du service des saillies
+import { matingService, MatingService } from "../../../../services/matingService";
 import { getBreedInfo, getSexInfo } from "../../../../constants/breeds";
 import { BackButton } from "../../../../components/BackButton";
 
@@ -40,16 +40,13 @@ export default function AnimalCyclesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // États pour les saillies
   const [matingServices, setMatingServices] = useState<MatingService[]>([]);
   const [loadingMating, setLoadingMating] = useState(false);
 
-  // États pour la modale de confirmation
   const [modalVisible, setModalVisible] = useState(false);
   const [confirmationDate, setConfirmationDate] = useState("");
   const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null);
 
-  // Charger l'animal, ses cycles et ses saillies
   async function loadData() {
     setError(null);
     try {
@@ -89,14 +86,12 @@ export default function AnimalCyclesScreen() {
     }, [id])
   );
 
-  // Ouvrir la modale de confirmation
   function openConfirmModal(cycleId: number) {
     setSelectedCycleId(cycleId);
     setConfirmationDate("");
     setModalVisible(true);
   }
 
-  // Soumettre la confirmation
   async function handleConfirmSubmit() {
     if (!selectedCycleId) return;
     if (!confirmationDate) {
@@ -114,7 +109,6 @@ export default function AnimalCyclesScreen() {
     }
   }
 
-  // Supprimer un cycle
   function handleDelete(cycleId: number) {
     Alert.alert(
       "Supprimer le cycle",
@@ -137,7 +131,6 @@ export default function AnimalCyclesScreen() {
     );
   }
 
-  // Supprimer une saillie
   function handleDeleteMating(matingId: number) {
     Alert.alert(
       "Supprimer la saillie",
@@ -160,13 +153,32 @@ export default function AnimalCyclesScreen() {
     );
   }
 
-  // ── États de chargement ──
+  const handleEditPregnancy = (cycleId: number) => {
+    router.push(`/reproduction/${id}/edit-pregnancy?cycleId=${cycleId}`);
+  };
+
+  const handleRecordLambing = (cycleId: number) => {
+    router.push(`/reproduction/${id}/record-lambing?cycleId=${cycleId}`);
+  };
+
+  const goToPerformance = () => {
+    router.push(`/reproduction/${id}/performance`);
+  };
+
+  const goToAddCycle = () => {
+    router.push(`/reproduction/add?animalId=${id}`);
+  };
+
+  const goToAddMating = () => {
+    router.push(`/reproduction/${id}/add-mating`);
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.header}>
           <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Cycles</Text>
+          <Text style={styles.headerTitle}>Suivi Reproduction</Text>
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.center}>
@@ -181,7 +193,7 @@ export default function AnimalCyclesScreen() {
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.header}>
           <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Cycles</Text>
+          <Text style={styles.headerTitle}>Suivi Reproduction</Text>
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.center}>
@@ -202,13 +214,8 @@ export default function AnimalCyclesScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <BackButton variant="dark" style={styles.backButton} />
-        <Text style={styles.headerTitle}>Cycles</Text>
-        <Pressable
-          onPress={() => router.push(`/reproduction/add?animalId=${animal.id}`)}
-          style={styles.addButton}
-        >
-          <Ionicons name="add" size={22} color={GREEN} />
-        </Pressable>
+        <Text style={styles.headerTitle}>Suivi Reproduction</Text>
+        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView
@@ -266,6 +273,34 @@ export default function AnimalCyclesScreen() {
           />
         </View>
 
+        {/* ── Actions ── */}
+        <View style={styles.section}>
+          <SectionTitle label="Actions" />
+          <View style={styles.actionsGrid}>
+            <ActionCard
+              icon="stats-chart"
+              iconBg="#EFF6FF"
+              iconColor={GREEN}
+              label="Performance"
+              onPress={goToPerformance}
+            />
+            <ActionCard
+              icon="add-circle"
+              iconBg="#ECFDF5"
+              iconColor={GREEN_EMERALD}
+              label="Ajouter cycle"
+              onPress={goToAddCycle}
+            />
+            <ActionCard
+              icon="git-merge"
+              iconBg="#F5F3FF"
+              iconColor="#7c3aed"
+              label="Ajouter saillie"
+              onPress={goToAddMating}
+            />
+          </View>
+        </View>
+
         {/* ── Liste des cycles ── */}
         <View style={styles.section}>
           <SectionTitle label="Tous les cycles" />
@@ -274,7 +309,7 @@ export default function AnimalCyclesScreen() {
               <Ionicons name="calendar-outline" size={48} color={TEXT_MUTED} />
               <Text style={styles.emptyText}>Aucun cycle enregistré</Text>
               <Pressable
-                onPress={() => router.push(`/reproduction/add?animalId=${animal.id}`)}
+                onPress={goToAddCycle}
                 style={styles.emptyButton}
               >
                 <Text style={styles.emptyButtonText}>Ajouter un premier cycle</Text>
@@ -287,23 +322,16 @@ export default function AnimalCyclesScreen() {
                 cycle={cycle}
                 onConfirm={openConfirmModal}
                 onDelete={handleDelete}
+                onEditPregnancy={handleEditPregnancy}
+                onRecordLambing={handleRecordLambing}
               />
             ))
           )}
         </View>
 
-        {/* ── Liste des saillies (US‑6.2) ── */}
+        {/* ── Liste des saillies ── */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <SectionTitle label="Saillies" />
-            <TouchableOpacity
-              onPress={() => router.push(`/reproduction/${id}/add-mating`)}
-              style={styles.addMatingButton}
-            >
-              <Text style={styles.addMatingButtonText}>+ Ajouter</Text>
-            </TouchableOpacity>
-          </View>
-
+          <SectionTitle label="Saillies" />
           {loadingMating ? (
             <ActivityIndicator size="small" color={GREEN_EMERALD} />
           ) : matingServices.length === 0 ? (
@@ -315,7 +343,7 @@ export default function AnimalCyclesScreen() {
                   key={mating.id}
                   mating={mating}
                   onDelete={() => handleDeleteMating(mating.id)}
-                  onEdit={() => router.push(`/reproduction/${id}/edit-mating/${mating.id}`)}
+                  onEdit={() => router.push(`/reproduction/${id}/edit-mating?matingId=${mating.id}`)}
                 />
               ))}
             </View>
@@ -390,6 +418,35 @@ function StatCard({
   );
 }
 
+function ActionCard({
+  icon,
+  iconBg,
+  iconColor,
+  label,
+  onPress,
+}: {
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.actionCard,
+        pressed && styles.actionCardPressed,
+      ]}
+      onPress={onPress}
+    >
+      <View style={[styles.actionIconCircle, { backgroundColor: iconBg }]}>
+        <Ionicons name={icon as any} size={20} color={iconColor} />
+      </View>
+      <Text style={styles.actionLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
 function SectionTitle({ label }: { label: string }) {
   return (
     <View style={styles.sectionTitleContainer}>
@@ -399,14 +456,19 @@ function SectionTitle({ label }: { label: string }) {
   );
 }
 
+// ── CycleCard ──
 function CycleCard({
   cycle,
   onConfirm,
   onDelete,
+  onEditPregnancy,
+  onRecordLambing,
 }: {
   cycle: ReproductionCycle;
   onConfirm: (id: number) => void;
   onDelete: (id: number) => void;
+  onEditPregnancy: (id: number) => void;
+  onRecordLambing: (id: number) => void;
 }) {
   const heatDate = new Date(cycle.heatDate).toLocaleDateString("fr-FR", {
     day: "numeric",
@@ -432,6 +494,14 @@ function CycleCard({
               style={[styles.actionButton, styles.confirmButton]}
             >
               <Ionicons name="checkmark" size={18} color="#fff" />
+            </Pressable>
+          )}
+          {isConfirmed && !cycle.lambingDate && (
+            <Pressable
+              onPress={() => onRecordLambing(cycle.id)}
+              style={[styles.actionButton, styles.lambingButton]}
+            >
+              <Ionicons name="add-circle" size={18} color="#fff" />
             </Pressable>
           )}
           <Pressable
@@ -480,12 +550,75 @@ function CycleCard({
             <Text style={styles.cycleNotes}>{cycle.notes}</Text>
           </View>
         )}
+
+        {cycle.pregnancyConfirmed && (
+          <PregnancyCard cycle={cycle} onEdit={() => onEditPregnancy(cycle.id)} />
+        )}
       </View>
     </View>
   );
 }
 
-// ── Nouveau composant pour les saillies ──
+// ── PregnancyCard ──
+function PregnancyCard({ cycle, onEdit }: { cycle: ReproductionCycle; onEdit: () => void }) {
+  return (
+    <View style={styles.pregnancyCard}>
+      <View style={styles.pregnancyHeader}>
+        <Text style={styles.pregnancyTitle}>🤰 Gestation</Text>
+        <TouchableOpacity onPress={onEdit} style={styles.pregnancyEditButton}>
+          <Ionicons name="pencil" size={18} color={GREEN_EMERALD} />
+        </TouchableOpacity>
+      </View>
+
+      {cycle.expectedLambingDate && (
+        <View style={styles.pregnancyRow}>
+          <Text style={styles.pregnancyLabel}>Mise bas prévue</Text>
+          <Text style={styles.pregnancyValue}>
+            {new Date(cycle.expectedLambingDate).toLocaleDateString('fr-FR')}
+          </Text>
+        </View>
+      )}
+
+      {cycle.ultrasoundNotes && (
+        <View style={styles.pregnancyRow}>
+          <Text style={styles.pregnancyLabel}>Échographie</Text>
+          <Text style={styles.pregnancyNotes}>{cycle.ultrasoundNotes}</Text>
+        </View>
+      )}
+
+      {cycle.lambingDate && (
+        <View style={styles.pregnancyRow}>
+          <Text style={styles.pregnancyLabel}>Mise bas réelle</Text>
+          <Text style={styles.pregnancyValue}>
+            {new Date(cycle.lambingDate).toLocaleDateString('fr-FR')}
+          </Text>
+        </View>
+      )}
+
+      {cycle.lambingType && (
+        <View style={styles.pregnancyRow}>
+          <Text style={styles.pregnancyLabel}>Type</Text>
+          <Text style={styles.pregnancyValue}>
+            {cycle.lambingType === 'single' ? '🐑 Simple' : '🐑🐑 Multiple'}
+          </Text>
+        </View>
+      )}
+
+      {(cycle.liveBorn !== null || cycle.stillBorn !== null) && (
+        <View style={styles.pregnancyRow}>
+          <Text style={styles.pregnancyLabel}>Naissances</Text>
+          <Text style={styles.pregnancyValue}>
+            {cycle.liveBorn !== null ? `${cycle.liveBorn} vivant${cycle.liveBorn > 1 ? 's' : ''}` : ''}
+            {cycle.liveBorn !== null && cycle.stillBorn !== null ? ' · ' : ''}
+            {cycle.stillBorn !== null ? `${cycle.stillBorn} mort-né${cycle.stillBorn > 1 ? 's' : ''}` : ''}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ── MatingCard ──
 function MatingCard({
   mating,
   onDelete,
@@ -497,23 +630,17 @@ function MatingCard({
 }) {
   const getResultColor = (result: string) => {
     switch (result) {
-      case "success":
-        return "#10B981";
-      case "failure":
-        return "#EF4444";
-      default:
-        return "#F59E0B";
+      case "success": return "#10B981";
+      case "failure": return "#EF4444";
+      default: return "#F59E0B";
     }
   };
 
   const getResultLabel = (result: string) => {
     switch (result) {
-      case "success":
-        return "✅ Réussie";
-      case "failure":
-        return "❌ Échec";
-      default:
-        return "⏳ En attente";
+      case "success": return "✅ Réussie";
+      case "failure": return "❌ Échec";
+      default: return "⏳ En attente";
     }
   };
 
@@ -597,16 +724,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: TEXT_DARK,
-    flex: 1,
-    textAlign: "center",
-  },
-  addButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#E6F8ED",
-    alignItems: "center",
-    justifyContent: "center",
   },
   center: {
     flex: 1,
@@ -615,16 +732,8 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 24,
   },
-  error: {
-    color: "#dc2626",
-    fontSize: 14,
-    textAlign: "center",
-  },
-
-  container: {
-    padding: 16,
-    paddingBottom: 32,
-  },
+  error: { color: "#dc2626", fontSize: 14, textAlign: "center" },
+  container: { padding: 16, paddingBottom: 32 },
 
   // ── Hero Card ──
   heroCard: {
@@ -688,26 +797,39 @@ const styles = StyleSheet.create({
   sectionBar: { width: 4, height: 18, backgroundColor: GREEN, borderRadius: 2, marginRight: 8 },
   sectionTitle: { fontSize: 15, fontWeight: "700", color: TEXT_DARK },
 
-  // ── En‑tête de section avec bouton Ajouter ──
-  sectionHeader: {
+  // ── Actions Grid ──
+  actionsGrid: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
+    gap: 10,
+  },
+  actionCard: {
+    width: "30%",
+    backgroundColor: CARD_BG,
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: "center",
-    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: BORDER,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  addMatingButton: {
-    backgroundColor: GREEN_EMERALD,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+  actionCardPressed: { backgroundColor: "#F9FAFB", borderColor: "#E5E7EB" },
+  actionIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
   },
-  addMatingButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 13,
-  },
+  actionLabel: { fontSize: 12, fontWeight: "700", color: TEXT_DARK, textAlign: "center" },
 
-  // ── Cycle Card ── (inchangé)
+  // ── Cycle Card ──
   cycleCard: {
     backgroundColor: CARD_BG,
     borderRadius: 14,
@@ -742,6 +864,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   confirmButton: { backgroundColor: GREEN_EMERALD },
+  lambingButton: { backgroundColor: "#8B5CF6" },
   deleteButton: { backgroundColor: "#dc2626" },
   cycleBody: { padding: 14, gap: 6 },
   cycleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
@@ -752,7 +875,40 @@ const styles = StyleSheet.create({
   pendingStatus: { color: "#d97706" },
   cycleNotes: { fontSize: 13, color: TEXT_MUTED, fontStyle: "italic", flex: 1, textAlign: "right" },
 
-  // ── Mating Card (US‑6.2) ──
+  // ── Pregnancy Card ──
+  pregnancyCard: {
+    backgroundColor: "#f0fdf4",
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+  },
+  pregnancyHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  pregnancyTitle: { fontSize: 15, fontWeight: "700", color: GREEN },
+  pregnancyEditButton: { padding: 4 },
+  pregnancyRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 3,
+  },
+  pregnancyLabel: { fontSize: 13, color: TEXT_MUTED, fontWeight: "500" },
+  pregnancyValue: { fontSize: 13, fontWeight: "600", color: TEXT_DARK },
+  pregnancyNotes: {
+    fontSize: 13,
+    fontStyle: "italic",
+    color: TEXT_MUTED,
+    flexShrink: 1,
+    textAlign: "right",
+  },
+
+  // ── Mating Card ──
   matingList: { gap: 12 },
   matingCard: {
     backgroundColor: CARD_BG,
@@ -772,42 +928,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  matingDate: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  matingDateText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: TEXT_DARK,
-  },
+  matingDate: { flexDirection: "row", alignItems: "center", gap: 6 },
+  matingDateText: { fontSize: 14, fontWeight: "600", color: TEXT_DARK },
   matingBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     backgroundColor: "#f3f4f6",
   },
-  matingBadgeText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
+  matingBadgeText: { fontSize: 12, fontWeight: "600" },
   matingBody: { gap: 4 },
   matingRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  matingLabel: {
-    fontSize: 13,
-    color: TEXT_MUTED,
-    fontWeight: "500",
-  },
-  matingValue: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: TEXT_DARK,
-  },
+  matingLabel: { fontSize: 13, color: TEXT_MUTED, fontWeight: "500" },
+  matingValue: { fontSize: 13, fontWeight: "600", color: TEXT_DARK },
   matingNotes: {
     fontSize: 13,
     color: TEXT_MUTED,
@@ -824,22 +961,15 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
   },
-  matingActionButton: {
-    padding: 4,
-  },
+  matingActionButton: { padding: 4 },
 
-  // ── États vides ──
+  // ── Empty state ──
   emptyContainer: {
     alignItems: "center",
     paddingVertical: 32,
     gap: 12,
   },
-  emptyText: {
-    textAlign: "center",
-    color: TEXT_MUTED,
-    marginTop: 8,
-    fontSize: 14,
-  },
+  emptyText: { textAlign: "center", color: TEXT_MUTED, marginTop: 8, fontSize: 14 },
   emptyButton: {
     backgroundColor: GREEN,
     paddingHorizontal: 16,
