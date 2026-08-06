@@ -19,6 +19,7 @@ import { reproductionService, ReproductionCycle } from "../../../../services/rep
 import { matingService, MatingService } from "../../../../services/matingService";
 import { getBreedInfo, getSexInfo } from "../../../../constants/breeds";
 import { BackButton } from "../../../../components/BackButton";
+import { usePermissions } from "@/contexts/PermissionsContext"; // 👈 NEW IMPORT
 
 // ── Design tokens ──
 const GREEN = "#14532d";
@@ -34,6 +35,7 @@ export default function AnimalCyclesScreen() {
   const { animalId } = useLocalSearchParams<{ animalId: string }>();
   const id = parseInt(animalId);
   const router = useRouter();
+  const { hasPermission } = usePermissions(); // 👈 NEW
 
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [cycles, setCycles] = useState<ReproductionCycle[]>([]);
@@ -284,20 +286,26 @@ export default function AnimalCyclesScreen() {
               label="Performance"
               onPress={goToPerformance}
             />
-            <ActionCard
-              icon="add-circle"
-              iconBg="#ECFDF5"
-              iconColor={GREEN_EMERALD}
-              label="Ajouter cycle"
-              onPress={goToAddCycle}
-            />
-            <ActionCard
-              icon="git-merge"
-              iconBg="#F5F3FF"
-              iconColor="#7c3aed"
-              label="Ajouter saillie"
-              onPress={goToAddMating}
-            />
+            {/* 👇 Ajouter cycle - REPRODUCTION:CREATE */}
+            {hasPermission('REPRODUCTION', 'CREATE') && (
+              <ActionCard
+                icon="add-circle"
+                iconBg="#ECFDF5"
+                iconColor={GREEN_EMERALD}
+                label="Ajouter cycle"
+                onPress={goToAddCycle}
+              />
+            )}
+            {/* 👇 Ajouter saillie - REPRODUCTION:CREATE */}
+            {hasPermission('REPRODUCTION', 'CREATE') && (
+              <ActionCard
+                icon="git-merge"
+                iconBg="#F5F3FF"
+                iconColor="#7c3aed"
+                label="Ajouter saillie"
+                onPress={goToAddMating}
+              />
+            )}
           </View>
         </View>
 
@@ -308,12 +316,14 @@ export default function AnimalCyclesScreen() {
             <View style={styles.emptyContainer}>
               <Ionicons name="calendar-outline" size={48} color={TEXT_MUTED} />
               <Text style={styles.emptyText}>Aucun cycle enregistré</Text>
-              <Pressable
-                onPress={goToAddCycle}
-                style={styles.emptyButton}
-              >
-                <Text style={styles.emptyButtonText}>Ajouter un premier cycle</Text>
-              </Pressable>
+              {hasPermission('REPRODUCTION', 'CREATE') && (
+                <Pressable
+                  onPress={goToAddCycle}
+                  style={styles.emptyButton}
+                >
+                  <Text style={styles.emptyButtonText}>Ajouter un premier cycle</Text>
+                </Pressable>
+              )}
             </View>
           ) : (
             cycles.map((cycle) => (
@@ -324,6 +334,9 @@ export default function AnimalCyclesScreen() {
                 onDelete={handleDelete}
                 onEditPregnancy={handleEditPregnancy}
                 onRecordLambing={handleRecordLambing}
+                canConfirm={hasPermission('REPRODUCTION', 'UPDATE')}
+                canRecordLambing={hasPermission('REPRODUCTION', 'UPDATE')}
+                canDelete={hasPermission('REPRODUCTION', 'DELETE')}
               />
             ))
           )}
@@ -344,6 +357,8 @@ export default function AnimalCyclesScreen() {
                   mating={mating}
                   onDelete={() => handleDeleteMating(mating.id)}
                   onEdit={() => router.push(`/reproduction/${id}/edit-mating?matingId=${mating.id}`)}
+                  canEdit={hasPermission('REPRODUCTION', 'UPDATE')}
+                  canDelete={hasPermission('REPRODUCTION', 'DELETE')}
                 />
               ))}
             </View>
@@ -418,6 +433,7 @@ function StatCard({
   );
 }
 
+// 👇 ActionCard avec condition directe dans le parent (pas de prop visible)
 function ActionCard({
   icon,
   iconBg,
@@ -463,12 +479,18 @@ function CycleCard({
   onDelete,
   onEditPregnancy,
   onRecordLambing,
+  canConfirm,
+  canRecordLambing,
+  canDelete,
 }: {
   cycle: ReproductionCycle;
   onConfirm: (id: number) => void;
   onDelete: (id: number) => void;
   onEditPregnancy: (id: number) => void;
   onRecordLambing: (id: number) => void;
+  canConfirm: boolean;
+  canRecordLambing: boolean;
+  canDelete: boolean;
 }) {
   const heatDate = new Date(cycle.heatDate).toLocaleDateString("fr-FR", {
     day: "numeric",
@@ -488,7 +510,8 @@ function CycleCard({
           <Text style={styles.cycleDateText}>{heatDate}</Text>
         </View>
         <View style={styles.cycleActions}>
-          {!isConfirmed && (
+          {/* 👇 Confirmer - REPRODUCTION:UPDATE */}
+          {!isConfirmed && canConfirm && (
             <Pressable
               onPress={() => onConfirm(cycle.id)}
               style={[styles.actionButton, styles.confirmButton]}
@@ -496,7 +519,8 @@ function CycleCard({
               <Ionicons name="checkmark" size={18} color="#fff" />
             </Pressable>
           )}
-          {isConfirmed && !cycle.lambingDate && (
+          {/* 👇 Mise bas - REPRODUCTION:UPDATE */}
+          {isConfirmed && !cycle.lambingDate && canRecordLambing && (
             <Pressable
               onPress={() => onRecordLambing(cycle.id)}
               style={[styles.actionButton, styles.lambingButton]}
@@ -504,12 +528,15 @@ function CycleCard({
               <Ionicons name="add-circle" size={18} color="#fff" />
             </Pressable>
           )}
-          <Pressable
-            onPress={() => onDelete(cycle.id)}
-            style={[styles.actionButton, styles.deleteButton]}
-          >
-            <Ionicons name="trash-outline" size={18} color="#fff" />
-          </Pressable>
+          {/* 👇 Supprimer cycle - REPRODUCTION:DELETE */}
+          {canDelete && (
+            <Pressable
+              onPress={() => onDelete(cycle.id)}
+              style={[styles.actionButton, styles.deleteButton]}
+            >
+              <Ionicons name="trash-outline" size={18} color="#fff" />
+            </Pressable>
+          )}
         </View>
       </View>
 
@@ -623,10 +650,14 @@ function MatingCard({
   mating,
   onDelete,
   onEdit,
+  canEdit,
+  canDelete,
 }: {
   mating: MatingService;
   onDelete: () => void;
   onEdit: () => void;
+  canEdit: boolean;
+  canDelete: boolean;
 }) {
   const getResultColor = (result: string) => {
     switch (result) {
@@ -696,19 +727,24 @@ function MatingCard({
       </View>
 
       <View style={styles.matingActions}>
-        <TouchableOpacity onPress={onEdit} style={styles.matingActionButton}>
-          <Ionicons name="pencil" size={18} color="#3B82F6" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onDelete} style={styles.matingActionButton}>
-          <Ionicons name="trash-outline" size={18} color="#EF4444" />
-        </TouchableOpacity>
+        {/* 👇 Modifier saillie - REPRODUCTION:UPDATE */}
+        {canEdit && (
+          <TouchableOpacity onPress={onEdit} style={styles.matingActionButton}>
+            <Ionicons name="pencil" size={18} color="#3B82F6" />
+          </TouchableOpacity>
+        )}
+        {/* 👇 Supprimer saillie - REPRODUCTION:DELETE */}
+        {canDelete && (
+          <TouchableOpacity onPress={onDelete} style={styles.matingActionButton}>
+            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
 }
 
 // ── Styles ─────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: BACKGROUND },
 
@@ -720,22 +756,11 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   backButton: { marginRight: 0 },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: TEXT_DARK,
-  },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    paddingHorizontal: 24,
-  },
+  headerTitle: { fontSize: 18, fontWeight: "700", color: TEXT_DARK, flex: 1, textAlign: "center" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 24 },
   error: { color: "#dc2626", fontSize: 14, textAlign: "center" },
   container: { padding: 16, paddingBottom: 32 },
 
-  // ── Hero Card ──
   heroCard: {
     backgroundColor: CARD_BG,
     borderRadius: 20,
@@ -749,15 +774,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   heroTop: { alignItems: "center", marginBottom: 12 },
-  heroAvatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: "#F0FDF4",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
+  heroAvatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: "#F0FDF4", alignItems: "center", justifyContent: "center", marginBottom: 12 },
   heroAvatarIcon: { fontSize: 42 },
   heroBadges: { flexDirection: "row", gap: 8 },
   heroBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
@@ -765,12 +782,7 @@ const styles = StyleSheet.create({
   heroName: { fontSize: 24, fontWeight: "800", color: GREEN, textAlign: "center" },
   heroRfid: { fontSize: 13, color: TEXT_MUTED, textAlign: "center" },
 
-  // ── Quick Stats ──
-  statsRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 20,
-  },
+  statsRow: { flexDirection: "row", gap: 10, marginBottom: 20 },
   statCard: {
     flex: 1,
     backgroundColor: CARD_BG,
@@ -787,23 +799,12 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 15, fontWeight: "700", color: TEXT_DARK },
   statLabel: { fontSize: 11, color: TEXT_MUTED, fontWeight: "600" },
 
-  // ── Section ──
   section: { marginBottom: 20 },
-  sectionTitleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
+  sectionTitleContainer: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   sectionBar: { width: 4, height: 18, backgroundColor: GREEN, borderRadius: 2, marginRight: 8 },
   sectionTitle: { fontSize: 15, fontWeight: "700", color: TEXT_DARK },
 
-  // ── Actions Grid ──
-  actionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 10,
-  },
+  actionsGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 10 },
   actionCard: {
     width: "30%",
     backgroundColor: CARD_BG,
@@ -819,17 +820,9 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   actionCardPressed: { backgroundColor: "#F9FAFB", borderColor: "#E5E7EB" },
-  actionIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
+  actionIconCircle: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   actionLabel: { fontSize: 12, fontWeight: "700", color: TEXT_DARK, textAlign: "center" },
 
-  // ── Cycle Card ──
   cycleCard: {
     backgroundColor: CARD_BG,
     borderRadius: 14,
@@ -856,13 +849,7 @@ const styles = StyleSheet.create({
   cycleDate: { flexDirection: "row", alignItems: "center", gap: 6 },
   cycleDateText: { fontSize: 14, fontWeight: "600", color: TEXT_DARK },
   cycleActions: { flexDirection: "row", gap: 6 },
-  actionButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  actionButton: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   confirmButton: { backgroundColor: GREEN_EMERALD },
   lambingButton: { backgroundColor: "#8B5CF6" },
   deleteButton: { backgroundColor: "#dc2626" },
@@ -875,7 +862,6 @@ const styles = StyleSheet.create({
   pendingStatus: { color: "#d97706" },
   cycleNotes: { fontSize: 13, color: TEXT_MUTED, fontStyle: "italic", flex: 1, textAlign: "right" },
 
-  // ── Pregnancy Card ──
   pregnancyCard: {
     backgroundColor: "#f0fdf4",
     borderRadius: 12,
@@ -884,31 +870,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#bbf7d0",
   },
-  pregnancyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
+  pregnancyHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
   pregnancyTitle: { fontSize: 15, fontWeight: "700", color: GREEN },
   pregnancyEditButton: { padding: 4 },
-  pregnancyRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 3,
-  },
+  pregnancyRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 3 },
   pregnancyLabel: { fontSize: 13, color: TEXT_MUTED, fontWeight: "500" },
   pregnancyValue: { fontSize: 13, fontWeight: "600", color: TEXT_DARK },
-  pregnancyNotes: {
-    fontSize: 13,
-    fontStyle: "italic",
-    color: TEXT_MUTED,
-    flexShrink: 1,
-    textAlign: "right",
-  },
+  pregnancyNotes: { fontSize: 13, fontStyle: "italic", color: TEXT_MUTED, flexShrink: 1, textAlign: "right" },
 
-  // ── Mating Card ──
   matingList: { gap: 12 },
   matingCard: {
     backgroundColor: CARD_BG,
@@ -922,102 +891,32 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  matingHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
+  matingHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
   matingDate: { flexDirection: "row", alignItems: "center", gap: 6 },
   matingDateText: { fontSize: 14, fontWeight: "600", color: TEXT_DARK },
-  matingBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: "#f3f4f6",
-  },
+  matingBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: "#f3f4f6" },
   matingBadgeText: { fontSize: 12, fontWeight: "600" },
   matingBody: { gap: 4 },
-  matingRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
+  matingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   matingLabel: { fontSize: 13, color: TEXT_MUTED, fontWeight: "500" },
   matingValue: { fontSize: 13, fontWeight: "600", color: TEXT_DARK },
-  matingNotes: {
-    fontSize: 13,
-    color: TEXT_MUTED,
-    fontStyle: "italic",
-    flexShrink: 1,
-    textAlign: "right",
-  },
-  matingActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 12,
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
-  },
+  matingNotes: { fontSize: 13, color: TEXT_MUTED, fontStyle: "italic", flexShrink: 1, textAlign: "right" },
+  matingActions: { flexDirection: "row", justifyContent: "flex-end", gap: 12, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: "#f0f0f0" },
   matingActionButton: { padding: 4 },
 
-  // ── Empty state ──
-  emptyContainer: {
-    alignItems: "center",
-    paddingVertical: 32,
-    gap: 12,
-  },
+  emptyContainer: { alignItems: "center", paddingVertical: 32, gap: 12 },
   emptyText: { textAlign: "center", color: TEXT_MUTED, marginTop: 8, fontSize: 14 },
-  emptyButton: {
-    backgroundColor: GREEN,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
+  emptyButton: { backgroundColor: GREEN, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
   emptyButtonText: { color: "#fff", fontWeight: "600", fontSize: 13 },
 
-  // ── Modal ──
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    width: "85%",
-    borderRadius: 16,
-    padding: 24,
-  },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
+  modalContent: { backgroundColor: "#fff", width: "85%", borderRadius: 16, padding: 24 },
   modalTitle: { fontSize: 18, fontWeight: "700", color: TEXT_DARK, marginBottom: 8 },
   modalSubtitle: { fontSize: 14, color: TEXT_MUTED, marginBottom: 16 },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    marginBottom: 16,
-    color: TEXT_DARK,
-  },
+  modalInput: { borderWidth: 1, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, marginBottom: 16, color: TEXT_DARK },
   modalButtons: { flexDirection: "row", gap: 10 },
-  modalCancel: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-    backgroundColor: "#f3f4f6",
-    borderRadius: 10,
-  },
+  modalCancel: { flex: 1, paddingVertical: 12, alignItems: "center", backgroundColor: "#f3f4f6", borderRadius: 10 },
   modalCancelText: { color: TEXT_MUTED, fontWeight: "600", fontSize: 14 },
-  modalConfirm: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-    backgroundColor: GREEN_EMERALD,
-    borderRadius: 10,
-  },
+  modalConfirm: { flex: 1, paddingVertical: 12, alignItems: "center", backgroundColor: GREEN_EMERALD, borderRadius: 10 },
   modalConfirmText: { color: "#fff", fontWeight: "600", fontSize: 14 },
 });

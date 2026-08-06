@@ -10,7 +10,6 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "../utils/jwt.js";
-import { getPermissionsForRole } from "../services/permissions.service.js";
 import { loginSchema } from "../validators/auth.validator.js";
 import {
   saveRefreshToken,
@@ -20,6 +19,11 @@ import { findUserById } from "../repositories/users.repository.js";
 
 import { createSession, closeSessionByRefreshToken } from "../repositories/sessions.repository.js";
 import { auditService } from "../services/audit.service.js";
+
+// 👇 Import nécessaire pour récupérer le nom du rôle
+import { db } from "../db/connection.js";
+import { roles } from "../db/schema/roles.js";
+import { eq } from "drizzle-orm";
 
 export async function login(c: Context) {
   const body = await c.req.json();
@@ -114,6 +118,9 @@ export async function login(c: Context) {
   });
 }
 
+// =================================================================
+// ✅ NOUVEAU : getMe – retourne l'utilisateur avec son roleName
+// =================================================================
 export async function getMe(c: Context) {
   const userPayload = c.get("user") as
     | { id: number; roleId: number; roleName?: string | null }
@@ -123,33 +130,28 @@ export async function getMe(c: Context) {
     return c.json({ success: false, message: "Authentification requise." }, 401);
   }
 
+  // Récupération complète de l'utilisateur
   const fullUser = await findUserById(userPayload.id);
 
   if (!fullUser) {
     return c.json({ success: false, message: "Utilisateur non trouvé." }, 404);
   }
 
-  // Return the user object directly (without a wrapper)
+  // Récupération du nom du rôle depuis la base (ou on pourrait utiliser userPayload.roleName)
+  // On préfère une requête DB pour être sûr que les données sont à jour.
+  const role = await db.query.roles.findFirst({
+    where: eq(roles.id, fullUser.roleId),
+  });
+
   const { password, ...safeUser } = fullUser;
-  return c.json(safeUser);
-}
 
-export async function getMyPermissions(c: Context) {
-  const user = c.get("user") as
-    | { id: number; roleId: number; roleName?: string | null }
-    | undefined;
-
-  if (!user) {
-    return c.json({ success: false, message: "Authentification requise." }, 401);
-  }
-
-  const permissions = await getPermissionsForRole(user.roleId);
-
+  // On retourne l'utilisateur avec le roleName ajouté
   return c.json({
-    permissions,
-    roleName: user.roleName ?? null,
+    ...safeUser,
+    roleName: role?.name ?? null,
   });
 }
+
 
 export async function refreshToken(c: Context) {
   const body = await c.req.json();

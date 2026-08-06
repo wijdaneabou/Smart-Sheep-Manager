@@ -17,6 +17,7 @@ import { listAnimals, type Animal } from "../../../services/animalsService";
 import { reproductionService, ReproductionCycle } from "../../../services/reproductionService";
 import { API_URL } from "../../../services/api";
 import { BackButton } from "../../../components/BackButton";
+import { usePermissions } from "@/contexts/PermissionsContext"; // 👈 NEW IMPORT
 import {
   BREEDS,
   getBreedInfo,
@@ -44,6 +45,8 @@ export default function ReproductionScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { hasPermission } = usePermissions(); // 👈 NEW
 
   async function loadData() {
     setError(null);
@@ -259,19 +262,21 @@ export default function ReproductionScreen() {
           />
         )}
 
-        {/* FAB */}
-        <Pressable
-          style={styles.fab}
-          onPress={() => router.push("/reproduction/add")}
-        >
-          <Text style={styles.fabIcon}>+</Text>
-        </Pressable>
+        {/* 👇 FAB Ajouter cycle - REPRODUCTION:CREATE */}
+        {hasPermission('REPRODUCTION', 'CREATE') && (
+          <Pressable
+            style={styles.fab}
+            onPress={() => router.push("/reproduction/add")}
+          >
+            <Text style={styles.fabIcon}>+</Text>
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );
 }
 
-// ── FilterPill (identique) ──
+// ── FilterPill ──
 function FilterPill({
   label,
   active,
@@ -295,7 +300,7 @@ function FilterPill({
   );
 }
 
-// ── Styles (identiques à herd/index.tsx) ──
+// ── Styles ──
 const GREEN = "#0F7A3C";
 
 const styles = StyleSheet.create({

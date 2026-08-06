@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../../services/api";
 import { BackButton } from "../../../../components/BackButton";
+import { usePermissions } from "@/contexts/PermissionsContext"; // 👈 NEW IMPORT
 
 type HealthStatus = 'HEALTHY' | 'SURVEILLANCE' | 'SICK' | 'UNDER_TREATMENT' | 'RECOVERED';
 
@@ -69,6 +70,8 @@ export default function HealthRecordDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const recordId = Number(id);
   const router = useRouter();
+  const { hasPermission } = usePermissions(); // 👈 NEW
+
   const [record, setRecord] = useState<any>(null);
   const [treatments, setTreatments] = useState<any[]>([]);
   const [vaccinations, setVaccinations] = useState<any[]>([]);
@@ -310,29 +313,33 @@ export default function HealthRecordDetail() {
           )}
         </View>
 
-        {/* Actions */}
+        {/* 👇 Actions du dossier - HEALTH:UPDATE et HEALTH:DELETE */}
         <View style={styles.actionsRow}>
-          <Pressable
-            style={styles.actionButton}
-            onPress={() => router.push(`/health/${record.id}/edit` as any)}
-          >
-            <Text style={styles.actionIcon}>✏️</Text>
-            <Text style={styles.actionLabel}>Modifier</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.actionButton, styles.actionButtonDanger]}
-            onPress={handleDelete}
-            disabled={deleting}
-          >
-            {deleting ? (
-              <ActivityIndicator size="small" color="#dc2626" />
-            ) : (
-              <>
-                <Text style={styles.actionIcon}>🗑️</Text>
-                <Text style={[styles.actionLabel, { color: "#dc2626" }]}>Supprimer</Text>
-              </>
-            )}
-          </Pressable>
+          {hasPermission('HEALTH', 'UPDATE') && (
+            <Pressable
+              style={styles.actionButton}
+              onPress={() => router.push(`/health/${record.id}/edit` as any)}
+            >
+              <Text style={styles.actionIcon}>✏️</Text>
+              <Text style={styles.actionLabel}>Modifier</Text>
+            </Pressable>
+          )}
+          {hasPermission('HEALTH', 'DELETE') && (
+            <Pressable
+              style={[styles.actionButton, styles.actionButtonDanger]}
+              onPress={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <ActivityIndicator size="small" color="#dc2626" />
+              ) : (
+                <>
+                  <Text style={styles.actionIcon}>🗑️</Text>
+                  <Text style={[styles.actionLabel, { color: "#dc2626" }]}>Supprimer</Text>
+                </>
+              )}
+            </Pressable>
+          )}
         </View>
 
         {/* Détails du dossier */}
@@ -347,17 +354,19 @@ export default function HealthRecordDetail() {
           <InfoRow label="Dernière mise à jour" value={new Date(record.updatedAt).toLocaleDateString("fr-FR")} last />
         </View>
 
-        {/* Traitements */}
+        {/* ── TRAITEMENTS ── */}
         <View style={styles.treatmentsSection}>
           <View style={styles.treatmentsHeader}>
             <Text style={styles.sectionTitle}>Traitements</Text>
-            <Pressable
-              style={styles.addTreatmentButton}
-              onPress={() => router.push(`/health/${record.id}/add-treatment` as any)}
-            >
-              <Ionicons name="add" size={20} color="#fff" />
-              <Text style={styles.addTreatmentButtonText}>Ajouter</Text>
-            </Pressable>
+            {hasPermission('HEALTH', 'CREATE') && (
+              <Pressable
+                style={styles.addTreatmentButton}
+                onPress={() => router.push(`/health/${record.id}/add-treatment` as any)}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+                <Text style={styles.addTreatmentButtonText}>Ajouter</Text>
+              </Pressable>
+            )}
           </View>
 
           {loadingTreatments ? (
@@ -421,35 +430,41 @@ export default function HealthRecordDetail() {
                   </Pressable>
                 )}
                 <View style={styles.treatmentActions}>
-                  <Pressable
-                    style={[styles.treatmentActionButton, styles.treatmentEditButton]}
-                    onPress={() => router.push(`/health/${record.id}/edit-treatment?treatmentId=${treatment.id}` as any)}
-                  >
-                    <Text style={styles.treatmentActionText}>✏️ Modifier</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.treatmentActionButton, styles.treatmentDeleteButton]}
-                    onPress={() => handleDeleteTreatment(treatment.id)}
-                  >
-                    <Text style={[styles.treatmentActionText, { color: '#dc2626' }]}>🗑️ Supprimer</Text>
-                  </Pressable>
+                  {hasPermission('HEALTH', 'UPDATE') && (
+                    <Pressable
+                      style={[styles.treatmentActionButton, styles.treatmentEditButton]}
+                      onPress={() => router.push(`/health/${record.id}/edit-treatment?treatmentId=${treatment.id}` as any)}
+                    >
+                      <Text style={styles.treatmentActionText}>✏️ Modifier</Text>
+                    </Pressable>
+                  )}
+                  {hasPermission('HEALTH', 'DELETE') && (
+                    <Pressable
+                      style={[styles.treatmentActionButton, styles.treatmentDeleteButton]}
+                      onPress={() => handleDeleteTreatment(treatment.id)}
+                    >
+                      <Text style={[styles.treatmentActionText, { color: '#dc2626' }]}>🗑️ Supprimer</Text>
+                    </Pressable>
+                  )}
                 </View>
               </View>
             ))
           )}
         </View>
 
-        {/* Vaccinations */}
+        {/* ── VACCINATIONS ── */}
         <View style={styles.vaccinationsSection}>
           <View style={styles.vaccinationsHeader}>
             <Text style={styles.sectionTitle}>Vaccinations</Text>
-            <Pressable
-              style={styles.addVaccinationButton}
-              onPress={() => router.push(`/health/${record.id}/add-vaccination` as any)}
-            >
-              <Ionicons name="add" size={20} color="#fff" />
-              <Text style={styles.addVaccinationButtonText}>Ajouter</Text>
-            </Pressable>
+            {hasPermission('HEALTH', 'CREATE') && (
+              <Pressable
+                style={styles.addVaccinationButton}
+                onPress={() => router.push(`/health/${record.id}/add-vaccination` as any)}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+                <Text style={styles.addVaccinationButtonText}>Ajouter</Text>
+              </Pressable>
+            )}
           </View>
 
           {loadingVaccinations ? (
@@ -504,35 +519,41 @@ export default function HealthRecordDetail() {
                   </Pressable>
                 )}
                 <View style={styles.vaccinationActions}>
-                  <Pressable
-                    style={[styles.vaccinationActionButton, styles.vaccinationEditButton]}
-                    onPress={() => router.push(`/health/${record.id}/edit-vaccination?vaccinationId=${vaccination.id}` as any)}
-                  >
-                    <Text style={styles.vaccinationActionText}>✏️ Modifier</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.vaccinationActionButton, styles.vaccinationDeleteButton]}
-                    onPress={() => handleDeleteVaccination(vaccination.id)}
-                  >
-                    <Text style={[styles.vaccinationActionText, { color: '#dc2626' }]}>🗑️ Supprimer</Text>
-                  </Pressable>
+                  {hasPermission('HEALTH', 'UPDATE') && (
+                    <Pressable
+                      style={[styles.vaccinationActionButton, styles.vaccinationEditButton]}
+                      onPress={() => router.push(`/health/${record.id}/edit-vaccination?vaccinationId=${vaccination.id}` as any)}
+                    >
+                      <Text style={styles.vaccinationActionText}>✏️ Modifier</Text>
+                    </Pressable>
+                  )}
+                  {hasPermission('HEALTH', 'DELETE') && (
+                    <Pressable
+                      style={[styles.vaccinationActionButton, styles.vaccinationDeleteButton]}
+                      onPress={() => handleDeleteVaccination(vaccination.id)}
+                    >
+                      <Text style={[styles.vaccinationActionText, { color: '#dc2626' }]}>🗑️ Supprimer</Text>
+                    </Pressable>
+                  )}
                 </View>
               </View>
             ))
           )}
         </View>
 
-        {/* Interventions vétérinaires (US-5.7) */}
+        {/* ── INTERVENTIONS VÉTÉRINAIRES ── */}
         <View style={styles.interventionsSection}>
           <View style={styles.interventionsHeader}>
             <Text style={styles.sectionTitle}>Interventions vétérinaires</Text>
-            <Pressable
-              style={styles.addInterventionButton}
-              onPress={() => router.push(`/health/${record.id}/add-intervention` as any)}
-            >
-              <Ionicons name="add" size={20} color="#fff" />
-              <Text style={styles.addInterventionButtonText}>Ajouter</Text>
-            </Pressable>
+            {hasPermission('HEALTH', 'CREATE') && (
+              <Pressable
+                style={styles.addInterventionButton}
+                onPress={() => router.push(`/health/${record.id}/add-intervention` as any)}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+                <Text style={styles.addInterventionButtonText}>Ajouter</Text>
+              </Pressable>
+            )}
           </View>
 
           {loadingInterventions ? (
@@ -576,18 +597,22 @@ export default function HealthRecordDetail() {
                   </Text>
                 </View>
                 <View style={styles.interventionActions}>
-                  <Pressable
-                    style={[styles.interventionActionButton, styles.interventionEditButton]}
-                    onPress={() => router.push(`/health/${record.id}/edit-intervention?interventionId=${intervention.id}` as any)}
-                  >
-                    <Text style={styles.interventionActionText}>✏️ Modifier</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.interventionActionButton, styles.interventionDeleteButton]}
-                    onPress={() => handleDeleteIntervention(intervention.id)}
-                  >
-                    <Text style={[styles.interventionActionText, { color: '#dc2626' }]}>🗑️ Supprimer</Text>
-                  </Pressable>
+                  {hasPermission('HEALTH', 'UPDATE') && (
+                    <Pressable
+                      style={[styles.interventionActionButton, styles.interventionEditButton]}
+                      onPress={() => router.push(`/health/${record.id}/edit-intervention?interventionId=${intervention.id}` as any)}
+                    >
+                      <Text style={styles.interventionActionText}>✏️ Modifier</Text>
+                    </Pressable>
+                  )}
+                  {hasPermission('HEALTH', 'DELETE') && (
+                    <Pressable
+                      style={[styles.interventionActionButton, styles.interventionDeleteButton]}
+                      onPress={() => handleDeleteIntervention(intervention.id)}
+                    >
+                      <Text style={[styles.interventionActionText, { color: '#dc2626' }]}>🗑️ Supprimer</Text>
+                    </Pressable>
+                  )}
                 </View>
               </View>
             ))
@@ -597,6 +622,8 @@ export default function HealthRecordDetail() {
     </SafeAreaView>
   );
 }
+
+// ── Composants réutilisables ──
 
 function SectionTitle({ label }: { label: string }) {
   return (
@@ -615,6 +642,7 @@ function InfoRow({ label, value, last }: { label: string; value: string; last?: 
   );
 }
 
+// ── Styles ──
 const PAGE_BG = "#faf3ea";
 
 const styles = StyleSheet.create({
@@ -626,9 +654,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 8,
   },
-  backButton: {
-    marginRight: 0,
-  },
+  backButton: { marginRight: 0 },
   headerTitle: { fontSize: 16, fontWeight: "700" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   error: { color: "#dc2626" },
@@ -833,7 +859,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
 
-  // Interventions vétérinaires (US-5.7)
+  // Interventions vétérinaires
   interventionsSection: {
     backgroundColor: "#fff",
     borderRadius: 14,

@@ -21,6 +21,7 @@ import {
   getHealthStatusInfo,
 } from "../../../constants/breeds";
 import { BackButton } from "../../../components/BackButton";
+import { usePermissions } from "@/contexts/PermissionsContext"; // 👈 NEW IMPORT
 
 type FilterType = "TOUT" | "Sardi" | "Timahdite" | "D'man" | "Beni-Guil";
 
@@ -31,6 +32,8 @@ export default function HerdScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { hasPermission } = usePermissions(); // 👈 NEW
 
   async function fetchAnimals() {
     setError(null);
@@ -214,16 +217,20 @@ export default function HerdScreen() {
           />
         )}
 
-        <Link href={"/herd/create" as any} asChild>
-          <Pressable style={styles.fab}>
-            <Text style={styles.fabIcon}>+</Text>
-          </Pressable>
-        </Link>
+        {/* 👇 FAB Ajouter animal - HERD:CREATE */}
+        {hasPermission('HERD', 'CREATE') && (
+          <Link href={"/herd/create" as any} asChild>
+            <Pressable style={styles.fab}>
+              <Text style={styles.fabIcon}>+</Text>
+            </Pressable>
+          </Link>
+        )}
       </View>
     </SafeAreaView>
   );
 }
 
+// ── FilterPill ──
 function FilterPill({
   label,
   active,
@@ -247,13 +254,14 @@ function FilterPill({
   );
 }
 
+// ── Styles ──
 const GREEN = "#0F7A3C";
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
   container: { flex: 1, paddingHorizontal: 16 },
 
-  // --- New header with back button ---
+  // --- Header ---
   headerRow: {
     flexDirection: "row",
     alignItems: "center",

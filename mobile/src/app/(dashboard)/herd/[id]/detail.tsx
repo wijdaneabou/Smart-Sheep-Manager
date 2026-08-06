@@ -21,8 +21,9 @@ import { exportAnimalHistoryPdf } from "../../../../services/animalHistoryServic
 import { getBreedInfo, getSexInfo, getHealthStatusInfo } from "../../../../constants/breeds";
 import { API_URL } from "../../../../services/api";
 import { BackButton } from "../../../../components/BackButton";
+import { usePermissions } from "@/contexts/PermissionsContext"; // 👈 NEW IMPORT
 
-// ── Design tokens ──────────────────────────────────────────────
+// ── Design tokens ──
 const GREEN = "#14532d";
 const GREEN_EMERALD = "#059669";
 const BACKGROUND = "#f8fafc";
@@ -31,7 +32,7 @@ const BORDER = "#e5e7eb";
 const TEXT_DARK = "#1f2937";
 const TEXT_MUTED = "#6b7280";
 
-// ── Helpers ────────────────────────────────────────────────────
+// ── Helpers ──
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "—";
   return new Date(dateStr).toLocaleDateString("fr-FR");
@@ -56,11 +57,12 @@ function calculateAge(birthDate: string | null): string {
   return `${days}j`;
 }
 
-// ── Main component ─────────────────────────────────────────────
+// ── Main component ──
 export default function AnimalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const animalId = Number(id);
   const router = useRouter();
+  const { hasPermission } = usePermissions(); // 👈 NEW
 
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [loading, setLoading] = useState(true);
@@ -251,20 +253,24 @@ export default function AnimalDetailScreen() {
         <View style={styles.section}>
           <SectionTitle label="Actions rapides" />
           <View style={styles.actionsGrid}>
-            <ActionCard
-              icon="create"
-              iconBg="#EFF6FF"
-              iconColor={GREEN}
-              label="Modifier"
-              onPress={() =>
-                router.push(
-                  {
-                    pathname: "/herd/[id]/edit",
-                    params: { id: String(animal.id) },
-                  } as any
-                )
-              }
-            />
+            {/* 👇 Modifier - HERD:UPDATE */}
+            {hasPermission('HERD', 'UPDATE') && (
+              <ActionCard
+                icon="create"
+                iconBg="#EFF6FF"
+                iconColor={GREEN}
+                label="Modifier"
+                onPress={() =>
+                  router.push(
+                    {
+                      pathname: "/herd/[id]/edit",
+                      params: { id: String(animal.id) },
+                    } as any
+                  )
+                }
+              />
+            )}
+
             <ActionCard
               icon="list"
               iconBg="#F5F3FF"
@@ -272,6 +278,7 @@ export default function AnimalDetailScreen() {
               label="Historique"
               onPress={() => router.push(`/herd/${animal.id}/history` as any)}
             />
+
             <ActionCard
               icon="swap-horizontal"
               iconBg="#ECFEFF"
@@ -286,6 +293,7 @@ export default function AnimalDetailScreen() {
                 } as any)
               }
             />
+
             <ActionCard
               icon="analytics"
               iconBg="#ECFDF5"
@@ -293,6 +301,7 @@ export default function AnimalDetailScreen() {
               label="Croissance"
               onPress={() => router.push(`/herd/${animal.id}/growth` as any)}
             />
+
             <ActionCard
               icon="body"
               iconBg="#E6F8ED"
@@ -300,6 +309,7 @@ export default function AnimalDetailScreen() {
               label="Radar BCS"
               onPress={() => router.push(`/herd/${animal.id}/bcs` as any)}
             />
+
             <ActionCard
               icon="git-branch"
               iconBg="#FFFBEB"
@@ -307,23 +317,31 @@ export default function AnimalDetailScreen() {
               label="Pedigree"
               onPress={() => router.push(`/herd/${animal.id}/pedigree` as any)}
             />
-            <ActionCard
-              icon="download"
-              iconBg="#F0FDF4"
-              iconColor={GREEN_EMERALD}
-              label="Exporter"
-              onPress={handleExport}
-              loading={exporting}
-            />
-            <ActionCard
-              icon="trash"
-              iconBg="#FEE2E2"
-              iconColor="#dc2626"
-              label="Supprimer"
-              onPress={handleDelete}
-              loading={deleting}
-              danger
-            />
+
+            {/* 👇 Exporter - HERD:EXPORT */}
+            {hasPermission('HERD', 'EXPORT') && (
+              <ActionCard
+                icon="download"
+                iconBg="#F0FDF4"
+                iconColor={GREEN_EMERALD}
+                label="Exporter"
+                onPress={handleExport}
+                loading={exporting}
+              />
+            )}
+
+            {/* 👇 Supprimer - HERD:DELETE */}
+            {hasPermission('HERD', 'DELETE') && (
+              <ActionCard
+                icon="trash"
+                iconBg="#FEE2E2"
+                iconColor="#dc2626"
+                label="Supprimer"
+                onPress={handleDelete}
+                loading={deleting}
+                danger
+              />
+            )}
           </View>
         </View>
 
@@ -477,9 +495,7 @@ function InfoRow({
 }
 
 // ── Styles ─────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  // ── Layout ──
   safeArea: { flex: 1, backgroundColor: BACKGROUND },
 
   header: {
@@ -489,32 +505,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
-  backButton: {
-    marginRight: 0,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: TEXT_DARK,
-  },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    paddingHorizontal: 24,
-  },
-  error: {
-    color: "#dc2626",
-    fontSize: 14,
-    textAlign: "center",
-  },
-  container: {
-    padding: 16,
-    paddingBottom: 32,
-  },
+  backButton: { marginRight: 0 },
+  headerTitle: { fontSize: 18, fontWeight: "700", color: TEXT_DARK },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 24 },
+  error: { color: "#dc2626", fontSize: 14, textAlign: "center" },
+  container: { padding: 16, paddingBottom: 32 },
 
-  // ── Hero Card ──
   heroCard: {
     backgroundColor: CARD_BG,
     borderRadius: 20,
@@ -527,16 +523,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  heroTop: {
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  heroPhoto: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    marginBottom: 12,
-  },
+  heroTop: { alignItems: "center", marginBottom: 12 },
+  heroPhoto: { width: 96, height: 96, borderRadius: 48, marginBottom: 12 },
   heroAvatar: {
     width: 96,
     height: 96,
@@ -546,41 +534,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 12,
   },
-  heroAvatarIcon: {
-    fontSize: 42,
-  },
-  heroBadges: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  heroBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  heroBadgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  heroName: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: GREEN,
-    textAlign: "center",
-    marginBottom: 4,
-  },
-  heroRfid: {
-    fontSize: 13,
-    color: TEXT_MUTED,
-    textAlign: "center",
-  },
+  heroAvatarIcon: { fontSize: 42 },
+  heroBadges: { flexDirection: "row", gap: 8 },
+  heroBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  heroBadgeText: { fontSize: 12, fontWeight: "700" },
+  heroName: { fontSize: 24, fontWeight: "800", color: GREEN, textAlign: "center" },
+  heroRfid: { fontSize: 13, color: TEXT_MUTED, textAlign: "center" },
 
-  // ── Quick Stats ──
-  statsRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 20,
-  },
+  statsRow: { flexDirection: "row", gap: 10, marginBottom: 20 },
   statCard: {
     flex: 1,
     backgroundColor: CARD_BG,
@@ -594,40 +555,18 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  statValue: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: TEXT_DARK,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: TEXT_MUTED,
-    fontWeight: "600",
-  },
+  statValue: { fontSize: 15, fontWeight: "700", color: TEXT_DARK },
+  statLabel: { fontSize: 11, color: TEXT_MUTED, fontWeight: "600" },
 
-  // ── Section ──
-  section: {
-    marginBottom: 20,
-  },
+  section: { marginBottom: 20 },
   sectionTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
   },
-  sectionBar: {
-    width: 4,
-    height: 18,
-    backgroundColor: GREEN,
-    borderRadius: 2,
-    marginRight: 8,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: TEXT_DARK,
-  },
+  sectionBar: { width: 4, height: 18, backgroundColor: GREEN, borderRadius: 2, marginRight: 8 },
+  sectionTitle: { fontSize: 15, fontWeight: "700", color: TEXT_DARK },
 
-  // ── Actions Grid ──
   actionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -648,14 +587,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  actionCardDanger: {
-    borderColor: "#fecaca",
-    backgroundColor: "#fef2f2",
-  },
-  actionCardPressed: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
-  },
+  actionCardDanger: { borderColor: "#fecaca", backgroundColor: "#fef2f2" },
+  actionCardPressed: { backgroundColor: "#F9FAFB", borderColor: "#E5E7EB" },
   actionIconCircle: {
     width: 40,
     height: 40,
@@ -664,14 +597,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
   },
-  actionLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: TEXT_DARK,
-    textAlign: "center",
-  },
+  actionLabel: { fontSize: 12, fontWeight: "700", color: TEXT_DARK, textAlign: "center" },
 
-  // ── Info Block ──
   infoBlock: {
     width: "100%",
     backgroundColor: CARD_BG,
@@ -692,17 +619,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
   },
-  infoLabel: {
-    fontSize: 13,
-    color: TEXT_MUTED,
-    fontWeight: "500",
-  },
-  infoValue: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: TEXT_DARK,
-    textAlign: "right",
-    flex: 1,
-    marginLeft: 12,
-  },
+  infoLabel: { fontSize: 13, color: TEXT_MUTED, fontWeight: "500" },
+  infoValue: { fontSize: 13, fontWeight: "600", color: TEXT_DARK, textAlign: "right", flex: 1, marginLeft: 12 },
 });

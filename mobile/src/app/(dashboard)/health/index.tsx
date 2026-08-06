@@ -15,6 +15,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import api, { API_URL } from "../../../services/api";
 import { BackButton } from "../../../components/BackButton";
 import { getBreedInfo, getSexInfo } from "../../../constants/breeds";
+import { usePermissions } from "@/contexts/PermissionsContext"; // 👈 NEW IMPORT
 
 type HealthStatus = 'HEALTHY' | 'SURVEILLANCE' | 'SICK' | 'UNDER_TREATMENT' | 'RECOVERED';
 
@@ -31,6 +32,8 @@ type StatusFilter = typeof statusFilterTypes[number];
 
 export default function HealthRecordsList() {
   const router = useRouter();
+  const { hasPermission } = usePermissions(); // 👈 NEW
+
   const [records, setRecords] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<StatusFilter>("TOUT");
@@ -256,13 +259,17 @@ export default function HealthRecordsList() {
 
         {/* Boutons flottants : + et Rapport */}
         <View style={styles.fabContainer}>
-          <Pressable
-            style={styles.fab}
-            onPress={() => router.push("/health/create")}
-          >
-            <Text style={styles.fabIcon}>+</Text>
-          </Pressable>
+          {/* 👇 FAB Ajouter dossier - HEALTH:CREATE */}
+          {hasPermission('HEALTH', 'CREATE') && (
+            <Pressable
+              style={styles.fab}
+              onPress={() => router.push("/health/create")}
+            >
+              <Text style={styles.fabIcon}>+</Text>
+            </Pressable>
+          )}
 
+          {/* Le bouton Rapport est visible pour tous ceux qui ont HEALTH:READ (toujours le cas) */}
           <Pressable
             style={styles.rapportFab}
             onPress={() => router.push("/health/report" as any)}

@@ -1,3 +1,4 @@
+// mobile/src/contexts/PermissionsContext.tsx
 import {
   createContext,
   useCallback,
@@ -10,14 +11,8 @@ import {
 import { ActivityIndicator, View, Platform } from "react-native";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import {
-  clearPermissionsSnapshot,
-  fetchAndCachePermissions,
-  loadPermissionsSnapshot,
-  savePermissionsSnapshot,
-  type PermissionsSnapshot,
-} from "@/services/permissionsCache";
 import api from "@/services/api";
+import { PERMISSIONS_MAP, hasPermission, canAccessModule } from "@/constants/permissions";
 
 type User = {
   id: number;
@@ -27,6 +22,7 @@ type User = {
   phone?: string | null;
   photo?: string | null;
   roleId: number;
+  roleName?: string | null;
   status?: string;
   createdAt?: string;
 };
@@ -40,27 +36,11 @@ type PermissionsContextValue = {
   hasAnyPermission: (module: string) => boolean;
   isAdmin: boolean;
   refreshPermissions: () => Promise<void>;
-  clearPermissions: () => Promise<void>;
-  logout: () => void; // ✅ changed to void (no async needed for navigation)
+  clearPermissions: () => void;      // ✅ synchrone
+  logout: () => void;                // ✅ synchrone
 };
 
 const PermissionsContext = createContext<PermissionsContextValue | null>(null);
-
-function normalizeSnapshot(snapshot: PermissionsSnapshot | null): PermissionsSnapshot {
-  return {
-    permissions: snapshot?.permissions ?? [],
-    userRole: snapshot?.userRole ?? "",
-  };
-}
-
-async function fetchUser() {
-  try {
-    const response = await api.get("/auth/me");
-    return response.data;
-  } catch {
-    return null;
-  }
-}
 
 export function PermissionsProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<string[]>([]);
@@ -68,32 +48,33 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const applySnapshot = useCallback(async (snapshot: PermissionsSnapshot) => {
-    setPermissions(snapshot.permissions);
-    setUserRole(snapshot.userRole);
-    await savePermissionsSnapshot(snapshot);
+  const fetchUser = useCallback(async () => {
+    try {
+      const response = await api.get("/auth/me");
+      return response.data as User;
+    } catch {
+      return null;
+    }
   }, []);
 
   const refreshPermissions = useCallback(async () => {
-    const snapshot = await fetchAndCachePermissions();
-    setPermissions(snapshot.permissions);
-    setUserRole(snapshot.userRole);
     const userData = await fetchUser();
-    setUser(userData);
-  }, []);
+    if (userData) {
+      setUser(userData);
+      const role = userData.roleName || '';
+      setUserRole(role);
+      const perms = PERMISSIONS_MAP[role.toLowerCase()] || [];
+      setPermissions(perms);
+    }
+  }, [fetchUser]);
 
-  const clearPermissions = useCallback(async () => {
+  const clearPermissions = useCallback(() => {
     setPermissions([]);
     setUserRole("");
     setUser(null);
-    await clearPermissionsSnapshot();
   }, []);
 
-  // ✅ logout is now a plain function (no async) to simplify
   const logout = useCallback(() => {
-    console.log("🟢 [logout] Started");
-
-    // Clear tokens
     if (Platform.OS === "web" && typeof window !== "undefined") {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
@@ -101,72 +82,56 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       SecureStore.deleteItemAsync("accessToken");
       SecureStore.deleteItemAsync("refreshToken");
     }
-    console.log("🟢 [logout] Tokens cleared");
-
-    // Clear state (fire and forget)
     clearPermissions();
-    console.log("🟢 [logout] State cleared");
-
-    // Navigate
     if (Platform.OS === "web" && typeof window !== "undefined") {
-      console.log("🟢 [logout] Web – redirecting to /login");
       window.location.href = "/login";
     } else {
-      console.log("🟢 [logout] Mobile – using router.replace('/login')");
       router.replace("/login");
     }
   }, [clearPermissions]);
 
   useEffect(() => {
     let active = true;
-
     const bootstrap = async () => {
       try {
-        const cached = normalizeSnapshot(await loadPermissionsSnapshot());
-        if (active) {
-          setPermissions(cached.permissions);
-          setUserRole(cached.userRole);
-        }
-
-        const fresh = await fetchAndCachePermissions();
-        if (active) {
-          await applySnapshot(fresh);
-        }
-
         const userData = await fetchUser();
-        if (active) {
+        if (active && userData) {
           setUser(userData);
+          const role = userData.roleName || '';
+          setUserRole(role);
+          const perms = PERMISSIONS_MAP[role.toLowerCase()] || [];
+          setPermissions(perms);
         }
-      } catch {
-        // Keep cached permissions if refresh fails.
+      } catch (error) {
+        console.error("Failed to load user:", error);
       } finally {
         if (active) setLoading(false);
       }
     };
-
     bootstrap();
+    return () => { active = false; };
+  }, [fetchUser]);
 
-    return () => {
-      active = false;
+  const value = useMemo(() => {
+    const isAdmin = userRole.toLowerCase() === 'admin';
+
+    const hasPerm = (module: string, action: string) => {
+      if (isAdmin) return true;
+      return hasPermission(userRole, module, action);
     };
-  }, [applySnapshot]);
 
-  const value = useMemo<PermissionsContextValue>(() => {
-    const isAdmin = userRole === "ADMIN";
-
-    const hasPermission = (module: string, action: string) =>
-      isAdmin || permissions.includes(`${module}:${action}`);
-
-    const hasAnyPermission = (module: string) =>
-      isAdmin || permissions.includes(`${module}:READ`);
+    const hasAny = (module: string) => {
+      if (isAdmin) return true;
+      return canAccessModule(userRole, module);
+    };
 
     return {
       permissions,
       userRole,
       user,
       loading,
-      hasPermission,
-      hasAnyPermission,
+      hasPermission: hasPerm,
+      hasAnyPermission: hasAny,
       isAdmin,
       refreshPermissions,
       clearPermissions,

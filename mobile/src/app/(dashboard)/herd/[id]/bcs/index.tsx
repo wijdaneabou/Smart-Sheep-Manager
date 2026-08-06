@@ -14,11 +14,13 @@ import { BcsRadarChart } from "@/components/BcsRadarChart";
 import { BcsScoreBadge } from "@/components/BcsScoreBadge";
 import { getBcsHistory, type BcsHistoryResponse, type BcsRecord } from "@/services/animalBcsService";
 import { getBreedInfo } from "@/constants/breeds";
+import { usePermissions } from "@/contexts/PermissionsContext"; // 👈 NEW IMPORT
 
 export default function AnimalBcsHistoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const animalId = Number(id);
   const router = useRouter();
+  const { hasPermission } = usePermissions(); // 👈 NEW
 
   const [data, setData] = useState<BcsHistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,9 +95,12 @@ export default function AnimalBcsHistoryScreen() {
           <Text style={styles.backButtonText}>‹</Text>
         </Pressable>
         <Text style={styles.headerTitle}>Score d'État Corporel (BCS)</Text>
-        <Pressable onPress={handleAddBcs} style={styles.addButton} hitSlop={8}>
-          <Text style={styles.addIcon}>➕</Text>
-        </Pressable>
+        {/* 👇 Add BCS button - HERD:UPDATE */}
+        {hasPermission('HERD', 'UPDATE') && (
+          <Pressable onPress={handleAddBcs} style={styles.addButton} hitSlop={8}>
+            <Text style={styles.addIcon}>➕</Text>
+          </Pressable>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
@@ -134,9 +139,12 @@ export default function AnimalBcsHistoryScreen() {
             <Text style={styles.emptyText}>
               Cet animal n'a pas encore de score d'état corporel enregistré.
             </Text>
-            <Pressable onPress={handleAddBcs} style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>Évaluer le BCS maintenant</Text>
-            </Pressable>
+            {/* 👇 Add BCS button in empty state - HERD:UPDATE */}
+            {hasPermission('HERD', 'UPDATE') && (
+              <Pressable onPress={handleAddBcs} style={styles.primaryButton}>
+                <Text style={styles.primaryButtonText}>Évaluer le BCS maintenant</Text>
+              </Pressable>
+            )}
           </View>
         ) : (
           <>

@@ -19,11 +19,13 @@ import {
 } from "@/services/animalWeightsService";
 import { getBreedInfo } from "@/constants/breeds";
 import { API_URL } from "@/services/api";
+import { usePermissions } from "@/contexts/PermissionsContext"; // 👈 NEW IMPORT
 
 export default function GrowthCurveScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const animalId = Number(id);
   const router = useRouter();
+  const { hasPermission } = usePermissions(); // 👈 NEW
 
   const [data, setData] = useState<GrowthCurveData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,9 +98,12 @@ export default function GrowthCurveScreen() {
             <Text style={styles.backButtonText}>‹</Text>
           </Pressable>
           <Text style={styles.headerTitle}>Courbe de croissance</Text>
-          <Pressable onPress={handleAddWeight} style={styles.addButton}>
-            <Text style={styles.addIcon}>➕</Text>
-          </Pressable>
+          {/* 👇 Add Weight button - HERD:UPDATE */}
+          {hasPermission('HERD', 'UPDATE') && (
+            <Pressable onPress={handleAddWeight} style={styles.addButton}>
+              <Text style={styles.addIcon}>➕</Text>
+            </Pressable>
+          )}
         </View>
         <View style={styles.center}>
           <Text style={styles.emptyIcon}>📊</Text>
@@ -127,9 +132,12 @@ export default function GrowthCurveScreen() {
           <Text style={styles.backButtonText}>‹</Text>
         </Pressable>
         <Text style={styles.headerTitle}>Courbe de croissance</Text>
-        <Pressable onPress={handleAddWeight} style={styles.addButton}>
-          <Text style={styles.addIcon}>➕</Text>
-        </Pressable>
+        {/* 👇 Add Weight button - HERD:UPDATE */}
+        {hasPermission('HERD', 'UPDATE') && (
+          <Pressable onPress={handleAddWeight} style={styles.addButton}>
+            <Text style={styles.addIcon}>➕</Text>
+          </Pressable>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
