@@ -9,6 +9,11 @@ import {
 } from "../validators/users.validator.js";
 import * as usersService from "../services/users.service.js";
 import { auditService } from "../services/audit.service.js";
+// 👇 Imports corrigés
+import { db } from "../db/connection.js";
+import { users } from "../db/schema/users.js";
+import { roles } from "../db/schema/roles.js";
+import { eq, inArray } from "drizzle-orm"; 
 
 function getRequestMeta(c: Context) {
   return {
@@ -127,12 +132,44 @@ export async function getUserByIdHandler(c: Context) {
   return c.json({ data: result.user }, result.status);
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// ✅ MODIFICATION : Ajout de roleName dans la réponse
+// ──────────────────────────────────────────────────────────────────────────
 export async function listUsersHandler(c: Context) {
   const parsed = listUsersQuerySchema.safeParse(c.req.query());
   if (!parsed.success) return c.json({ error: parsed.error.flatten() }, 400);
 
   const result = await usersService.listUsers(parsed.data);
-  return c.json({ data: result.users, pagination: result.pagination }, result.status);
+
+  // ✅ Récupérer les IDs des utilisateurs
+  const userIds = result.users.map((u: any) => u.id);
+  const rolesMap: Record<number, string | null> = {};
+
+  if (userIds.length > 0) {
+    const userRoles = await db
+      .select({ userId: users.id, roleName: roles.name })
+      .from(users)
+      .leftJoin(roles, eq(users.roleId, roles.id))
+      .where(inArray(users.id, userIds)); // ✅ utilisation de inArray correctement
+
+    userRoles.forEach((row) => {
+      rolesMap[row.userId] = row.roleName ?? null;
+    });
+  }
+
+  // ✅ Ajouter roleName à chaque utilisateur
+  const usersWithRole = result.users.map((u: any) => ({
+    ...u,
+    roleName: rolesMap[u.id] ?? null,
+  }));
+
+  return c.json(
+    {
+      data: usersWithRole,
+      pagination: result.pagination,
+    },
+    result.status
+  );
 }
 
 export async function getLoginHistoryHandler(c: Context) {
@@ -159,7 +196,6 @@ export async function uploadUserPhotoHandler(c: Context) {
     const formData = await c.req.formData();
     const file = formData.get("photo");
 
-    // Debug logs – will appear in backend console
     console.log("📦 FormData keys:", Array.from(formData.keys()));
     console.log("📄 File type:", typeof file);
     console.log("📄 File constructor:", file?.constructor?.name);

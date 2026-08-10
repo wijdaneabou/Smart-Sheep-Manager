@@ -7,14 +7,26 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../../services/api";
 import { BackButton } from "../../../../components/BackButton";
-import { usePermissions } from "@/contexts/PermissionsContext"; // 👈 NEW IMPORT
+import { usePermissions } from "@/contexts/PermissionsContext";
+import { API_URL } from "../../../../services/api";
 
+// ── Design Tokens ──
+const GREEN = "#14532d";
+const GREEN_EMERALD = "#059669";
+const BACKGROUND = "#f8fafc";
+const CARD_BG = "#ffffff";
+const BORDER = "#e5e7eb";
+const TEXT_DARK = "#1f2937";
+const TEXT_MUTED = "#6b7280";
+
+// ── Types & Configs ──
 type HealthStatus = 'HEALTHY' | 'SURVEILLANCE' | 'SICK' | 'UNDER_TREATMENT' | 'RECOVERED';
 
 const statusConfig: Record<HealthStatus, { label: string; color: string; icon: string }> = {
@@ -66,13 +78,17 @@ const interventionTypeColors: Record<string, string> = {
   EMERGENCY: '#dc2626',
 };
 
+// ── Main Component ──
 export default function HealthRecordDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const recordId = Number(id);
   const router = useRouter();
-  const { hasPermission } = usePermissions(); // 👈 NEW
+  const { hasPermission } = usePermissions();
 
+  // ── State ──
   const [record, setRecord] = useState<any>(null);
+  const [animal, setAnimal] = useState<any>(null);
+  const [animalLoading, setAnimalLoading] = useState(true);
   const [treatments, setTreatments] = useState<any[]>([]);
   const [vaccinations, setVaccinations] = useState<any[]>([]);
   const [interventions, setInterventions] = useState<any[]>([]);
@@ -83,16 +99,31 @@ export default function HealthRecordDetail() {
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // ── Fetch Functions ──
   async function fetchRecord() {
     setError(null);
     try {
       const response = await api.get(`/health/records/${recordId}`);
       setRecord(response.data.data);
+      // Fetch animal data
+      await fetchAnimal(response.data.data.animalId);
     } catch (err) {
       setError("Erreur de chargement");
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchAnimal(animalId: number) {
+    setAnimalLoading(true);
+    try {
+      const response = await api.get(`/animals/${animalId}`);
+      setAnimal(response.data.data);
+    } catch (err) {
+      console.error("Erreur chargement animal:", err);
+    } finally {
+      setAnimalLoading(false);
     }
   }
 
@@ -144,6 +175,7 @@ export default function HealthRecordDetail() {
     }, [recordId])
   );
 
+  // ── Handlers ──
   async function handleDelete() {
     Alert.alert(
       "Confirmer la suppression",
@@ -264,18 +296,33 @@ export default function HealthRecordDetail() {
     );
   }
 
+  // ── Loading State ──
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <ActivityIndicator style={{ marginTop: 40 }} />
+        <View style={styles.header}>
+          <BackButton variant="dark" style={styles.backButton} />
+          <Text style={styles.headerTitle}>Dossier médical</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={GREEN_EMERALD} />
+        </View>
       </SafeAreaView>
     );
   }
 
+  // ── Error State ──
   if (error || !record) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+        <View style={styles.header}>
+          <BackButton variant="dark" style={styles.backButton} />
+          <Text style={styles.headerTitle}>Dossier médical</Text>
+          <View style={{ width: 32 }} />
+        </View>
         <View style={styles.center}>
+          <Ionicons name="alert-circle" size={48} color="#dc2626" />
           <Text style={styles.error}>{error ?? "Dossier introuvable."}</Text>
         </View>
       </SafeAreaView>
@@ -285,86 +332,135 @@ export default function HealthRecordDetail() {
   const statusInfo = statusConfig[record.status as HealthStatus] || { label: record.status, color: '#888', icon: '❓' };
   const severityInfo = record.severity ? severityConfig[record.severity as keyof typeof severityConfig] : null;
 
+  // ── Animal Photo URL ──
+  const animalPhotoUrl = animal?.photoUrl
+    ? animal.photoUrl.startsWith("http")
+      ? animal.photoUrl
+      : `${API_URL}${animal.photoUrl}`
+    : null;
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      {/* ── Header ── */}
       <View style={styles.header}>
         <BackButton variant="dark" style={styles.backButton} />
         <Text style={styles.headerTitle}>Dossier médical</Text>
         <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* En-tête */}
-        <View style={styles.recordHeader}>
-          <Text style={styles.recordIcon}>🏥</Text>
-          <Text style={styles.recordTitle}>Dossier #{record.id}</Text>
-          <Text style={styles.recordSubtitle}>Animal #{record.animalId}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusInfo.color + "20" }]}>
-            <Text style={[styles.statusBadgeText, { color: statusInfo.color }]}>
-              {statusInfo.icon} {statusInfo.label}
-            </Text>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Animal Profile Card (SAME AS HERD DETAIL) ── */}
+        <Pressable
+          style={styles.heroCard}
+          onPress={() => router.push(`/herd/${record.animalId}/detail` as any)}
+        >
+          <View style={styles.heroTop}>
+            {animalPhotoUrl ? (
+              <Image source={{ uri: animalPhotoUrl }} style={styles.heroPhoto} />
+            ) : (
+              <View style={styles.heroAvatar}>
+                <Text style={styles.heroAvatarIcon}>🐑</Text>
+              </View>
+            )}
           </View>
-          {severityInfo && (
-            <View style={[styles.severityBadge, { backgroundColor: severityInfo.color + "20" }]}>
-              <Text style={[styles.severityBadgeText, { color: severityInfo.color }]}>
-                Gravité: {severityInfo.label}
+
+          <Text style={styles.heroName}>{animal?.name || `Animal #${record.animalId}`}</Text>
+          <Text style={styles.heroRfid}>{animal?.rfid || "RFID inconnu"}</Text>
+
+          {/* Health status badge */}
+          <View style={styles.heroBadges}>
+            <View style={[styles.heroBadge, { backgroundColor: statusInfo.color + "20" }]}>
+              <Text style={[styles.heroBadgeText, { color: statusInfo.color }]}>
+                {statusInfo.icon} {statusInfo.label}
               </Text>
             </View>
-          )}
+            {severityInfo && (
+              <View style={[styles.heroBadge, { backgroundColor: severityInfo.color + "20" }]}>
+                <Text style={[styles.heroBadgeText, { color: severityInfo.color }]}>
+                  Gravité: {severityInfo.label}
+                </Text>
+              </View>
+            )}
+          </View>
+        </Pressable>
+
+        {/* ── Quick Stats ── */}
+        <View style={styles.statsRow}>
+          <StatCard
+            icon="calendar"
+            iconColor={GREEN}
+            value={new Date(record.createdAt).toLocaleDateString("fr-FR")}
+            label="Créé le"
+          />
+          <StatCard
+            icon="time"
+            iconColor={GREEN}
+            value={new Date(record.updatedAt).toLocaleDateString("fr-FR")}
+            label="Mise à jour"
+          />
+          <StatCard
+            icon="medkit"
+            iconColor={GREEN}
+            value={statusInfo.label}
+            label="Statut"
+          />
         </View>
 
-        {/* 👇 Actions du dossier - HEALTH:UPDATE et HEALTH:DELETE */}
-        <View style={styles.actionsRow}>
-          {hasPermission('HEALTH', 'UPDATE') && (
-            <Pressable
-              style={styles.actionButton}
-              onPress={() => router.push(`/health/${record.id}/edit` as any)}
-            >
-              <Text style={styles.actionIcon}>✏️</Text>
-              <Text style={styles.actionLabel}>Modifier</Text>
-            </Pressable>
-          )}
-          {hasPermission('HEALTH', 'DELETE') && (
-            <Pressable
-              style={[styles.actionButton, styles.actionButtonDanger]}
-              onPress={handleDelete}
-              disabled={deleting}
-            >
-              {deleting ? (
-                <ActivityIndicator size="small" color="#dc2626" />
-              ) : (
-                <>
-                  <Text style={styles.actionIcon}>🗑️</Text>
-                  <Text style={[styles.actionLabel, { color: "#dc2626" }]}>Supprimer</Text>
-                </>
-              )}
-            </Pressable>
-          )}
+        {/* ── Actions ── */}
+        <View style={styles.section}>
+          <SectionTitle label="Actions" />
+          <View style={styles.actionsGrid}>
+            {hasPermission('HEALTH', 'UPDATE') && (
+              <ActionCard
+                icon="create"
+                iconBg="#EFF6FF"
+                iconColor={GREEN}
+                label="Modifier"
+                onPress={() => router.push(`/health/${record.id}/edit` as any)}
+              />
+            )}
+            {hasPermission('HEALTH', 'DELETE') && (
+              <ActionCard
+                icon="trash"
+                iconBg="#FEE2E2"
+                iconColor="#dc2626"
+                label="Supprimer"
+                onPress={handleDelete}
+                loading={deleting}
+                danger
+              />
+            )}
+          </View>
         </View>
 
-        {/* Détails du dossier */}
-        <View style={styles.infoBlock}>
+        {/* ── Informations ── */}
+        <View style={styles.section}>
           <SectionTitle label="Informations" />
-          <InfoRow label="Animal" value={`#${record.animalId}`} />
-          <InfoRow label="Statut" value={statusInfo.label} />
-          {record.symptoms && <InfoRow label="Symptômes" value={record.symptoms} />}
-          {record.diagnosis && <InfoRow label="Diagnostic" value={record.diagnosis} />}
-          {record.severity && <InfoRow label="Gravité" value={severityInfo?.label || record.severity} />}
-          <InfoRow label="Créé le" value={new Date(record.createdAt).toLocaleDateString("fr-FR")} />
-          <InfoRow label="Dernière mise à jour" value={new Date(record.updatedAt).toLocaleDateString("fr-FR")} last />
+          <View style={styles.infoBlock}>
+            <InfoRow label="Dossier ID" value={`#${record.id}`} />
+            <InfoRow label="Statut" value={statusInfo.label} />
+            {record.symptoms && <InfoRow label="Symptômes" value={record.symptoms} />}
+            {record.diagnosis && <InfoRow label="Diagnostic" value={record.diagnosis} />}
+            {record.severity && <InfoRow label="Gravité" value={severityInfo?.label || record.severity} />}
+            <InfoRow label="Créé le" value={new Date(record.createdAt).toLocaleDateString("fr-FR")} />
+            <InfoRow label="Dernière mise à jour" value={new Date(record.updatedAt).toLocaleDateString("fr-FR")} last />
+          </View>
         </View>
 
-        {/* ── TRAITEMENTS ── */}
-        <View style={styles.treatmentsSection}>
-          <View style={styles.treatmentsHeader}>
-            <Text style={styles.sectionTitle}>Traitements</Text>
+        {/* ── Traitements ── */}
+        <View style={styles.section}>
+          <View style={styles.sectionTitleRow}>
+            <SectionTitle label="Traitements" />
             {hasPermission('HEALTH', 'CREATE') && (
               <Pressable
-                style={styles.addTreatmentButton}
+                style={styles.addButton}
                 onPress={() => router.push(`/health/${record.id}/add-treatment` as any)}
               >
-                <Ionicons name="add" size={20} color="#fff" />
-                <Text style={styles.addTreatmentButtonText}>Ajouter</Text>
+                <Ionicons name="add" size={18} color="#fff" />
+                <Text style={styles.addButtonText}>Ajouter</Text>
               </Pressable>
             )}
           </View>
@@ -372,97 +468,35 @@ export default function HealthRecordDetail() {
           {loadingTreatments ? (
             <ActivityIndicator style={{ marginTop: 12 }} />
           ) : treatments.length === 0 ? (
-            <View style={styles.emptyTreatments}>
-              <Text style={styles.emptyTreatmentsText}>Aucun traitement prescrit</Text>
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>Aucun traitement prescrit</Text>
             </View>
           ) : (
             treatments.map((treatment) => (
-              <View key={treatment.id} style={styles.treatmentCard}>
-                <View style={styles.treatmentHeader}>
-                  <Text style={styles.treatmentName}>{treatment.medicationName}</Text>
-                  <View style={[
-                    styles.treatmentStatusBadge,
-                    { backgroundColor: treatment.administered ? '#16a34a20' : '#dc262620' }
-                  ]}>
-                    <Text style={[
-                      styles.treatmentStatusText,
-                      { color: treatment.administered ? '#16a34a' : '#dc2626' }
-                    ]}>
-                      {treatment.administered ? '✅ Administré' : '⏳ En cours'}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.treatmentDetails}>
-                  <Text style={styles.treatmentDetail}>
-                    <Text style={styles.treatmentDetailLabel}>Dosage :</Text> {treatment.dosage}
-                  </Text>
-                  <Text style={styles.treatmentDetail}>
-                    <Text style={styles.treatmentDetailLabel}>Fréquence :</Text> {frequencyLabels[treatment.frequency] || treatment.frequency}
-                  </Text>
-                  <Text style={styles.treatmentDetail}>
-                    <Text style={styles.treatmentDetailLabel}>Voie :</Text> {routeLabels[treatment.route] || treatment.route}
-                  </Text>
-                  <Text style={styles.treatmentDetail}>
-                    <Text style={styles.treatmentDetailLabel}>Début :</Text> {new Date(treatment.startDate).toLocaleDateString('fr-FR')}
-                  </Text>
-                  {treatment.endDate && (
-                    <Text style={styles.treatmentDetail}>
-                      <Text style={styles.treatmentDetailLabel}>Fin :</Text> {new Date(treatment.endDate).toLocaleDateString('fr-FR')}
-                    </Text>
-                  )}
-                  {treatment.nextDoseDate && (
-                    <Text style={styles.treatmentDetail}>
-                      <Text style={styles.treatmentDetailLabel}>Prochaine dose :</Text> {new Date(treatment.nextDoseDate).toLocaleDateString('fr-FR')}
-                    </Text>
-                  )}
-                  {treatment.notes && (
-                    <Text style={styles.treatmentDetail}>
-                      <Text style={styles.treatmentDetailLabel}>Notes :</Text> {treatment.notes}
-                    </Text>
-                  )}
-                </View>
-                {!treatment.administered && (
-                  <Pressable
-                    style={styles.administerButton}
-                    onPress={() => handleAdministerTreatment(treatment.id)}
-                  >
-                    <Text style={styles.administerButtonText}>💉 Administrer maintenant</Text>
-                  </Pressable>
-                )}
-                <View style={styles.treatmentActions}>
-                  {hasPermission('HEALTH', 'UPDATE') && (
-                    <Pressable
-                      style={[styles.treatmentActionButton, styles.treatmentEditButton]}
-                      onPress={() => router.push(`/health/${record.id}/edit-treatment?treatmentId=${treatment.id}` as any)}
-                    >
-                      <Text style={styles.treatmentActionText}>✏️ Modifier</Text>
-                    </Pressable>
-                  )}
-                  {hasPermission('HEALTH', 'DELETE') && (
-                    <Pressable
-                      style={[styles.treatmentActionButton, styles.treatmentDeleteButton]}
-                      onPress={() => handleDeleteTreatment(treatment.id)}
-                    >
-                      <Text style={[styles.treatmentActionText, { color: '#dc2626' }]}>🗑️ Supprimer</Text>
-                    </Pressable>
-                  )}
-                </View>
-              </View>
+              <TreatmentCard
+                key={treatment.id}
+                treatment={treatment}
+                onAdminister={handleAdministerTreatment}
+                onEdit={() => router.push(`/health/${record.id}/edit-treatment?treatmentId=${treatment.id}` as any)}
+                onDelete={() => handleDeleteTreatment(treatment.id)}
+                canUpdate={hasPermission('HEALTH', 'UPDATE')}
+                canDelete={hasPermission('HEALTH', 'DELETE')}
+              />
             ))
           )}
         </View>
 
-        {/* ── VACCINATIONS ── */}
-        <View style={styles.vaccinationsSection}>
-          <View style={styles.vaccinationsHeader}>
-            <Text style={styles.sectionTitle}>Vaccinations</Text>
+        {/* ── Vaccinations ── */}
+        <View style={styles.section}>
+          <View style={styles.sectionTitleRow}>
+            <SectionTitle label="Vaccinations" />
             {hasPermission('HEALTH', 'CREATE') && (
               <Pressable
-                style={styles.addVaccinationButton}
+                style={styles.addButton}
                 onPress={() => router.push(`/health/${record.id}/add-vaccination` as any)}
               >
-                <Ionicons name="add" size={20} color="#fff" />
-                <Text style={styles.addVaccinationButtonText}>Ajouter</Text>
+                <Ionicons name="add" size={18} color="#fff" />
+                <Text style={styles.addButtonText}>Ajouter</Text>
               </Pressable>
             )}
           </View>
@@ -470,88 +504,35 @@ export default function HealthRecordDetail() {
           {loadingVaccinations ? (
             <ActivityIndicator style={{ marginTop: 12 }} />
           ) : vaccinations.length === 0 ? (
-            <View style={styles.emptyVaccinations}>
-              <Text style={styles.emptyVaccinationsText}>Aucune vaccination enregistrée</Text>
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>Aucune vaccination enregistrée</Text>
             </View>
           ) : (
             vaccinations.map((vaccination) => (
-              <View key={vaccination.id} style={styles.vaccinationCard}>
-                <View style={styles.vaccinationHeader}>
-                  <Text style={styles.vaccinationName}>{vaccination.vaccineType}</Text>
-                  <View style={[
-                    styles.vaccinationStatusBadge,
-                    { backgroundColor: vaccination.status === 'DONE' ? '#16a34a20' : vaccination.status === 'OVERDUE' ? '#dc262620' : '#ca8a0420' }
-                  ]}>
-                    <Text style={[
-                      styles.vaccinationStatusText,
-                      { color: vaccination.status === 'DONE' ? '#16a34a' : vaccination.status === 'OVERDUE' ? '#dc2626' : '#ca8a04' }
-                    ]}>
-                      {vaccination.status === 'DONE' ? '✅ Effectué' : vaccination.status === 'OVERDUE' ? '⏰ En retard' : '⏳ En attente'}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.vaccinationDetails}>
-                  <Text style={styles.vaccinationDetail}>
-                    <Text style={styles.vaccinationDetailLabel}>Date :</Text> {new Date(vaccination.date).toLocaleDateString('fr-FR')}
-                  </Text>
-                  {vaccination.boosterDate && (
-                    <Text style={styles.vaccinationDetail}>
-                      <Text style={styles.vaccinationDetailLabel}>Rappel :</Text> {new Date(vaccination.boosterDate).toLocaleDateString('fr-FR')}
-                    </Text>
-                  )}
-                  {vaccination.batchNumber && (
-                    <Text style={styles.vaccinationDetail}>
-                      <Text style={styles.vaccinationDetailLabel}>Lot :</Text> {vaccination.batchNumber}
-                    </Text>
-                  )}
-                  {vaccination.notes && (
-                    <Text style={styles.vaccinationDetail}>
-                      <Text style={styles.vaccinationDetailLabel}>Notes :</Text> {vaccination.notes}
-                    </Text>
-                  )}
-                </View>
-                {vaccination.status !== 'DONE' && (
-                  <Pressable
-                    style={styles.vaccinationAdministerButton}
-                    onPress={() => handleAdministerVaccination(vaccination.id)}
-                  >
-                    <Text style={styles.vaccinationAdministerButtonText}>💉 Marquer comme effectué</Text>
-                  </Pressable>
-                )}
-                <View style={styles.vaccinationActions}>
-                  {hasPermission('HEALTH', 'UPDATE') && (
-                    <Pressable
-                      style={[styles.vaccinationActionButton, styles.vaccinationEditButton]}
-                      onPress={() => router.push(`/health/${record.id}/edit-vaccination?vaccinationId=${vaccination.id}` as any)}
-                    >
-                      <Text style={styles.vaccinationActionText}>✏️ Modifier</Text>
-                    </Pressable>
-                  )}
-                  {hasPermission('HEALTH', 'DELETE') && (
-                    <Pressable
-                      style={[styles.vaccinationActionButton, styles.vaccinationDeleteButton]}
-                      onPress={() => handleDeleteVaccination(vaccination.id)}
-                    >
-                      <Text style={[styles.vaccinationActionText, { color: '#dc2626' }]}>🗑️ Supprimer</Text>
-                    </Pressable>
-                  )}
-                </View>
-              </View>
+              <VaccinationCard
+                key={vaccination.id}
+                vaccination={vaccination}
+                onAdminister={handleAdministerVaccination}
+                onEdit={() => router.push(`/health/${record.id}/edit-vaccination?vaccinationId=${vaccination.id}` as any)}
+                onDelete={() => handleDeleteVaccination(vaccination.id)}
+                canUpdate={hasPermission('HEALTH', 'UPDATE')}
+                canDelete={hasPermission('HEALTH', 'DELETE')}
+              />
             ))
           )}
         </View>
 
-        {/* ── INTERVENTIONS VÉTÉRINAIRES ── */}
-        <View style={styles.interventionsSection}>
-          <View style={styles.interventionsHeader}>
-            <Text style={styles.sectionTitle}>Interventions vétérinaires</Text>
+        {/* ── Interventions vétérinaires ── */}
+        <View style={styles.section}>
+          <View style={styles.sectionTitleRow}>
+            <SectionTitle label="Interventions vétérinaires" />
             {hasPermission('HEALTH', 'CREATE') && (
               <Pressable
-                style={styles.addInterventionButton}
+                style={styles.addButton}
                 onPress={() => router.push(`/health/${record.id}/add-intervention` as any)}
               >
-                <Ionicons name="add" size={20} color="#fff" />
-                <Text style={styles.addInterventionButtonText}>Ajouter</Text>
+                <Ionicons name="add" size={18} color="#fff" />
+                <Text style={styles.addButtonText}>Ajouter</Text>
               </Pressable>
             )}
           </View>
@@ -559,62 +540,19 @@ export default function HealthRecordDetail() {
           {loadingInterventions ? (
             <ActivityIndicator style={{ marginTop: 12 }} />
           ) : interventions.length === 0 ? (
-            <View style={styles.emptyInterventions}>
-              <Text style={styles.emptyInterventionsText}>Aucune intervention enregistrée</Text>
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>Aucune intervention enregistrée</Text>
             </View>
           ) : (
             interventions.map((intervention) => (
-              <View key={intervention.id} style={styles.interventionCard}>
-                <View style={styles.interventionHeader}>
-                  <Text style={styles.interventionName}>
-                    {interventionTypeLabels[intervention.type] || intervention.type}
-                  </Text>
-                  <View style={[
-                    styles.interventionTypeBadge,
-                    { backgroundColor: (interventionTypeColors[intervention.type] || '#888') + '20' }
-                  ]}>
-                    <Text style={[styles.interventionTypeText, { color: interventionTypeColors[intervention.type] || '#888' }]}>
-                      {intervention.type}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.interventionDetails}>
-                  <Text style={styles.interventionDetail}>
-                    <Text style={styles.interventionDetailLabel}>Date :</Text> {new Date(intervention.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                  {intervention.cost && (
-                    <Text style={styles.interventionDetail}>
-                      <Text style={styles.interventionDetailLabel}>Coût :</Text> {intervention.cost} MAD
-                    </Text>
-                  )}
-                  {intervention.report && (
-                    <Text style={styles.interventionDetail}>
-                      <Text style={styles.interventionDetailLabel}>Rapport :</Text> {intervention.report}
-                    </Text>
-                  )}
-                  <Text style={styles.interventionDetail}>
-                    <Text style={styles.interventionDetailLabel}>Vétérinaire :</Text> ID #{intervention.performedBy}
-                  </Text>
-                </View>
-                <View style={styles.interventionActions}>
-                  {hasPermission('HEALTH', 'UPDATE') && (
-                    <Pressable
-                      style={[styles.interventionActionButton, styles.interventionEditButton]}
-                      onPress={() => router.push(`/health/${record.id}/edit-intervention?interventionId=${intervention.id}` as any)}
-                    >
-                      <Text style={styles.interventionActionText}>✏️ Modifier</Text>
-                    </Pressable>
-                  )}
-                  {hasPermission('HEALTH', 'DELETE') && (
-                    <Pressable
-                      style={[styles.interventionActionButton, styles.interventionDeleteButton]}
-                      onPress={() => handleDeleteIntervention(intervention.id)}
-                    >
-                      <Text style={[styles.interventionActionText, { color: '#dc2626' }]}>🗑️ Supprimer</Text>
-                    </Pressable>
-                  )}
-                </View>
-              </View>
+              <InterventionCard
+                key={intervention.id}
+                intervention={intervention}
+                onEdit={() => router.push(`/health/${record.id}/edit-intervention?interventionId=${intervention.id}` as any)}
+                onDelete={() => handleDeleteIntervention(intervention.id)}
+                canUpdate={hasPermission('HEALTH', 'UPDATE')}
+                canDelete={hasPermission('HEALTH', 'DELETE')}
+              />
             ))
           )}
         </View>
@@ -623,17 +561,89 @@ export default function HealthRecordDetail() {
   );
 }
 
-// ── Composants réutilisables ──
+// ── Sub-components ──
 
 function SectionTitle({ label }: { label: string }) {
   return (
     <View style={styles.sectionTitleContainer}>
-      <Text style={styles.sectionTitle}>{label}</Text>
+      <View style={styles.sectionBar} />
+      <Text style={styles.sectionTitleText}>{label}</Text>
     </View>
   );
 }
 
-function InfoRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
+function StatCard({
+  icon,
+  iconColor,
+  value,
+  label,
+}: {
+  icon: string;
+  iconColor: string;
+  value: string;
+  label: string;
+}) {
+  return (
+    <View style={styles.statCard}>
+      <Ionicons name={icon as any} size={18} color={iconColor} />
+      <Text style={styles.statValue} numberOfLines={1}>
+        {value}
+      </Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function ActionCard({
+  icon,
+  iconBg,
+  iconColor,
+  label,
+  onPress,
+  loading,
+  danger,
+}: {
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  label: string;
+  onPress: () => void;
+  loading?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.actionCard,
+        danger && styles.actionCardDanger,
+        pressed && styles.actionCardPressed,
+      ]}
+      onPress={onPress}
+      disabled={loading}
+    >
+      <View style={[styles.actionIconCircle, { backgroundColor: iconBg }]}>
+        {loading ? (
+          <ActivityIndicator size="small" color={iconColor} />
+        ) : (
+          <Ionicons name={icon as any} size={20} color={iconColor} />
+        )}
+      </View>
+      <Text style={[styles.actionLabel, danger && { color: "#dc2626" }]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function InfoRow({
+  label,
+  value,
+  last,
+}: {
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
   return (
     <View style={[styles.infoRow, last && { borderBottomWidth: 0 }]}>
       <Text style={styles.infoLabel}>{label}</Text>
@@ -642,292 +652,417 @@ function InfoRow({ label, value, last }: { label: string; value: string; last?: 
   );
 }
 
+function TreatmentCard({ treatment, onAdminister, onEdit, onDelete, canUpdate, canDelete }: any) {
+  return (
+    <View style={styles.subCard}>
+      <View style={styles.subCardHeader}>
+        <Text style={styles.subCardTitle}>{treatment.medicationName}</Text>
+        <View style={[
+          styles.subCardBadge,
+          { backgroundColor: treatment.administered ? '#16a34a20' : '#dc262620' }
+        ]}>
+          <Text style={[
+            styles.subCardBadgeText,
+            { color: treatment.administered ? '#16a34a' : '#dc2626' }
+          ]}>
+            {treatment.administered ? '✅ Administré' : '⏳ En cours'}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.subCardDetails}>
+        <Text style={styles.subCardDetail}>
+          <Text style={styles.subCardDetailLabel}>Dosage :</Text> {treatment.dosage}
+        </Text>
+        <Text style={styles.subCardDetail}>
+          <Text style={styles.subCardDetailLabel}>Fréquence :</Text> {frequencyLabels[treatment.frequency] || treatment.frequency}
+        </Text>
+        <Text style={styles.subCardDetail}>
+          <Text style={styles.subCardDetailLabel}>Voie :</Text> {routeLabels[treatment.route] || treatment.route}
+        </Text>
+        <Text style={styles.subCardDetail}>
+          <Text style={styles.subCardDetailLabel}>Début :</Text> {new Date(treatment.startDate).toLocaleDateString('fr-FR')}
+        </Text>
+        {treatment.endDate && (
+          <Text style={styles.subCardDetail}>
+            <Text style={styles.subCardDetailLabel}>Fin :</Text> {new Date(treatment.endDate).toLocaleDateString('fr-FR')}
+          </Text>
+        )}
+        {treatment.nextDoseDate && (
+          <Text style={styles.subCardDetail}>
+            <Text style={styles.subCardDetailLabel}>Prochaine dose :</Text> {new Date(treatment.nextDoseDate).toLocaleDateString('fr-FR')}
+          </Text>
+        )}
+        {treatment.notes && (
+          <Text style={styles.subCardDetail}>
+            <Text style={styles.subCardDetailLabel}>Notes :</Text> {treatment.notes}
+          </Text>
+        )}
+      </View>
+      {!treatment.administered && (
+        <Pressable
+          style={styles.primaryActionButton}
+          onPress={() => onAdminister(treatment.id)}
+        >
+          <Text style={styles.primaryActionButtonText}>💉 Administrer maintenant</Text>
+        </Pressable>
+      )}
+      <View style={styles.subCardActions}>
+        {canUpdate && (
+          <Pressable
+            style={[styles.subCardAction, styles.subCardActionEdit]}
+            onPress={onEdit}
+          >
+            <Text style={styles.subCardActionText}>✏️ Modifier</Text>
+          </Pressable>
+        )}
+        {canDelete && (
+          <Pressable
+            style={[styles.subCardAction, styles.subCardActionDelete]}
+            onPress={onDelete}
+          >
+            <Text style={[styles.subCardActionText, { color: '#dc2626' }]}>🗑️ Supprimer</Text>
+          </Pressable>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function VaccinationCard({ vaccination, onAdminister, onEdit, onDelete, canUpdate, canDelete }: any) {
+  return (
+    <View style={styles.subCard}>
+      <View style={styles.subCardHeader}>
+        <Text style={styles.subCardTitle}>{vaccination.vaccineType}</Text>
+        <View style={[
+          styles.subCardBadge,
+          { backgroundColor: vaccination.status === 'DONE' ? '#16a34a20' : vaccination.status === 'OVERDUE' ? '#dc262620' : '#ca8a0420' }
+        ]}>
+          <Text style={[
+            styles.subCardBadgeText,
+            { color: vaccination.status === 'DONE' ? '#16a34a' : vaccination.status === 'OVERDUE' ? '#dc2626' : '#ca8a04' }
+          ]}>
+            {vaccination.status === 'DONE' ? '✅ Effectué' : vaccination.status === 'OVERDUE' ? '⏰ En retard' : '⏳ En attente'}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.subCardDetails}>
+        <Text style={styles.subCardDetail}>
+          <Text style={styles.subCardDetailLabel}>Date :</Text> {new Date(vaccination.date).toLocaleDateString('fr-FR')}
+        </Text>
+        {vaccination.boosterDate && (
+          <Text style={styles.subCardDetail}>
+            <Text style={styles.subCardDetailLabel}>Rappel :</Text> {new Date(vaccination.boosterDate).toLocaleDateString('fr-FR')}
+          </Text>
+        )}
+        {vaccination.batchNumber && (
+          <Text style={styles.subCardDetail}>
+            <Text style={styles.subCardDetailLabel}>Lot :</Text> {vaccination.batchNumber}
+          </Text>
+        )}
+        {vaccination.notes && (
+          <Text style={styles.subCardDetail}>
+            <Text style={styles.subCardDetailLabel}>Notes :</Text> {vaccination.notes}
+          </Text>
+        )}
+      </View>
+      {vaccination.status !== 'DONE' && (
+        <Pressable
+          style={styles.primaryActionButton}
+          onPress={() => onAdminister(vaccination.id)}
+        >
+          <Text style={styles.primaryActionButtonText}>💉 Marquer comme effectué</Text>
+        </Pressable>
+      )}
+      <View style={styles.subCardActions}>
+        {canUpdate && (
+          <Pressable
+            style={[styles.subCardAction, styles.subCardActionEdit]}
+            onPress={onEdit}
+          >
+            <Text style={styles.subCardActionText}>✏️ Modifier</Text>
+          </Pressable>
+        )}
+        {canDelete && (
+          <Pressable
+            style={[styles.subCardAction, styles.subCardActionDelete]}
+            onPress={onDelete}
+          >
+            <Text style={[styles.subCardActionText, { color: '#dc2626' }]}>🗑️ Supprimer</Text>
+          </Pressable>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function InterventionCard({ intervention, onEdit, onDelete, canUpdate, canDelete }: any) {
+  return (
+    <View style={styles.subCard}>
+      <View style={styles.subCardHeader}>
+        <Text style={styles.subCardTitle}>
+          {interventionTypeLabels[intervention.type] || intervention.type}
+        </Text>
+        <View style={[
+          styles.subCardBadge,
+          { backgroundColor: (interventionTypeColors[intervention.type] || '#888') + '20' }
+        ]}>
+          <Text style={[styles.subCardBadgeText, { color: interventionTypeColors[intervention.type] || '#888' }]}>
+            {intervention.type}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.subCardDetails}>
+        <Text style={styles.subCardDetail}>
+          <Text style={styles.subCardDetailLabel}>Date :</Text> {new Date(intervention.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+        </Text>
+        {intervention.cost && (
+          <Text style={styles.subCardDetail}>
+            <Text style={styles.subCardDetailLabel}>Coût :</Text> {intervention.cost} MAD
+          </Text>
+        )}
+        {intervention.report && (
+          <Text style={styles.subCardDetail}>
+            <Text style={styles.subCardDetailLabel}>Rapport :</Text> {intervention.report}
+          </Text>
+        )}
+        <Text style={styles.subCardDetail}>
+          <Text style={styles.subCardDetailLabel}>Vétérinaire :</Text> ID #{intervention.performedBy}
+        </Text>
+      </View>
+      <View style={styles.subCardActions}>
+        {canUpdate && (
+          <Pressable
+            style={[styles.subCardAction, styles.subCardActionEdit]}
+            onPress={onEdit}
+          >
+            <Text style={styles.subCardActionText}>✏️ Modifier</Text>
+          </Pressable>
+        )}
+        {canDelete && (
+          <Pressable
+            style={[styles.subCardAction, styles.subCardActionDelete]}
+            onPress={onDelete}
+          >
+            <Text style={[styles.subCardActionText, { color: '#dc2626' }]}>🗑️ Supprimer</Text>
+          </Pressable>
+        )}
+      </View>
+    </View>
+  );
+}
+
 // ── Styles ──
-const PAGE_BG = "#faf3ea";
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: PAGE_BG },
+  safeArea: { flex: 1, backgroundColor: BACKGROUND },
+
+  // ── Header ──
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   backButton: { marginRight: 0 },
-  headerTitle: { fontSize: 16, fontWeight: "700" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  error: { color: "#dc2626" },
+  headerTitle: { fontSize: 18, fontWeight: "700", color: TEXT_DARK },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 24 },
+  error: { color: "#dc2626", fontSize: 14, textAlign: "center" },
 
-  container: { padding: 20, paddingTop: 8 },
+  container: { padding: 16, paddingBottom: 32 },
 
-  recordHeader: { alignItems: "center", marginBottom: 20 },
-  recordIcon: { fontSize: 48, marginBottom: 8 },
-  recordTitle: { fontSize: 22, fontWeight: "800", color: "#0F2A1D" },
-  recordSubtitle: { fontSize: 14, color: "#888", marginBottom: 8 },
-  statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 4 },
-  statusBadgeText: { fontSize: 12, fontWeight: "700" },
-  severityBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 16 },
-  severityBadgeText: { fontSize: 11, fontWeight: "600" },
+  // ── Hero Card (Animal Profile) ──
+  heroCard: {
+    backgroundColor: CARD_BG,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  heroTop: { alignItems: "center", marginBottom: 12 },
+  heroPhoto: { width: 96, height: 96, borderRadius: 48, marginBottom: 12 },
+  heroAvatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: "#F0FDF4",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  heroAvatarIcon: { fontSize: 42 },
+  heroName: { fontSize: 24, fontWeight: "800", color: GREEN, textAlign: "center", marginBottom: 4 },
+  heroRfid: { fontSize: 13, color: TEXT_MUTED, textAlign: "center", marginBottom: 8 },
+  heroBadges: { flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "center" },
+  heroBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  heroBadgeText: { fontSize: 12, fontWeight: "700" },
 
-  actionsRow: { flexDirection: "row", gap: 10, marginBottom: 18 },
-  actionButton: {
+  // ── Quick Stats ──
+  statsRow: { flexDirection: "row", gap: 10, marginBottom: 20 },
+  statCard: {
     flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingVertical: 12,
+    backgroundColor: CARD_BG,
+    borderRadius: 14,
+    padding: 12,
+    alignItems: "center",
+    gap: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  statValue: { fontSize: 12, fontWeight: "700", color: TEXT_DARK, textAlign: "center" },
+  statLabel: { fontSize: 10, color: TEXT_MUTED, fontWeight: "600", textAlign: "center" },
+
+  // ── Section ──
+  section: { marginBottom: 20 },
+  sectionTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  sectionBar: { width: 4, height: 18, backgroundColor: GREEN, borderRadius: 2, marginRight: 8 },
+  sectionTitleText: { fontSize: 15, fontWeight: "700", color: TEXT_DARK, flex: 1 },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  // ── Add Button ──
+  addButton: {
+    flexDirection: "row",
+    backgroundColor: GREEN_EMERALD,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  addButtonText: { color: "#fff", fontWeight: "600", fontSize: 12, marginLeft: 4 },
+
+  // ── Actions Grid ──
+  actionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  actionCard: {
+    width: "30%",
+    backgroundColor: CARD_BG,
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: BORDER,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  actionButtonDanger: { borderColor: "#fecaca", backgroundColor: "#fef2f2" },
-  actionIcon: { fontSize: 16, marginBottom: 4 },
-  actionLabel: { fontSize: 12, fontWeight: "600", color: "#333" },
+  actionCardDanger: { borderColor: "#fecaca", backgroundColor: "#fef2f2" },
+  actionCardPressed: { backgroundColor: "#F9FAFB", borderColor: "#E5E7EB" },
+  actionIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  actionLabel: { fontSize: 12, fontWeight: "700", color: TEXT_DARK, textAlign: "center" },
 
+  // ── Info Block ──
   infoBlock: {
     width: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: CARD_BG,
     borderRadius: 14,
     padding: 16,
-    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: BORDER,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  sectionTitleContainer: { borderBottomWidth: 1, borderBottomColor: "#f0f0f0", paddingBottom: 8, marginBottom: 10 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1a1a1a" },
-  infoRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
-  infoLabel: { fontSize: 13, color: "#888" },
-  infoValue: { fontSize: 13, fontWeight: "600", color: "#333" },
-
-  // Traitements
-  treatmentsSection: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
-  },
-  treatmentsHeader: {
+  infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
-    paddingBottom: 8,
-    marginBottom: 12,
   },
-  addTreatmentButton: {
-    flexDirection: "row",
-    backgroundColor: "#059669",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  addTreatmentButtonText: { color: "#fff", fontWeight: "600", fontSize: 12, marginLeft: 4 },
+  infoLabel: { fontSize: 13, color: TEXT_MUTED, fontWeight: "500" },
+  infoValue: { fontSize: 13, fontWeight: "600", color: TEXT_DARK, textAlign: "right", flex: 1, marginLeft: 12 },
 
-  emptyTreatments: { alignItems: "center", paddingVertical: 20 },
-  emptyTreatmentsText: { color: "#888", fontSize: 13 },
-
-  treatmentCard: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    padding: 12,
+  // ── Sub Cards ──
+  subCard: {
+    backgroundColor: CARD_BG,
+    borderRadius: 12,
+    padding: 14,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: BORDER,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  treatmentHeader: {
+  subCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 6,
   },
-  treatmentName: { fontSize: 15, fontWeight: "700", color: "#0F2A1D" },
-  treatmentStatusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
-  treatmentStatusText: { fontSize: 10, fontWeight: "600" },
+  subCardTitle: { fontSize: 15, fontWeight: "700", color: TEXT_DARK, flex: 1, marginRight: 8 },
+  subCardBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
+  subCardBadgeText: { fontSize: 10, fontWeight: "600" },
+  subCardDetails: { marginTop: 2 },
+  subCardDetail: { fontSize: 12, color: "#555", marginVertical: 1 },
+  subCardDetailLabel: { fontWeight: "600", color: "#333" },
+  subCardActions: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+  },
+  subCardAction: {
+    flex: 1,
+    paddingVertical: 6,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  subCardActionEdit: { backgroundColor: "#e5e7eb" },
+  subCardActionDelete: { backgroundColor: "#fee2e2" },
+  subCardActionText: { fontSize: 12, fontWeight: "600", color: "#333" },
 
-  treatmentDetails: { marginTop: 4 },
-  treatmentDetail: { fontSize: 12, color: "#555", marginVertical: 1 },
-  treatmentDetailLabel: { fontWeight: "600", color: "#333" },
-
-  administerButton: {
+  // ── Primary Action Buttons ──
+  primaryActionButton: {
     marginTop: 8,
     backgroundColor: "#2563eb",
     borderRadius: 8,
     paddingVertical: 8,
     alignItems: "center",
   },
-  administerButtonText: { color: "#fff", fontWeight: "600", fontSize: 13 },
+  primaryActionButtonText: { color: "#fff", fontWeight: "600", fontSize: 13 },
 
-  treatmentActions: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 8,
-  },
-  treatmentActionButton: {
-    flex: 1,
-    paddingVertical: 6,
-    borderRadius: 6,
+  // ── Empty State ──
+  emptyCard: {
+    backgroundColor: CARD_BG,
+    borderRadius: 12,
+    padding: 20,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderStyle: "dashed",
   },
-  treatmentEditButton: {
-    backgroundColor: "#e5e7eb",
-  },
-  treatmentDeleteButton: {
-    backgroundColor: "#fee2e2",
-  },
-  treatmentActionText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#333",
-  },
-
-  // Vaccinations
-  vaccinationsSection: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
-  },
-  vaccinationsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    paddingBottom: 8,
-    marginBottom: 12,
-  },
-  addVaccinationButton: {
-    flexDirection: "row",
-    backgroundColor: "#059669",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  addVaccinationButtonText: { color: "#fff", fontWeight: "600", fontSize: 12, marginLeft: 4 },
-
-  emptyVaccinations: { alignItems: "center", paddingVertical: 20 },
-  emptyVaccinationsText: { color: "#888", fontSize: 13 },
-
-  vaccinationCard: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-  },
-  vaccinationHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  vaccinationName: { fontSize: 15, fontWeight: "700", color: "#0F2A1D" },
-  vaccinationStatusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
-  vaccinationStatusText: { fontSize: 10, fontWeight: "600" },
-
-  vaccinationDetails: { marginTop: 4 },
-  vaccinationDetail: { fontSize: 12, color: "#555", marginVertical: 1 },
-  vaccinationDetailLabel: { fontWeight: "600", color: "#333" },
-
-  vaccinationAdministerButton: {
-    marginTop: 8,
-    backgroundColor: "#2563eb",
-    borderRadius: 8,
-    paddingVertical: 8,
-    alignItems: "center",
-  },
-  vaccinationAdministerButtonText: { color: "#fff", fontWeight: "600", fontSize: 13 },
-
-  vaccinationActions: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 8,
-  },
-  vaccinationActionButton: {
-    flex: 1,
-    paddingVertical: 6,
-    borderRadius: 6,
-    alignItems: "center",
-  },
-  vaccinationEditButton: {
-    backgroundColor: "#e5e7eb",
-  },
-  vaccinationDeleteButton: {
-    backgroundColor: "#fee2e2",
-  },
-  vaccinationActionText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#333",
-  },
-
-  // Interventions vétérinaires
-  interventionsSection: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
-  },
-  interventionsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    paddingBottom: 8,
-    marginBottom: 12,
-  },
-  addInterventionButton: {
-    flexDirection: "row",
-    backgroundColor: "#059669",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  addInterventionButtonText: { color: "#fff", fontWeight: "600", fontSize: 12, marginLeft: 4 },
-
-  emptyInterventions: { alignItems: "center", paddingVertical: 20 },
-  emptyInterventionsText: { color: "#888", fontSize: 13 },
-
-  interventionCard: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-  },
-  interventionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  interventionName: { fontSize: 15, fontWeight: "700", color: "#0F2A1D" },
-  interventionTypeBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
-  interventionTypeText: { fontSize: 10, fontWeight: "600" },
-
-  interventionDetails: { marginTop: 4 },
-  interventionDetail: { fontSize: 12, color: "#555", marginVertical: 1 },
-  interventionDetailLabel: { fontWeight: "600", color: "#333" },
-
-  interventionActions: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 8,
-  },
-  interventionActionButton: {
-    flex: 1,
-    paddingVertical: 6,
-    borderRadius: 6,
-    alignItems: "center",
-  },
-  interventionEditButton: {
-    backgroundColor: "#e5e7eb",
-  },
-  interventionDeleteButton: {
-    backgroundColor: "#fee2e2",
-  },
-  interventionActionText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#333",
-  },
+  emptyText: { color: TEXT_MUTED, fontSize: 13 },
 });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -25,9 +25,12 @@ import {
   type HealthStatus,
 } from "../../../services/animalsService";
 import { BREEDS, SEXES, HEALTH_STATUSES } from "../../../constants/breeds";
+import { listExploitations } from "../../../services/exploitationservice";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 export default function CreateAnimalScreen() {
   const router = useRouter();
+  const { hasPermission } = usePermissions();
 
   // --- Photo ---
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -38,7 +41,10 @@ export default function CreateAnimalScreen() {
   const [breed, setBreed] = useState<Breed>("Sardi");
   const [sex, setSex] = useState<Sex>("FEMALE");
 
+  // --- Exploitation (obligatoire) ---
   const [exploitationId, setExploitationId] = useState("");
+  const [exploitations, setExploitations] = useState<any[]>([]);
+  const [loadingExploitations, setLoadingExploitations] = useState(true);
 
   // --- Caractéristiques ---
   const [birthDate, setBirthDate] = useState("");
@@ -52,6 +58,28 @@ export default function CreateAnimalScreen() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ── Charger la liste des exploitations disponibles ──
+  useEffect(() => {
+    async function loadExploitations() {
+      setLoadingExploitations(true);
+      try {
+        const result = await listExploitations({ limit: 100 });
+        if (result.success) {
+          setExploitations(result.data);
+          // Pré-sélectionner la première exploitation si disponible
+          if (result.data && result.data.length > 0) {
+            setExploitationId(String(result.data[0].id));
+          }
+        }
+      } catch (err) {
+        console.error("Erreur chargement exploitations:", err);
+      } finally {
+        setLoadingExploitations(false);
+      }
+    }
+    loadExploitations();
+  }, []);
 
   async function pickFromLibrary() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -115,8 +143,10 @@ export default function CreateAnimalScreen() {
     if (motherRfid.length > 0 && motherRfid.length < 5)
       return "Le RFID de la mère est invalide.";
 
-    if (exploitationId && Number.isNaN(Number(exploitationId)))
-      return "L'exploitation doit être un nombre.";
+    // ✅ EXPLOITATION OBLIGATOIRE
+    if (!exploitationId || Number.isNaN(Number(exploitationId))) {
+      return "L'exploitation est obligatoire. Veuillez en sélectionner une.";
+    }
 
     return null;
   }
@@ -142,7 +172,7 @@ export default function CreateAnimalScreen() {
       healthStatus,
       fatherRfid: fatherRfid || undefined,
       motherRfid: motherRfid || undefined,
-      exploitationId: exploitationId ? Number(exploitationId) : undefined,
+      exploitationId: Number(exploitationId), // ✅ Maintenant obligatoire
       ...(photoUri ? { photoUri } : {}),
     });
 
@@ -355,18 +385,57 @@ export default function CreateAnimalScreen() {
                 onChangeText={setMotherRfid}
               />
             </View>
+          </View>
 
-            <View style={[styles.fieldGroup, styles.rowItem]}>
-              <Text style={styles.label}>Exploitation</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="ID"
-                placeholderTextColor="#aaa"
-                keyboardType="numeric"
-                value={exploitationId}
-                onChangeText={setExploitationId}
-              />
-            </View>
+          {/* --- 4. Exploitation (OBLIGATOIRE) --- */}
+          <SectionTitle index={4} label="Exploitation *" />
+
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Exploitation *</Text>
+            <Text style={styles.helperText}>
+              Sélectionnez l'exploitation à laquelle appartient l'animal.
+            </Text>
+
+            {loadingExploitations ? (
+              <ActivityIndicator size="small" color={GREEN} />
+            ) : exploitations.length === 0 ? (
+              <Text style={styles.noExploitationText}>
+                Aucune exploitation disponible. Créez-en une d'abord.
+              </Text>
+            ) : (
+              <View style={styles.exploitationList}>
+                {exploitations.map((exploitation) => {
+                  const selected = exploitationId === String(exploitation.id);
+                  return (
+                    <Pressable
+                      key={exploitation.id}
+                      onPress={() => setExploitationId(String(exploitation.id))}
+                      style={[
+                        styles.exploitationOption,
+                        selected && styles.exploitationOptionSelected,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.exploitationName,
+                          selected && styles.exploitationTextSelected,
+                        ]}
+                      >
+                        {exploitation.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.exploitationType,
+                          selected && styles.exploitationTextSelected,
+                        ]}
+                      >
+                        {exploitation.type || "Type non défini"}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
           </View>
 
           {error && <Text style={styles.error}>{error}</Text>}
@@ -461,6 +530,7 @@ const styles = StyleSheet.create({
 
   fieldGroup: { marginBottom: 14 },
   label: { fontSize: 13, fontWeight: "600", color: "#444", marginBottom: 6 },
+  helperText: { fontSize: 12, color: "#64748b", marginBottom: 8 },
   input: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -489,6 +559,40 @@ const styles = StyleSheet.create({
 
   row: { flexDirection: "row", gap: 12 },
   rowItem: { flex: 1 },
+
+  // ── Styles pour la liste des exploitations ──
+  exploitationList: { gap: 8 },
+  exploitationOption: {
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: BORDER,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  exploitationOptionSelected: {
+    backgroundColor: GREEN,
+    borderColor: GREEN,
+  },
+  exploitationName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1f2937",
+  },
+  exploitationType: {
+    fontSize: 12,
+    color: "#64748b",
+    marginTop: 2,
+  },
+  exploitationTextSelected: {
+    color: "#fff",
+  },
+  noExploitationText: {
+    color: "#dc2626",
+    fontSize: 13,
+    textAlign: "center",
+    paddingVertical: 12,
+  },
 
   error: {
     color: "#dc2626",

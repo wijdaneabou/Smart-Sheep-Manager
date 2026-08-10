@@ -25,6 +25,9 @@ import animalBcsRoutes from "./routes/animalBcs.routes.js";
 import reproductionRoutes from './routes/reproductionRoutes.js';
 import matingRoutes from './routes/matingRoutes.js';
 
+import userExploitationsRoutes from "./routes/userExploitations.routes.js";
+
+
 const app = new Hono();
 
 app.use(cors({
@@ -71,6 +74,8 @@ app.route('/api/health', healthRoutes);
 
 app.route('/api/reproduction-cycles', reproductionRoutes);
 app.route('/api/mating-services', matingRoutes);
+
+app.route("/api", userExploitationsRoutes);
 
 
 export default app;

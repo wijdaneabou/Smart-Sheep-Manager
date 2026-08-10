@@ -29,3 +29,4 @@ export * from './veterinaryInterventions.js';
 
 export * from './reproductionCycles.js';
 export * from './matingServices.js';
+export * from "./userExploitations.js";

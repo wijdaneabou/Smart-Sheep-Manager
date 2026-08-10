@@ -1,6 +1,6 @@
 import { db } from "../db/connection.js";
 import { animals } from "../db/schema/animals.js";
-import { eq, and, like, desc, count, or } from "drizzle-orm";
+import { eq, and, like, desc, count, or, inArray } from "drizzle-orm"; // 👈 AJOUT: inArray
 
 type CreateAnimalData = typeof animals.$inferInsert;
 type UpdateAnimalData = Partial<CreateAnimalData>;
@@ -36,16 +36,29 @@ export async function deleteAnimal(id: number) {
   await db.delete(animals).where(eq(animals.id, id));
 }
 
-export async function listAnimals(params: {
-  page: number;
-  limit: number;
-  search?: string;
-  breed?: string;
-  sex?: string;
-  healthStatus?: string;
-}) {
+// 👇 FONCTION MODIFIÉE : ajout du paramètre exploitationIds
+export async function listAnimals(
+  params: {
+    page: number;
+    limit: number;
+    search?: string;
+    breed?: string;
+    sex?: string;
+    healthStatus?: string;
+  },
+  exploitationIds?: number[]  // 👈 Nouveau paramètre
+) {
   const conditions = [];
 
+  // 🔒 Filtrer par exploitation(s) autorisée(s)
+  if (exploitationIds && exploitationIds.length > 0) {
+    conditions.push(inArray(animals.exploitationId, exploitationIds));
+  } else if (exploitationIds && exploitationIds.length === 0) {
+    // L'utilisateur n'a accès à aucune exploitation → retour vide
+    return { rows: [], total: 0 };
+  }
+
+  // Recherche et autres filtres
   if (params.search) {
     conditions.push(
       or(
@@ -83,15 +96,8 @@ export async function listAnimals(params: {
   return { rows, total };
 }
 
+// ─── Pedigree (inchangé) ───────────────────────────────────────────
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Pedigree / Genealogical Tree
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Compact animal info returned as part of the pedigree tree.
- * Only the fields relevant for a genealogical view are included.
- */
 export interface PedigreeAnimal {
   id: number;
   rfid: string;
@@ -105,22 +111,12 @@ export interface PedigreeAnimal {
   photoUrl: string | null;
 }
 
-/**
- * A node in the recursive pedigree tree.
- * `animal` is null when the parent is unknown (not recorded).
- * `father` / `mother` are null when the corresponding parent ID is missing
- * or when the maximum generation depth has been reached.
- */
 export interface PedigreeNode {
   animal: PedigreeAnimal | null;
   father: PedigreeNode | null;
   mother: PedigreeNode | null;
 }
 
-/**
- * Maps a full animal row to the compact PedigreeAnimal shape.
- * Converts Date fields to ISO date strings for JSON serialisation.
- */
 function toPedigreeAnimal(row: typeof animals.$inferSelect): PedigreeAnimal {
   return {
     id: row.id,
@@ -136,21 +132,12 @@ function toPedigreeAnimal(row: typeof animals.$inferSelect): PedigreeAnimal {
   };
 }
 
-/**
- * Recursively builds a pedigree node for the given animal ID.
- *
- * @param id              The animal to look up.
- * @param generation      Current generation index (0 = subject, 1 = parents, …).
- * @param maxGenerations  How many generations to traverse (3 = subject + parents + grandparents).
- * @param visited         Set of already-visited IDs to prevent infinite loops on circular references.
- */
 async function buildPedigreeNode(
   id: number,
   generation: number,
   maxGenerations: number,
   visited: Set<number>
 ): Promise<PedigreeNode> {
-  // Stop if we've reached the generation limit or hit a cycle.
   if (generation >= maxGenerations || visited.has(id)) {
     return { animal: null, father: null, mother: null };
   }
@@ -178,13 +165,6 @@ async function buildPedigreeNode(
   };
 }
 
-/**
- * Builds the complete pedigree tree for an animal (up to 3 generations).
- *
- * @param animalId       The subject animal.
- * @param maxGenerations Number of generations to include (default 3).
- * @returns              The root PedigreeNode, or null if the animal doesn't exist.
- */
 export async function getPedigreeTree(
   animalId: number,
   maxGenerations: number = 3
@@ -211,4 +191,3 @@ export async function getPedigreeTree(
     mother,
   };
 }
-

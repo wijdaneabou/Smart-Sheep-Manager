@@ -149,6 +149,7 @@ export const reproductionService = {
           weight: lambData.weight ? String(lambData.weight) : null,
           fatherId: fatherId,
           motherId: motherId,
+          // ✅ L'exploitation est héritée de la mère (peut être null)
           exploitationId: exploitationId,
           healthStatus: 'HEALTHY',
         })

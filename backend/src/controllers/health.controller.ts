@@ -14,35 +14,62 @@ import {
 import { db } from '../db/connection.js';
 import { animals } from '../db/schema/index.js';
 import { eq } from 'drizzle-orm';
+import { getUserExploitationIds } from '../utils/permissions.js';
 
 const healthService = new HealthService();
+
+// ─── Helper pour vérifier l'accès à un animal ───────────────────
+async function checkAnimalAccess(animalId: number, userId: number, roleName: string): Promise<boolean> {
+  const [animal] = await db
+    .select({ exploitationId: animals.exploitationId })
+    .from(animals)
+    .where(eq(animals.id, animalId));
+  if (!animal) return false;
+  // ✅ Correction : gérer le cas où exploitationId est null
+  if (animal.exploitationId === null) return false;
+  const allowedIds = await getUserExploitationIds(userId, roleName);
+  return allowedIds.includes(animal.exploitationId);
+}
 
 export const HealthController = {
   // ============================================
   // Health Records (US-5.1)
   // ============================================
 
-  // ✅ MODIFIÉ : utilise la méthode avec jointure pour récupérer les infos animal
   async getHealthRecords(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const animalIdParam = c.req.param('animalId');
     if (animalIdParam) {
       const animalId = Number(animalIdParam);
       if (isNaN(animalId)) {
         return c.json({ success: false, message: 'ID de l\'animal invalide' }, 400);
       }
+      const hasAccess = await checkAnimalAccess(animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé à cet animal' }, 403);
+      }
       const records = await healthService.getHealthRecords(animalId);
       return c.json({ success: true, data: records });
     } else {
-      // ✅ Tous les dossiers avec infos animal
-      const records = await healthService.getAllHealthRecordsWithAnimals();
+      const allowedIds = await getUserExploitationIds(user.id, user.roleName || '');
+      const records = await healthService.getAllHealthRecordsWithAnimals(allowedIds);
       return c.json({ success: true, data: records });
     }
   },
 
   async getLatestHealthRecord(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const animalId = Number(c.req.param('animalId'));
     if (isNaN(animalId)) {
       return c.json({ success: false, message: 'ID de l\'animal invalide' }, 400);
+    }
+    const hasAccess = await checkAnimalAccess(animalId, user.id, user.roleName || '');
+    if (!hasAccess) {
+      return c.json({ success: false, message: 'Accès non autorisé à cet animal' }, 403);
     }
     const record = await healthService.getLatestHealthRecord(animalId);
     if (!record) {
@@ -52,6 +79,9 @@ export const HealthController = {
   },
 
   async getHealthRecordById(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID du dossier invalide' }, 400);
@@ -60,15 +90,25 @@ export const HealthController = {
     if (!record) {
       return c.json({ success: false, message: 'Dossier médical non trouvé' }, 404);
     }
+    const hasAccess = await checkAnimalAccess(record.animalId, user.id, user.roleName || '');
+    if (!hasAccess) {
+      return c.json({ success: false, message: 'Accès non autorisé' }, 403);
+    }
     return c.json({ success: true, data: record });
   },
 
   async createHealthRecord(c: Context) {
-    const user = c.get('user') as { id: number } | undefined;
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const body = await c.req.json();
     try {
       const validated = createHealthRecordSchema.parse(body);
-      const recordedBy = user ? user.id : null;
+      const hasAccess = await checkAnimalAccess(validated.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé à cet animal' }, 403);
+      }
+      const recordedBy = user.id;
       const record = await healthService.createHealthRecord({ ...validated, recordedBy });
       return c.json({ success: true, data: record }, 201);
     } catch (error: any) {
@@ -78,12 +118,24 @@ export const HealthController = {
   },
 
   async updateHealthRecord(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
     const body = await c.req.json();
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID du dossier invalide' }, 400);
     }
     try {
+      const existing = await healthService.getHealthRecordById(id);
+      if (!existing) {
+        return c.json({ success: false, message: 'Dossier médical non trouvé' }, 404);
+      }
+      const hasAccess = await checkAnimalAccess(existing.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé' }, 403);
+      }
+
       const validated = updateHealthRecordSchema.parse(body);
       const record = await healthService.updateHealthRecord(id, validated);
       if (!record) {
@@ -96,11 +148,22 @@ export const HealthController = {
   },
 
   async deleteHealthRecord(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID du dossier invalide' }, 400);
     }
     try {
+      const existing = await healthService.getHealthRecordById(id);
+      if (!existing) {
+        return c.json({ success: false, message: 'Dossier médical non trouvé' }, 404);
+      }
+      const hasAccess = await checkAnimalAccess(existing.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé' }, 403);
+      }
       await healthService.deleteHealthRecord(id);
       return c.json({ success: true, message: 'Dossier médical supprimé' });
     } catch (error: any) {
@@ -113,9 +176,16 @@ export const HealthController = {
   // ============================================
 
   async getCarnet(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const animalId = Number(c.req.param('animalId'));
     if (isNaN(animalId)) {
       return c.json({ success: false, message: "ID de l'animal invalide" }, 400);
+    }
+    const hasAccess = await checkAnimalAccess(animalId, user.id, user.roleName || '');
+    if (!hasAccess) {
+      return c.json({ success: false, message: 'Accès non autorisé à cet animal' }, 403);
     }
 
     try {
@@ -134,15 +204,30 @@ export const HealthController = {
   // ============================================
 
   async getTreatmentsByHealthRecord(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const healthRecordId = Number(c.req.param('healthRecordId'));
     if (isNaN(healthRecordId)) {
       return c.json({ success: false, message: 'ID du dossier médical invalide' }, 400);
     }
+    const record = await healthService.getHealthRecordById(healthRecordId);
+    if (!record) {
+      return c.json({ success: false, message: 'Dossier médical non trouvé' }, 404);
+    }
+    const hasAccess = await checkAnimalAccess(record.animalId, user.id, user.roleName || '');
+    if (!hasAccess) {
+      return c.json({ success: false, message: 'Accès non autorisé' }, 403);
+    }
+
     const treatments = await healthService.getTreatmentsByHealthRecord(healthRecordId);
     return c.json({ success: true, data: treatments });
   },
 
   async getTreatmentById(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID du traitement invalide' }, 400);
@@ -151,17 +236,31 @@ export const HealthController = {
     if (!treatment) {
       return c.json({ success: false, message: 'Traitement non trouvé' }, 404);
     }
+    const record = await healthService.getHealthRecordById(treatment.healthRecordId);
+    if (!record) {
+      return c.json({ success: false, message: 'Dossier médical associé non trouvé' }, 404);
+    }
+    const hasAccess = await checkAnimalAccess(record.animalId, user.id, user.roleName || '');
+    if (!hasAccess) {
+      return c.json({ success: false, message: 'Accès non autorisé' }, 403);
+    }
     return c.json({ success: true, data: treatment });
   },
 
   async createTreatment(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const body = await c.req.json();
     try {
       const validated = createTreatmentSchema.parse(body);
-
       const healthRecord = await healthService.getHealthRecordById(validated.healthRecordId);
       if (!healthRecord) {
         return c.json({ success: false, message: 'Dossier médical non trouvé' }, 404);
+      }
+      const hasAccess = await checkAnimalAccess(healthRecord.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé' }, 403);
       }
 
       const treatmentData = {
@@ -180,19 +279,29 @@ export const HealthController = {
   },
 
   async updateTreatment(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
     const body = await c.req.json();
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID du traitement invalide' }, 400);
     }
     try {
-      const validated = updateTreatmentSchema.parse(body);
-
       const existing = await healthService.getTreatmentById(id);
       if (!existing) {
         return c.json({ success: false, message: 'Traitement non trouvé' }, 404);
       }
+      const record = await healthService.getHealthRecordById(existing.healthRecordId);
+      if (!record) {
+        return c.json({ success: false, message: 'Dossier médical associé non trouvé' }, 404);
+      }
+      const hasAccess = await checkAnimalAccess(record.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé' }, 403);
+      }
 
+      const validated = updateTreatmentSchema.parse(body);
       const treatmentData: any = { ...validated };
       if (validated.startDate !== undefined) {
         treatmentData.startDate = new Date(validated.startDate);
@@ -212,8 +321,10 @@ export const HealthController = {
   },
 
   async administerTreatment(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
-    const user = c.get('user') as { id: number } | undefined;
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID du traitement invalide' }, 400);
     }
@@ -222,13 +333,18 @@ export const HealthController = {
       if (!existing) {
         return c.json({ success: false, message: 'Traitement non trouvé' }, 404);
       }
-      const isAlreadyAdministered = existing.administered === true;
+      const record = await healthService.getHealthRecordById(existing.healthRecordId);
+      if (!record) {
+        return c.json({ success: false, message: 'Dossier médical associé non trouvé' }, 404);
+      }
+      const hasAccess = await checkAnimalAccess(record.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé' }, 403);
+      }
 
+      const isAlreadyAdministered = existing.administered === true;
       if (isAlreadyAdministered) {
         return c.json({ success: false, message: 'Ce traitement a déjà été administré' }, 400);
-      }
-      if (!user?.id) {
-        return c.json({ success: false, message: 'Utilisateur non authentifié' }, 401);
       }
       const treatment = await healthService.administerTreatment(id, user.id);
       return c.json({ success: true, data: treatment });
@@ -238,6 +354,9 @@ export const HealthController = {
   },
 
   async deleteTreatment(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID du traitement invalide' }, 400);
@@ -246,6 +365,14 @@ export const HealthController = {
       const existing = await healthService.getTreatmentById(id);
       if (!existing) {
         return c.json({ success: false, message: 'Traitement non trouvé' }, 404);
+      }
+      const record = await healthService.getHealthRecordById(existing.healthRecordId);
+      if (!record) {
+        return c.json({ success: false, message: 'Dossier médical associé non trouvé' }, 404);
+      }
+      const hasAccess = await checkAnimalAccess(record.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé' }, 403);
       }
       await healthService.deleteTreatment(id);
       return c.json({ success: true, message: 'Traitement supprimé avec succès' });
@@ -259,15 +386,26 @@ export const HealthController = {
   // ============================================
 
   async getVaccinationsByAnimal(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const animalId = Number(c.req.param('animalId'));
     if (isNaN(animalId)) {
       return c.json({ success: false, message: 'ID de l\'animal invalide' }, 400);
     }
-    const vaccinations = await healthService.getVaccinationsByAnimal(animalId);
+    const hasAccess = await checkAnimalAccess(animalId, user.id, user.roleName || '');
+    if (!hasAccess) {
+      return c.json({ success: false, message: 'Accès non autorisé à cet animal' }, 403);
+    }
+    const allowedIds = await getUserExploitationIds(user.id, user.roleName || '');
+    const vaccinations = await healthService.getVaccinationsByAnimal(animalId, allowedIds);
     return c.json({ success: true, data: vaccinations });
   },
 
   async getVaccinationById(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID de la vaccination invalide' }, 400);
@@ -276,29 +414,30 @@ export const HealthController = {
     if (!vaccination) {
       return c.json({ success: false, message: 'Vaccination non trouvée' }, 404);
     }
+    const hasAccess = await checkAnimalAccess(vaccination.animalId, user.id, user.roleName || '');
+    if (!hasAccess) {
+      return c.json({ success: false, message: 'Accès non autorisé' }, 403);
+    }
     return c.json({ success: true, data: vaccination });
   },
 
   async createVaccination(c: Context) {
-    const user = c.get('user') as { id: number } | undefined;
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const body = await c.req.json();
     try {
       const validated = createVaccinationSchema.parse(body);
-
-      const [animal] = await db
-        .select()
-        .from(animals)
-        .where(eq(animals.id, validated.animalId));
-
-      if (!animal) {
-        return c.json({ success: false, message: 'Animal non trouvé' }, 404);
+      const hasAccess = await checkAnimalAccess(validated.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé à cet animal' }, 403);
       }
 
       const vaccinationData = {
         ...validated,
         date: new Date(validated.date),
         boosterDate: validated.boosterDate ? new Date(validated.boosterDate) : undefined,
-        administeredBy: user?.id || null,
+        administeredBy: user.id,
         status: 'PENDING',
       };
 
@@ -311,19 +450,25 @@ export const HealthController = {
   },
 
   async updateVaccination(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
     const body = await c.req.json();
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID de la vaccination invalide' }, 400);
     }
     try {
-      const validated = updateVaccinationSchema.parse(body);
-
       const existing = await healthService.getVaccinationById(id);
       if (!existing) {
         return c.json({ success: false, message: 'Vaccination non trouvée' }, 404);
       }
+      const hasAccess = await checkAnimalAccess(existing.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé' }, 403);
+      }
 
+      const validated = updateVaccinationSchema.parse(body);
       const vaccinationData: any = { ...validated };
       if (validated.date !== undefined) {
         vaccinationData.date = new Date(validated.date);
@@ -340,30 +485,26 @@ export const HealthController = {
   },
 
   async updateVaccinationStatus(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
-    const user = c.get('user') as { id: number } | undefined;
     const body = await c.req.json();
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID de la vaccination invalide' }, 400);
     }
     try {
-      const validated = updateVaccinationStatusSchema.parse(body);
-
       const existing = await healthService.getVaccinationById(id);
       if (!existing) {
         return c.json({ success: false, message: 'Vaccination non trouvée' }, 404);
       }
-
-      if (!user?.id) {
-        return c.json({ success: false, message: 'Utilisateur non authentifié' }, 401);
+      const hasAccess = await checkAnimalAccess(existing.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé' }, 403);
       }
 
-      const vaccination = await healthService.updateVaccinationStatus(
-        id,
-        validated.status,
-        user.id
-      );
-
+      const validated = updateVaccinationStatusSchema.parse(body);
+      const vaccination = await healthService.updateVaccinationStatus(id, validated.status, user.id);
       return c.json({ success: true, data: vaccination });
     } catch (error: any) {
       return c.json({ success: false, message: 'Erreur lors de la mise à jour du statut', errors: error.message }, 400);
@@ -371,6 +512,9 @@ export const HealthController = {
   },
 
   async deleteVaccination(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID de la vaccination invalide' }, 400);
@@ -379,6 +523,10 @@ export const HealthController = {
       const existing = await healthService.getVaccinationById(id);
       if (!existing) {
         return c.json({ success: false, message: 'Vaccination non trouvée' }, 404);
+      }
+      const hasAccess = await checkAnimalAccess(existing.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé' }, 403);
       }
       await healthService.deleteVaccination(id);
       return c.json({ success: true, message: 'Vaccination supprimée avec succès' });
@@ -392,8 +540,12 @@ export const HealthController = {
   // ============================================
 
   async getHealthReport(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     try {
-      const report = await healthService.getHealthReport();
+      const allowedIds = await getUserExploitationIds(user.id, user.roleName || '');
+      const report = await healthService.getHealthReport(allowedIds);
       return c.json({
         success: true,
         data: report,
@@ -412,15 +564,26 @@ export const HealthController = {
   // ============================================
 
   async getInterventionsByAnimal(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const animalId = Number(c.req.param('animalId'));
     if (isNaN(animalId)) {
       return c.json({ success: false, message: 'ID de l\'animal invalide' }, 400);
     }
-    const interventions = await healthService.getInterventionsByAnimal(animalId);
+    const hasAccess = await checkAnimalAccess(animalId, user.id, user.roleName || '');
+    if (!hasAccess) {
+      return c.json({ success: false, message: 'Accès non autorisé à cet animal' }, 403);
+    }
+    const allowedIds = await getUserExploitationIds(user.id, user.roleName || '');
+    const interventions = await healthService.getInterventionsByAnimal(animalId, allowedIds);
     return c.json({ success: true, data: interventions });
   },
 
   async getInterventionById(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID de l\'intervention invalide' }, 400);
@@ -429,28 +592,29 @@ export const HealthController = {
     if (!intervention) {
       return c.json({ success: false, message: 'Intervention non trouvée' }, 404);
     }
+    const hasAccess = await checkAnimalAccess(intervention.animalId, user.id, user.roleName || '');
+    if (!hasAccess) {
+      return c.json({ success: false, message: 'Accès non autorisé' }, 403);
+    }
     return c.json({ success: true, data: intervention });
   },
 
   async createIntervention(c: Context) {
-    const user = c.get('user') as { id: number } | undefined;
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const body = await c.req.json();
     try {
       const validated = createInterventionSchema.parse(body);
-
-      const [animal] = await db
-        .select()
-        .from(animals)
-        .where(eq(animals.id, validated.animalId));
-
-      if (!animal) {
-        return c.json({ success: false, message: 'Animal non trouvé' }, 404);
+      const hasAccess = await checkAnimalAccess(validated.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé à cet animal' }, 403);
       }
 
       const interventionData = {
         ...validated,
         date: new Date(validated.date),
-        performedBy: user?.id || null,
+        performedBy: user.id,
       };
 
       const intervention = await healthService.createIntervention(interventionData);
@@ -462,19 +626,25 @@ export const HealthController = {
   },
 
   async updateIntervention(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
     const body = await c.req.json();
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID de l\'intervention invalide' }, 400);
     }
     try {
-      const validated = updateInterventionSchema.parse(body);
-
       const existing = await healthService.getInterventionById(id);
       if (!existing) {
         return c.json({ success: false, message: 'Intervention non trouvée' }, 404);
       }
+      const hasAccess = await checkAnimalAccess(existing.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé' }, 403);
+      }
 
+      const validated = updateInterventionSchema.parse(body);
       const interventionData: any = { ...validated };
       if (validated.date !== undefined) {
         interventionData.date = new Date(validated.date);
@@ -488,6 +658,9 @@ export const HealthController = {
   },
 
   async deleteIntervention(c: Context) {
+    const user = c.get('user') as { id: number; roleName?: string } | undefined;
+    if (!user) return c.json({ success: false, message: 'Non authentifié' }, 401);
+
     const id = Number(c.req.param('id'));
     if (isNaN(id)) {
       return c.json({ success: false, message: 'ID de l\'intervention invalide' }, 400);
@@ -496,6 +669,10 @@ export const HealthController = {
       const existing = await healthService.getInterventionById(id);
       if (!existing) {
         return c.json({ success: false, message: 'Intervention non trouvée' }, 404);
+      }
+      const hasAccess = await checkAnimalAccess(existing.animalId, user.id, user.roleName || '');
+      if (!hasAccess) {
+        return c.json({ success: false, message: 'Accès non autorisé' }, 403);
       }
       await healthService.deleteIntervention(id);
       return c.json({ success: true, message: 'Intervention supprimée avec succès' });

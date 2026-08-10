@@ -15,6 +15,13 @@
       "when": 1785697881339,
       "tag": "0001_pale_rattler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786025548431,
+      "tag": "0002_even_texas_twister",
+      "breakpoints": true
     }
   ]
 }

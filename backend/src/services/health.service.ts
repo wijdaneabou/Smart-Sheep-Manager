@@ -8,7 +8,7 @@ import {
   NewHealthRecord,
   NewTreatment,
 } from '../db/schema/index.js';
-import { eq, desc, inArray, sql } from 'drizzle-orm';
+import { eq, desc, inArray, sql, and } from 'drizzle-orm'; // 👈 AJOUT: and
 
 export type CarnetEvent = {
   type: 'health_record' | 'treatment' | 'vaccination';
@@ -33,8 +33,16 @@ export class HealthService {
   // US-5.1: Dossiers médicaux
   // ============================================
 
-  // Récupère les dossiers d'un animal spécifique AVEC les infos de l'animal
-  async getHealthRecords(animalId: number) {
+  async getHealthRecords(animalId: number, exploitationIds?: number[]) {
+    // ✅ Construire les conditions
+    const conditions = [eq(healthRecords.animalId, animalId)];
+
+    if (exploitationIds && exploitationIds.length > 0) {
+      conditions.push(inArray(animals.exploitationId, exploitationIds));
+    } else if (exploitationIds && exploitationIds.length === 0) {
+      return [];
+    }
+
     return await db
       .select({
         id: healthRecords.id,
@@ -46,20 +54,28 @@ export class HealthService {
         recordedBy: healthRecords.recordedBy,
         createdAt: healthRecords.createdAt,
         updatedAt: healthRecords.updatedAt,
-        // Champs de l'animal
         animalName: animals.name,
         animalRfid: animals.rfid,
         animalPhotoUrl: animals.photoUrl,
+        animalExploitationId: animals.exploitationId,
       })
       .from(healthRecords)
       .leftJoin(animals, eq(healthRecords.animalId, animals.id))
-      .where(eq(healthRecords.animalId, animalId))
+      .where(and(...conditions))
       .orderBy(desc(healthRecords.createdAt));
   }
 
-  // Récupère TOUS les dossiers AVEC les infos de l'animal
-  async getAllHealthRecordsWithAnimals() {
-    return await db
+  async getAllHealthRecordsWithAnimals(exploitationIds?: number[]) {
+    // ✅ Construire les conditions
+    const conditions: any[] = [];
+
+    if (exploitationIds && exploitationIds.length > 0) {
+      conditions.push(inArray(animals.exploitationId, exploitationIds));
+    } else if (exploitationIds && exploitationIds.length === 0) {
+      return [];
+    }
+
+    const query = db
       .select({
         id: healthRecords.id,
         animalId: healthRecords.animalId,
@@ -70,14 +86,19 @@ export class HealthService {
         recordedBy: healthRecords.recordedBy,
         createdAt: healthRecords.createdAt,
         updatedAt: healthRecords.updatedAt,
-        // Champs de l'animal
         animalName: animals.name,
         animalRfid: animals.rfid,
         animalPhotoUrl: animals.photoUrl,
+        animalExploitationId: animals.exploitationId,
       })
       .from(healthRecords)
-      .leftJoin(animals, eq(healthRecords.animalId, animals.id))
-      .orderBy(desc(healthRecords.createdAt));
+      .leftJoin(animals, eq(healthRecords.animalId, animals.id));
+
+    if (conditions.length > 0) {
+      return await query.where(and(...conditions)).orderBy(desc(healthRecords.createdAt));
+    }
+
+    return await query.orderBy(desc(healthRecords.createdAt));
   }
 
   // Récupère TOUS les dossiers (sans jointure) – gardé pour compatibilité
@@ -236,11 +257,21 @@ export class HealthService {
   // US-5.3: Vaccinations
   // ============================================
 
-  async getVaccinationsByAnimal(animalId: number) {
+  async getVaccinationsByAnimal(animalId: number, exploitationIds?: number[]) {
+    // ✅ Construire les conditions
+    const conditions = [eq(vaccinations.animalId, animalId)];
+
+    if (exploitationIds && exploitationIds.length > 0) {
+      conditions.push(inArray(animals.exploitationId, exploitationIds));
+    } else if (exploitationIds && exploitationIds.length === 0) {
+      return [];
+    }
+
     return await db
       .select()
       .from(vaccinations)
-      .where(eq(vaccinations.animalId, animalId))
+      .leftJoin(animals, eq(vaccinations.animalId, animals.id))
+      .where(and(...conditions))
       .orderBy(desc(vaccinations.date));
   }
 
@@ -400,57 +431,98 @@ export class HealthService {
   // US-5.6: Rapport sanitaire
   // ============================================
 
-  async getHealthReport() {
-    const totalAnimalsResult = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(animals);
-    const totalAnimals = totalAnimalsResult[0]?.count || 0;
+  async getHealthReport(exploitationIds?: number[]) {
+    // ✅ Filtrer les animaux par exploitation(s) autorisée(s)
+    let animalIds: number[] = [];
 
-    const deceasedResult = await db
-      .select({ count: sql<number>`COUNT(*)` })
+    if (exploitationIds && exploitationIds.length > 0) {
+      const filteredAnimals = await db
+        .select({ id: animals.id })
+        .from(animals)
+        .where(inArray(animals.exploitationId, exploitationIds));
+      animalIds = filteredAnimals.map(a => a.id);
+    } else if (exploitationIds && exploitationIds.length === 0) {
+      return {
+        summary: {
+          totalAnimals: 0,
+          totalHealthRecords: 0,
+          morbidityRate: 0,
+          mortalityRate: 0,
+          avgCostPerAnimal: 0,
+          avgRecoveryDays: 0,
+        },
+        statusDistribution: {},
+        recentActivities: [],
+      };
+    } else {
+      // Aucun filtre → tous les animaux
+      const allAnimals = await db.select({ id: animals.id }).from(animals);
+      animalIds = allAnimals.map(a => a.id);
+    }
+
+    const totalAnimals = animalIds.length;
+
+    if (totalAnimals === 0) {
+      return {
+        summary: {
+          totalAnimals: 0,
+          totalHealthRecords: 0,
+          morbidityRate: 0,
+          mortalityRate: 0,
+          avgCostPerAnimal: 0,
+          avgRecoveryDays: 0,
+        },
+        statusDistribution: {},
+        recentActivities: [],
+      };
+    }
+
+    // Compter les animaux malades et décédés
+    const allAnimalsFull = await db
+      .select()
       .from(animals)
-      .where(eq(animals.healthStatus, 'DECEASED'));
-    const deceased = deceasedResult[0]?.count || 0;
+      .where(inArray(animals.id, animalIds));
 
-    const sickResult = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(animals)
-      .where(eq(animals.healthStatus, 'SICK'));
-    const sick = sickResult[0]?.count || 0;
+    const sickCount = allAnimalsFull.filter(a => a.healthStatus === 'SICK').length;
+    const deceasedCount = allAnimalsFull.filter(a => a.healthStatus === 'DECEASED').length;
 
-    const totalRecordsResult = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(healthRecords);
-    const totalHealthRecords = totalRecordsResult[0]?.count || 0;
-
-    const statusDistribution = await db
-      .select({
-        status: healthRecords.status,
-        count: sql<number>`COUNT(*)`,
-      })
+    // Récupérer les dossiers médicaux des animaux autorisés
+    const healthRecordsList = await db
+      .select()
       .from(healthRecords)
-      .groupBy(healthRecords.status);
+      .where(inArray(healthRecords.animalId, animalIds));
 
+    const totalHealthRecords = healthRecordsList.length;
+
+    // Distribution des statuts
     const distribution: Record<string, number> = {};
-    statusDistribution.forEach((row) => {
-      distribution[row.status] = Number(row.count);
+    healthRecordsList.forEach((record) => {
+      distribution[record.status] = (distribution[record.status] || 0) + 1;
     });
 
-    const avgRecoveryResult = await db
-      .select({
-        avgDays: sql<number>`AVG(DATEDIFF(${healthRecords.updatedAt}, ${healthRecords.createdAt}))`,
-      })
-      .from(healthRecords)
-      .where(eq(healthRecords.status, 'RECOVERED'));
-    const avgRecoveryDays = Math.round(avgRecoveryResult[0]?.avgDays || 0);
+    // Temps de guérison moyen
+    const recoveredRecords = healthRecordsList.filter(r => r.status === 'RECOVERED');
+    let avgRecoveryDays = 0;
+    if (recoveredRecords.length > 0) {
+      const totalDays = recoveredRecords.reduce((sum, r) => {
+        const start = r.createdAt ? new Date(r.createdAt).getTime() : 0;
+        const end = r.updatedAt ? new Date(r.updatedAt).getTime() : Date.now();
+        const days = (end - start) / (1000 * 60 * 60 * 24);
+        return sum + days;
+      }, 0);
+      avgRecoveryDays = Math.round(totalDays / recoveredRecords.length);
+    }
 
+    // Activités récentes (limitées aux animaux autorisés)
     const recentHealthRecords = await db
       .select({
         type: sql<string>`'health_record'`,
         date: healthRecords.createdAt,
-        description: sql<string>`CONCAT('Diagnostic: ', ${healthRecords.diagnosis}, ' pour animal #', ${healthRecords.animalId})`,
+        description: sql<string>`CONCAT('Diagnostic: ', ${healthRecords.diagnosis}, ' pour ', ${animals.name})`,
       })
       .from(healthRecords)
+      .leftJoin(animals, eq(healthRecords.animalId, animals.id))
+      .where(inArray(healthRecords.animalId, animalIds))
       .orderBy(desc(healthRecords.createdAt))
       .limit(5);
 
@@ -458,9 +530,12 @@ export class HealthService {
       .select({
         type: sql<string>`'treatment'`,
         date: treatments.createdAt,
-        description: sql<string>`CONCAT('Traitement: ', ${treatments.medicationName}, ' pour dossier #', ${treatments.healthRecordId})`,
+        description: sql<string>`CONCAT('Traitement: ', ${treatments.medicationName}, ' pour ', ${animals.name})`,
       })
       .from(treatments)
+      .leftJoin(healthRecords, eq(treatments.healthRecordId, healthRecords.id))
+      .leftJoin(animals, eq(healthRecords.animalId, animals.id))
+      .where(inArray(healthRecords.animalId, animalIds))
       .orderBy(desc(treatments.createdAt))
       .limit(5);
 
@@ -468,9 +543,11 @@ export class HealthService {
       .select({
         type: sql<string>`'vaccination'`,
         date: vaccinations.date,
-        description: sql<string>`CONCAT('Vaccination: ', ${vaccinations.vaccineType}, ' pour animal #', ${vaccinations.animalId})`,
+        description: sql<string>`CONCAT('Vaccination: ', ${vaccinations.vaccineType}, ' pour ', ${animals.name})`,
       })
       .from(vaccinations)
+      .leftJoin(animals, eq(vaccinations.animalId, animals.id))
+      .where(inArray(vaccinations.animalId, animalIds))
       .orderBy(desc(vaccinations.date))
       .limit(5);
 
@@ -489,14 +566,8 @@ export class HealthService {
         description: activity.description,
       }));
 
-    const morbidityRate = totalAnimals > 0 ? (sick / totalAnimals) * 100 : 0;
-    const mortalityRate = totalAnimals > 0 ? (deceased / totalAnimals) * 100 : 0;
-
-    const treatmentsCountResult = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(treatments);
-    const treatmentsCount = treatmentsCountResult[0]?.count || 0;
-    const avgCostPerAnimal = totalAnimals > 0 ? (treatmentsCount / totalAnimals) * 10 : 0;
+    const morbidityRate = totalAnimals > 0 ? (sickCount / totalAnimals) * 100 : 0;
+    const mortalityRate = totalAnimals > 0 ? (deceasedCount / totalAnimals) * 100 : 0;
 
     return {
       summary: {
@@ -504,7 +575,7 @@ export class HealthService {
         totalHealthRecords,
         morbidityRate: Math.round(morbidityRate * 10) / 10,
         mortalityRate: Math.round(mortalityRate * 10) / 10,
-        avgCostPerAnimal: Math.round(avgCostPerAnimal * 100) / 100,
+        avgCostPerAnimal: 0,
         avgRecoveryDays,
       },
       statusDistribution: distribution,
@@ -516,11 +587,20 @@ export class HealthService {
   // US-5.7: Interventions vétérinaires
   // ============================================
 
-  async getInterventionsByAnimal(animalId: number) {
+  async getInterventionsByAnimal(animalId: number, exploitationIds?: number[]) {
+    const conditions = [eq(veterinaryInterventions.animalId, animalId)];
+
+    if (exploitationIds && exploitationIds.length > 0) {
+      conditions.push(inArray(animals.exploitationId, exploitationIds));
+    } else if (exploitationIds && exploitationIds.length === 0) {
+      return [];
+    }
+
     return await db
       .select()
       .from(veterinaryInterventions)
-      .where(eq(veterinaryInterventions.animalId, animalId))
+      .leftJoin(animals, eq(veterinaryInterventions.animalId, animals.id))
+      .where(and(...conditions))
       .orderBy(desc(veterinaryInterventions.date));
   }
 

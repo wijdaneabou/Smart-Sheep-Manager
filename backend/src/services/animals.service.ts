@@ -5,11 +5,9 @@ import {
   updateAnimal as updateAnimalInDb,
   deleteAnimal as deleteAnimalInDb,
   listAnimals as listAnimalsInDb,
-
   getPedigreeTree,
   type PedigreeNode,
   type PedigreeAnimal,
-
 } from "../repositories/animals.repository.js";
 
 export type CreateAnimalResult =
@@ -32,9 +30,7 @@ export async function createAnimal(input: {
   bcs?: number;
   healthStatus?: "HEALTHY" | "SICK" | "RECOVERING" | "DECEASED" | "QUARANTINE";
   exploitationId?: number;
-
   photoUrl?: string;
-
 }): Promise<CreateAnimalResult> {
   // Vérifier l'unicité du RFID
   const existing = await findAnimalByRfid(input.rfid);
@@ -58,9 +54,7 @@ export async function createAnimal(input: {
     bcs: input.bcs !== undefined ? String(input.bcs) : undefined,
     healthStatus: input.healthStatus ?? "HEALTHY",
     exploitationId: input.exploitationId,
-
     photoUrl: input.photoUrl,
-
   });
 
   if (!animal) {
@@ -93,9 +87,7 @@ export async function updateAnimal(
     bcs?: number | null;
     healthStatus?: "HEALTHY" | "SICK" | "RECOVERING" | "DECEASED" | "QUARANTINE";
     exploitationId?: number | null;
-
     photoUrl?: string;
-
   }
 ): Promise<UpdateAnimalResult> {
   const existing = await findAnimalById(id);
@@ -129,9 +121,7 @@ export async function updateAnimal(
       input.bcs !== undefined ? (input.bcs === null ? undefined : String(input.bcs)) : undefined,
     healthStatus: input.healthStatus,
     exploitationId: input.exploitationId ?? undefined,
-
     photoUrl: input.photoUrl,
-
   });
 
   if (!updated) {
@@ -157,15 +147,21 @@ export async function getAnimalById(id: number): Promise<GetAnimalResult> {
   return { success: true, status: 200, animal };
 }
 
-export async function listAnimals(params: {
-  page: number;
-  limit: number;
-  search?: string;
-  breed?: string;
-  sex?: string;
-  healthStatus?: string;
-}) {
-  const { rows, total } = await listAnimalsInDb(params);
+// ────────────────────────────────────────────────────────────────
+// ✅ MODIFICATION : Ajout du paramètre exploitationIds
+// ────────────────────────────────────────────────────────────────
+export async function listAnimals(
+  params: {
+    page: number;
+    limit: number;
+    search?: string;
+    breed?: string;
+    sex?: string;
+    healthStatus?: string;
+  },
+  exploitationIds?: number[]  // 👈 Nouveau paramètre
+) {
+  const { rows, total } = await listAnimalsInDb(params, exploitationIds);
   return {
     success: true as const,
     status: 200 as const,
@@ -192,11 +188,6 @@ export async function deleteAnimal(id: number): Promise<UpdateAnimalResult> {
 // Pedigree / Genealogical Tree
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Information about a consanguinity (inbreeding) alert.
- * When the same ancestor appears on both the paternal and maternal sides,
- * the coefficient of relationship can be computed.
- */
 export interface ConsanguinityAlert {
   animalId: number;
   animalName: string;
@@ -204,20 +195,12 @@ export interface ConsanguinityAlert {
   paths: string[];
 }
 
-/**
- * Result of the pedigree query, including the tree and any consanguinity alerts.
- */
 export interface PedigreeResult {
   tree: PedigreeNode;
   consanguinityAlerts: ConsanguinityAlert[];
   hasConsanguinity: boolean;
 }
 
-/**
- * Traverses the pedigree tree and collects all animal IDs with their
- * relationship paths. Used to detect consanguinity (same ancestor appearing
- * on both paternal and maternal sides).
- */
 function collectAncestors(
   node: PedigreeNode | null,
   path: string,
@@ -227,24 +210,15 @@ function collectAncestors(
 
   const currentPath = path ? `${path} → ${node.animal.name}` : node.animal.name;
 
-  // Record this animal
   if (!map.has(node.animal.id)) {
     map.set(node.animal.id, []);
   }
   map.get(node.animal.id)!.push(currentPath);
 
-  // Recurse into parents
   collectAncestors(node.father, `${currentPath} (père)`, map);
   collectAncestors(node.mother, `${currentPath} (mère)`, map);
 }
 
-/**
- * Builds the pedigree tree for an animal and detects consanguinity.
- *
- * @param animalId       The subject animal.
- * @param maxGenerations Number of generations (default 3).
- * @returns              The tree, consanguinity alerts, and a boolean flag.
- */
 export async function getPedigree(
   animalId: number,
   maxGenerations: number = 3
@@ -257,7 +231,6 @@ export async function getPedigree(
     return { success: false, status: 404, message: "Animal introuvable." };
   }
 
-  // Detect consanguinity: collect all ancestors and find duplicates
   const ancestorMap = new Map<number, string[]>();
   collectAncestors(tree.father, "Père", ancestorMap);
   collectAncestors(tree.mother, "Mère", ancestorMap);
@@ -265,7 +238,6 @@ export async function getPedigree(
   const consanguinityAlerts: ConsanguinityAlert[] = [];
   for (const [id, paths] of ancestorMap) {
     if (paths.length > 1) {
-      // Find the animal name from the first path
       const nameMatch = paths[0].match(/→ ([^(]+)/);
       const name = nameMatch ? nameMatch[1].trim() : `Animal #${id}`;
       consanguinityAlerts.push({
@@ -287,4 +259,3 @@ export async function getPedigree(
     },
   };
 }
-
