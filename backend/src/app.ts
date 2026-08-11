@@ -26,6 +26,13 @@ import reproductionRoutes from './routes/reproductionRoutes.js';
 import matingRoutes from './routes/matingRoutes.js';
 
 import userExploitationsRoutes from "./routes/userExploitations.routes.js";
+import iotShieldsRoutes from "./routes/iotShields.routes.js";
+import sensorDataRoutes from "./routes/iotSensorData.routes.js";
+import iotAlertsRoutes from "./routes/iotAlerts.routes.js";
+import geocodeRoutes from "./routes/geocode.routes.js";
+import iotZonesRoutes from "./routes/iotZones.routes.js";
+
+import iotAnalyticsRoutes from "./routes/iotAnalytics.routes.js";
 
 
 const app = new Hono();
@@ -76,6 +83,14 @@ app.route('/api/reproduction-cycles', reproductionRoutes);
 app.route('/api/mating-services', matingRoutes);
 
 app.route("/api", userExploitationsRoutes);
+
+// IoT Routes
+app.route("/api/iot-shields", iotShieldsRoutes);
+app.route("/api/sensor-data", sensorDataRoutes);
+app.route("/api/iot-alerts", iotAlertsRoutes);
+app.route("/api/iot-zones", iotZonesRoutes);
+app.route("/api/geocode", geocodeRoutes);
+app.route("/api/iot-analytics", iotAnalyticsRoutes);
 
 
 export default app;

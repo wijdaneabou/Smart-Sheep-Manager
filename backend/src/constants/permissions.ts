@@ -16,6 +16,14 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     // Module REPRODUCTION
     'REPRODUCTION:READ', 'REPRODUCTION:CREATE', 'REPRODUCTION:UPDATE',
     'REPRODUCTION:DELETE', 'REPRODUCTION:EXPORT', 'REPRODUCTION:AGGREGATE',
+    // ============================================
+    // 🟢 MODULE IOT 
+    // ============================================
+    'IOT:SHIELDS:READ', 'IOT:SHIELDS:CREATE', 'IOT:SHIELDS:UPDATE', 'IOT:SHIELDS:DELETE',
+    'IOT:SENSOR:READ', 'IOT:SENSOR:CREATE',
+    'IOT:ALERTS:READ', 'IOT:ALERTS:CREATE', 'IOT:ALERTS:UPDATE', 'IOT:ALERTS:DELETE',
+    'IOT:ZONES:READ', 'IOT:ZONES:CREATE', 'IOT:ZONES:UPDATE', 'IOT:ZONES:DELETE',
+    'IOT:ANALYTICS:READ',
   ],
   manager: [
     'EXPLOITATIONS:READ',
@@ -29,6 +37,14 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'HEALTH:EXPORT',
     'REPRODUCTION:READ',
     'REPRODUCTION:EXPORT',
+    // ============================================
+    // 🟢 IOT - Manager
+    // ============================================
+    'IOT:SHIELDS:READ', 'IOT:SHIELDS:CREATE',
+    'IOT:SENSOR:READ',
+    'IOT:ALERTS:READ', 'IOT:ALERTS:CREATE',
+    'IOT:ZONES:READ',
+    'IOT:ANALYTICS:READ',
   ],
   eleveur: [
     'EXPLOITATIONS:READ',
@@ -44,24 +60,45 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'REPRODUCTION:CREATE',
     'REPRODUCTION:UPDATE',
     'REPRODUCTION:DELETE',
+    // ============================================
+    // 🟢 IOT - Eleveur
+    // ============================================
+    'IOT:SHIELDS:READ',
+    'IOT:SENSOR:READ',
+    'IOT:ALERTS:READ',
+    'IOT:ZONES:READ',
+    'IOT:ANALYTICS:READ',
   ],
   ouvrier: [
     'EXPLOITATIONS:READ',
     'HERD:READ',
     'HEALTH:READ',
-    'HEALTH:UPDATE',   // pour enregistrer les administrations
+    'HEALTH:UPDATE',
+    // ============================================
+    // 🟢 IOT - Ouvrier 
+    // ============================================
+    'IOT:SHIELDS:READ',
+    'IOT:SENSOR:READ',
+    'IOT:ALERTS:READ',
   ],
   veterinaire: [
     'EXPLOITATIONS:READ',
     'HERD:READ',
-    'HERD:UPDATE',     // pour mettre à jour le statut sanitaire
+    'HERD:UPDATE',
     'HEALTH:READ',
     'HEALTH:CREATE',
     'HEALTH:UPDATE',
     'HEALTH:DELETE',
     'HEALTH:VALIDATE',
     'REPRODUCTION:READ',
-    'REPRODUCTION:UPDATE', // pour confirmer les gestations
+    'REPRODUCTION:UPDATE',
+    // ============================================
+    // 🟢 IOT - Veterinaire
+    // ============================================
+    'IOT:SHIELDS:READ',
+    'IOT:SENSOR:READ',
+    'IOT:ALERTS:READ',
+    'IOT:ANALYTICS:READ',
   ],
   cooperative: [
     'EXPLOITATIONS:READ',
@@ -72,6 +109,13 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'HEALTH:AGGREGATE',
     'REPRODUCTION:READ',
     'REPRODUCTION:AGGREGATE',
+    // ============================================
+    // 🟢 IOT - Cooperative 
+    // ============================================
+    'IOT:SHIELDS:READ',
+    'IOT:SENSOR:READ',
+    'IOT:ALERTS:READ',
+    'IOT:ANALYTICS:READ',
   ],
 };
 

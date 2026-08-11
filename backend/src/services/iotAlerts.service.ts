@@ -1,0 +1,354 @@
+import {
+  createAlert as createAlertInDb,
+  findAlertById,
+  listAlertsByExploitation as listAlertsByExploitationInDb,
+  resolveAlert as resolveAlertInDb,
+  hasUnresolvedAlert,
+  listUnresolvedAlertsByShield,
+  countUnresolvedAlertsByExploitation as countUnresolvedAlertsByExploitationInDb,
+} from "../repositories/iotAlerts.repository.js";
+import { isPointInsideAnyZone } from "./iotZones.service.js";
+import { findIotShieldById } from "../repositories/iotShields.repository.js";
+import { findExploitationById } from "../repositories/exploitations.repository.js";
+import { db } from "../db/connection.js";
+import { iotSensorData } from "../db/schema/iotSensorData.js";
+import { eq, and, desc, asc, ne } from "drizzle-orm";
+
+// ── Alert thresholds ──────────────────────────────────────────────
+export const ALERT_THRESHOLDS = {
+  HIGH_TEMPERATURE: 40.5,
+  INACTIVITY_MINUTES: 120,
+  LOW_BATTERY: 15,
+  GRAZING_RADIUS_KM: 5,
+} as const;
+
+export type AlertType =
+  | "HIGH_TEMPERATURE"
+  | "INACTIVITY"
+  | "LOW_BATTERY"
+  | "OUT_OF_ZONE";
+
+export type AlertSeverity = "WARNING" | "CRITICAL";
+
+export interface SerializedAlert {
+  id: number;
+  shieldId: number;
+  animalId: number | null;
+  exploitationId: number | null;
+  type: AlertType;
+  severity: AlertSeverity;
+  message: string;
+  value: string | null;
+  threshold: string | null;
+  resolved: boolean;
+  resolvedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  shield?: {
+    id: number;
+    ssmIotNumber: string;
+    sensorType: string;
+    battery: string;
+    status: string;
+    animalId: number | null;
+    exploitationId: number | null;
+  } | null;
+  animal?: {
+    id: number;
+    rfid: string;
+    name: string;
+    breed: string;
+    sex: string;
+  } | null;
+  exploitation?: {
+    id: number;
+    name: string;
+    latitude: string | null;
+    longitude: string | null;
+  } | null;
+}
+
+function serializeAlert(row: any): SerializedAlert {
+  return {
+    id: row.id,
+    shieldId: row.shieldId,
+    animalId: row.animalId,
+    exploitationId: row.exploitationId,
+    type: row.type,
+    severity: row.severity,
+    message: row.message,
+    value: row.value,
+    threshold: row.threshold,
+    resolved: Boolean(row.resolved),
+    resolvedAt: row.resolvedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    shield: row.shield ? {
+      id: row.shield.id,
+      ssmIotNumber: row.shield.ssmIotNumber,
+      sensorType: row.shield.sensorType,
+      battery: row.shield.battery,
+      status: row.shield.status,
+      animalId: row.shield.animalId,
+      exploitationId: row.shield.exploitationId,
+    } : null,
+    animal: row.animal ? {
+      id: row.animal.id,
+      rfid: row.animal.rfid,
+      name: row.animal.name,
+      breed: row.animal.breed,
+      sex: row.animal.sex,
+    } : null,
+    exploitation: row.exploitation ? {
+      id: row.exploitation.id,
+      name: row.exploitation.name,
+      latitude: row.exploitation.latitude,
+      longitude: row.exploitation.longitude,
+    } : null,
+  };
+}
+
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// ── Core alert detection ──────────────────────────────────────────
+
+/**
+ * NOTE : on ne charge plus la lecture + shield + animal + exploitation via
+ * db.query.iotSensorData.findFirst({ with: { shield: { with: {...} } } } }).
+ * Ce pattern génère un LEFT JOIN LATERAL que MariaDB rejette (ER_PARSE_ERROR).
+ * On récupère donc la lecture par un simple select, puis on réutilise
+ * findIotShieldById (déjà en jointures explicites) + findExploitationById.
+ */
+export async function evaluateSensorDataForAlerts(sensorDataId: number) {
+  const rows = await db
+    .select()
+    .from(iotSensorData)
+    .where(eq(iotSensorData.id, sensorDataId))
+    .limit(1);
+  const sensorData = rows[0];
+  if (!sensorData) return;
+
+  const shield = await findIotShieldById(sensorData.shieldId);
+  if (!shield) return;
+
+  const animal = shield.animal;
+  const exploitationId = shield.exploitationId ?? undefined;
+  const exploitation = exploitationId
+    ? await findExploitationById(exploitationId)
+    : null;
+
+  const alertsToCreate: Array<{
+    type: AlertType;
+    severity: AlertSeverity;
+    message: string;
+    value: string;
+    threshold: string;
+  }> = [];
+
+  // 1. High temperature
+  if (sensorData.temperature) {
+    const temp = parseFloat(sensorData.temperature);
+    if (temp > ALERT_THRESHOLDS.HIGH_TEMPERATURE) {
+      const already = await hasUnresolvedAlert(shield.id, "HIGH_TEMPERATURE");
+      if (!already) {
+        alertsToCreate.push({
+          type: "HIGH_TEMPERATURE",
+          severity: "CRITICAL",
+          message: `Température élevée : ${temp.toFixed(1)}°C (seuil ${ALERT_THRESHOLDS.HIGH_TEMPERATURE}°C). Animal ${animal?.name ?? shield.ssmIotNumber}.`,
+          value: temp.toFixed(2),
+          threshold: String(ALERT_THRESHOLDS.HIGH_TEMPERATURE),
+        });
+      }
+    }
+  }
+
+  // 2. Low battery
+  if (shield.battery) {
+    const battery = parseFloat(shield.battery);
+    if (battery < ALERT_THRESHOLDS.LOW_BATTERY) {
+      const already = await hasUnresolvedAlert(shield.id, "LOW_BATTERY");
+      if (!already) {
+        alertsToCreate.push({
+          type: "LOW_BATTERY",
+          severity: "WARNING",
+          message: `Batterie faible : ${battery.toFixed(0)}% (seuil ${ALERT_THRESHOLDS.LOW_BATTERY}%). Bouclier ${shield.ssmIotNumber}.`,
+          value: battery.toFixed(2),
+          threshold: String(ALERT_THRESHOLDS.LOW_BATTERY),
+        });
+      }
+    }
+  }
+
+  // 3. Inactivity > 2h — pas de `with:`, donc pas de LATERAL, OK sous MariaDB
+  if (sensorData.activity === "REST" && animal) {
+    const lastActive = await db.query.iotSensorData.findFirst({
+      where: and(
+        eq(iotSensorData.shieldId, shield.id),
+        ne(iotSensorData.activity, "REST")
+      ),
+      orderBy: desc(iotSensorData.measuredAt),
+    });
+    const firstRest = await db.query.iotSensorData.findFirst({
+      where: and(
+        eq(iotSensorData.shieldId, shield.id),
+        eq(iotSensorData.activity, "REST")
+      ),
+      orderBy: asc(iotSensorData.measuredAt),
+    });
+
+    let isInactive = false;
+    let restMinutes = 0;
+    if (lastActive) {
+      const ms = new Date(sensorData.measuredAt).getTime() - new Date(lastActive.measuredAt).getTime();
+      restMinutes = ms / (1000 * 60);
+      if (restMinutes >= ALERT_THRESHOLDS.INACTIVITY_MINUTES) isInactive = true;
+    } else if (firstRest) {
+      const ms = Date.now() - new Date(firstRest.measuredAt).getTime();
+      restMinutes = ms / (1000 * 60);
+      if (restMinutes >= ALERT_THRESHOLDS.INACTIVITY_MINUTES) isInactive = true;
+    }
+
+    if (isInactive) {
+      const already = await hasUnresolvedAlert(shield.id, "INACTIVITY");
+      if (!already) {
+        alertsToCreate.push({
+          type: "INACTIVITY",
+          severity: "WARNING",
+          message: `Immobilité prolongée : ${animal.name} inactif depuis > ${ALERT_THRESHOLDS.INACTIVITY_MINUTES / 60}h.`,
+          value: `${Math.round(restMinutes)} min`,
+          threshold: `${ALERT_THRESHOLDS.INACTIVITY_MINUTES} min`,
+        });
+      }
+    }
+  }
+
+  // 4. Out of zone — test polygonal réel contre les zones définies (US-4.4),
+  // plus le cercle approximatif de 5km. Si aucune zone n'est définie pour
+  // l'exploitation, on ne déclenche pas d'alerte (pas de faux positif tant
+  // que l'éleveur n'a pas configuré de zone de pâturage).
+  if (sensorData.latitude && sensorData.longitude && exploitationId) {
+    const lat = parseFloat(sensorData.latitude);
+    const lng = parseFloat(sensorData.longitude);
+
+    const { insideZone, hasZonesDefined } = await isPointInsideAnyZone(
+      exploitationId,
+      lat,
+      lng
+    );
+
+    if (hasZonesDefined && !insideZone) {
+      const already = await hasUnresolvedAlert(shield.id, "OUT_OF_ZONE");
+      if (!already) {
+        alertsToCreate.push({
+          type: "OUT_OF_ZONE",
+          severity: "WARNING",
+          message: `Sortie de zone : ${animal?.name ?? shield.ssmIotNumber} est en dehors de toutes les zones de pâturage définies.`,
+          value: `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+          threshold: "zone(s) définie(s)",
+        });
+      }
+    } else if (insideZone) {
+      // De retour dans une zone : résoudre une éventuelle alerte active
+      const already = await hasUnresolvedAlert(shield.id, "OUT_OF_ZONE");
+      if (already) {
+        const zoneAlert = await listUnresolvedAlertsByShield(shield.id);
+        const outOfZoneAlert = zoneAlert.find((a) => a.type === "OUT_OF_ZONE");
+        if (outOfZoneAlert) {
+          await resolveAlertInDb(outOfZoneAlert.id);
+        }
+      }
+    }
+  }
+
+  for (const alert of alertsToCreate) {
+    await createAlertInDb({
+      shieldId: shield.id,
+      animalId: animal?.id ?? null,
+      exploitationId: exploitationId ?? null,
+      type: alert.type,
+      severity: alert.severity,
+      message: alert.message,
+      value: alert.value,
+      threshold: alert.threshold,
+      resolved: 0,
+    });
+  }
+}
+
+// ── Public API ────────────────────────────────────────────────────
+
+export type ListAlertsResult =
+  | { success: true; status: 200; alerts: SerializedAlert[]; total: number }
+  | { success: false; status: 400; message: string };
+
+export async function listAlerts(params: {
+  exploitationId?: number;
+  resolved?: boolean;
+  type?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<ListAlertsResult> {
+  if (!params.exploitationId) {
+    return { success: false, status: 400, message: "exploitationId requis." };
+  }
+  const { rows, total } = await listAlertsByExploitationInDb(
+    params.exploitationId,
+    {
+      resolved: params.resolved,
+      type: params.type,
+      limit: params.limit,
+      offset: params.offset,
+    }
+  );
+  return {
+    success: true,
+    status: 200,
+    alerts: rows.map(serializeAlert),
+    total,
+  };
+}
+
+export type GetAlertResult =
+  | { success: true; status: 200; alert: SerializedAlert }
+  | { success: false; status: 404; message: string };
+
+export async function getAlertById(id: number): Promise<GetAlertResult> {
+  const alert = await findAlertById(id);
+  if (!alert) return { success: false, status: 404, message: "Alerte introuvable." };
+  return { success: true, status: 200, alert: serializeAlert(alert) };
+}
+
+export type ResolveAlertResult =
+  | { success: true; status: 200; alert: SerializedAlert }
+  | { success: false; status: 404; message: string };
+
+export async function resolveAlert(id: number): Promise<ResolveAlertResult> {
+  const existing = await findAlertById(id);
+  if (!existing) return { success: false, status: 404, message: "Alerte introuvable." };
+  const resolved = await resolveAlertInDb(id);
+  if (!resolved) return { success: false, status: 404, message: "Alerte introuvable." };
+  return { success: true, status: 200, alert: serializeAlert(resolved) };
+}
+
+export type AlertSummaryResult =
+  | { success: true; status: 200; summary: Record<string, number> }
+  | { success: false; status: 400; message: string };
+
+export async function getAlertSummary(exploitationId: number): Promise<AlertSummaryResult> {
+  if (!exploitationId) return { success: false, status: 400, message: "exploitationId requis." };
+  const counts = await countUnresolvedAlertsByExploitationInDb(exploitationId);
+  const summary: Record<string, number> = {};
+  for (const row of counts) {
+    summary[row.type] = Number(row.count);
+  }
+  return { success: true, status: 200, summary };
+}
