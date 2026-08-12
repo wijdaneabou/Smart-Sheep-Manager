@@ -15,6 +15,7 @@ export interface User {
   roleName?: string | null;
   status: string;
   createdAt?: string | null;
+  exploitationId?: number | null; 
 }
 
 export function useAuth() {

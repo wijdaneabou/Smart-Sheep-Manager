@@ -20,9 +20,10 @@ import { findUserById } from "../repositories/users.repository.js";
 import { createSession, closeSessionByRefreshToken } from "../repositories/sessions.repository.js";
 import { auditService } from "../services/audit.service.js";
 
-// 👇 Import nécessaire pour récupérer le nom du rôle
+// 👇 Import nécessaire pour récupérer le nom du rôle ET exploitationId
 import { db } from "../db/connection.js";
 import { roles } from "../db/schema/roles.js";
+import { userExploitations } from "../db/schema/userExploitations.js";
 import { eq } from "drizzle-orm";
 
 export async function login(c: Context) {
@@ -119,7 +120,7 @@ export async function login(c: Context) {
 }
 
 // =================================================================
-// ✅ NOUVEAU : getMe – retourne l'utilisateur avec son roleName
+// ✅ getMe – retourne l'utilisateur avec son roleName ET exploitationId
 // =================================================================
 export async function getMe(c: Context) {
   const userPayload = c.get("user") as
@@ -137,21 +138,25 @@ export async function getMe(c: Context) {
     return c.json({ success: false, message: "Utilisateur non trouvé." }, 404);
   }
 
-  // Récupération du nom du rôle depuis la base (ou on pourrait utiliser userPayload.roleName)
-  // On préfère une requête DB pour être sûr que les données sont à jour.
+  // Récupération du nom du rôle depuis la base
   const role = await db.query.roles.findFirst({
     where: eq(roles.id, fullUser.roleId),
   });
 
+  // ✅ Récupération de l'exploitationId depuis user_exploitations
+  const userExploitation = await db.query.userExploitations.findFirst({
+    where: eq(userExploitations.userId, fullUser.id),
+  });
+
   const { password, ...safeUser } = fullUser;
 
-  // On retourne l'utilisateur avec le roleName ajouté
+  // ✅ Ajout de roleName et exploitationId
   return c.json({
     ...safeUser,
     roleName: role?.name ?? null,
+    exploitationId: userExploitation?.exploitationId ?? null,
   });
 }
-
 
 export async function refreshToken(c: Context) {
   const body = await c.req.json();
