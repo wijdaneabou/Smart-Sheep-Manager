@@ -169,6 +169,24 @@ export default function FatteningScreen() {
           </Link>
         </View>
 
+        <View style={styles.summaryRow}>
+          <View style={[styles.summaryPill, { backgroundColor: "#DCFCE7" }]}>
+            <Text style={[styles.summaryPillText, { color: "#15803D" }]}>
+              {batches.filter(b => b.status === "ACTIVE").length} en cours
+            </Text>
+          </View>
+          <View style={[styles.summaryPill, { backgroundColor: "#DBEAFE" }]}>
+            <Text style={[styles.summaryPillText, { color: "#1D4ED8" }]}>
+              {batches.filter(b => b.status === "COMPLETED").length} terminés
+            </Text>
+          </View>
+          <View style={[styles.summaryPill, { backgroundColor: "#FEE2E2" }]}>
+            <Text style={[styles.summaryPillText, { color: "#DC2626" }]}>
+              {batches.filter(b => b.status === "CANCELLED").length} annulés
+            </Text>
+          </View>
+        </View>
+
         <View style={styles.searchRow}>
           <View style={styles.searchInputWrap}>
             <Text style={styles.searchIcon}>🔍</Text>
@@ -281,6 +299,24 @@ const styles = StyleSheet.create({
   headerTitleContainer: { flex: 1 },
   title: { fontSize: 22, fontWeight: "800", color: "#111" },
   subtitle: { fontSize: 13, color: "#888", marginTop: 2 },
+
+  summaryRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 16,
+  },
+  summaryPill: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  summaryPillText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
   searchRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
   searchInputWrap: {
     flex: 1,

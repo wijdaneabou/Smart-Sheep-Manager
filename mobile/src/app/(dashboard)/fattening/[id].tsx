@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,10 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
 
 import {
@@ -18,11 +19,33 @@ import {
   getBatchGmqStats,
   listFatteningAlerts,
   resolveFatteningAlert,
+  listBatchWeightRecords,
+  listIndividualWeights,
+  listFeedRecords,
+  listBatchCosts,
   type FatteningBatch,
   type GmqStats,
   type FatteningAlert,
+  type FatteningBatchWeightRecord,
+  type FatteningBatchIndividualWeight,
+  type FatteningFeedRecord,
+  type FatteningBatchCostRecord,
 } from "../../../services/fatteningService";
 import { usePermissions } from "@/contexts/PermissionsContext";
+import SubTabBar from "@/components/SubTabBar";
+
+const GREEN = "#14532d";
+
+type TabKey = "overview" | "weighings" | "individual" | "feed" | "costs" | "alerts";
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "overview", label: "Vue d'ensemble" },
+  { key: "weighings", label: "Pesées" },
+  { key: "individual", label: "Poids ind." },
+  { key: "feed", label: "Alimentation" },
+  { key: "costs", label: "Coûts" },
+  { key: "alerts", label: "Alertes" },
+];
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
   ACTIVE: { label: "En cours", color: "#15803D", bgColor: "#DCFCE7" },
@@ -30,27 +53,23 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: str
   CANCELLED: { label: "Annulé", color: "#DC2626", bgColor: "#FEE2E2" },
 };
 
-const GMQ_TARGET_MIN = 0.18;
-const GMQ_TARGET_MAX = 0.25;
-
-function getGmqStatus(gmq: number | null): { label: string; color: string; bgColor: string } {
-  if (gmq === null) return { label: "N/A", color: "#666", bgColor: "#f0f0f0" };
-  if (gmq < GMQ_TARGET_MIN) return { label: "Bas", color: "#DC2626", bgColor: "#FEE2E2" };
-  if (gmq > GMQ_TARGET_MAX) return { label: "Élevé", color: "#D97706", bgColor: "#FEF3C7" };
-  return { label: "Objectif", color: "#15803D", bgColor: "#DCFCE7" };
-}
-
 export default function FatteningBatchDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { hasPermission } = usePermissions();
+  const batchId = Number(id);
 
+  const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [batch, setBatch] = useState<FatteningBatch | null>(null);
   const [gmqStats, setGmqStats] = useState<GmqStats | null>(null);
   const [alerts, setAlerts] = useState<FatteningAlert[]>([]);
+  const [records, setRecords] = useState<FatteningBatchWeightRecord[]>([]);
+  const [individualWeights, setIndividualWeights] = useState<FatteningBatchIndividualWeight[]>([]);
+  const [feedRecords, setFeedRecords] = useState<FatteningFeedRecord[]>([]);
+  const [costs, setCosts] = useState<FatteningBatchCostRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingGmq, setLoadingGmq] = useState(true);
   const [loadingAlerts, setLoadingAlerts] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadBatch = useCallback(async () => {
@@ -68,12 +87,10 @@ export default function FatteningBatchDetailScreen() {
 
   const loadGmqStats = useCallback(async () => {
     if (!id) return;
-    setLoadingGmq(true);
     const result = await getBatchGmqStats(Number(id));
     if (result.success) {
       setGmqStats(result.stats);
     }
-    setLoadingGmq(false);
   }, [id]);
 
   const loadAlerts = useCallback(async () => {
@@ -86,13 +103,63 @@ export default function FatteningBatchDetailScreen() {
     setLoadingAlerts(false);
   }, [id]);
 
-  useEffect(() => {
-    Promise.resolve().then(() => {
+  const loadRecords = useCallback(async () => {
+    if (!id) return;
+    const result = await listBatchWeightRecords(Number(id));
+    if (result.success) {
+      setRecords(result.records);
+    }
+  }, [id]);
+
+  const loadIndividualWeights = useCallback(async () => {
+    if (!id) return;
+    const result = await listIndividualWeights(Number(id));
+    if (result.success) {
+      setIndividualWeights(result.records);
+    }
+  }, [id]);
+
+  const loadFeedRecords = useCallback(async () => {
+    if (!id) return;
+    const result = await listFeedRecords(Number(id));
+    if (result.success) {
+      setFeedRecords(result.records);
+    }
+  }, [id]);
+
+  const loadCosts = useCallback(async () => {
+    if (!id) return;
+    const result = await listBatchCosts(Number(id));
+    if (result.success) {
+      setCosts(result.costs);
+    }
+  }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
       loadBatch();
       loadGmqStats();
       loadAlerts();
-    });
-  }, [id, loadBatch, loadGmqStats, loadAlerts]);
+      loadRecords();
+      loadIndividualWeights();
+      loadFeedRecords();
+      loadCosts();
+    }, [loadBatch, loadGmqStats, loadAlerts, loadRecords, loadIndividualWeights, loadFeedRecords, loadCosts])
+  );
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await Promise.all([
+      loadBatch(),
+      loadGmqStats(),
+      loadAlerts(),
+      loadRecords(),
+      loadIndividualWeights(),
+      loadFeedRecords(),
+      loadCosts(),
+    ]);
+    setRefreshing(false);
+  }
 
   async function handleDelete() {
     if (!id || !batch) return;
@@ -171,14 +238,19 @@ export default function FatteningBatchDetailScreen() {
   const overallGmqG = gmqStats?.history.overallGmq !== null && gmqStats?.history.overallGmq !== undefined && gmqStats
     ? (gmqStats.history.overallGmq * 1000).toFixed(0)
     : null;
-  const avgDailyGmqG = gmqStats?.history.averageDailyGmq !== null && gmqStats?.history.averageDailyGmq !== undefined && gmqStats
-    ? (gmqStats.history.averageDailyGmq * 1000).toFixed(0)
-    : null;
-  const gmqStatus = overallGmqG && gmqStats ? getGmqStatus(gmqStats.history.overallGmq) : null;
+
+  const totalFeedKg = feedRecords.reduce((sum, r) => sum + Number(r.quantityKg), 0);
+  const totalFeedCost = feedRecords.reduce((sum, r) => sum + Number(r.totalCost), 0);
+  const totalCosts = costs.reduce((sum, r) => sum + Number(r.amount), 0);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
             <Ionicons name="arrow-back" size={22} color="#14532d" />
@@ -187,223 +259,353 @@ export default function FatteningBatchDetailScreen() {
           <View style={{ width: 32 }} />
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.name}>{batch.name}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
-              <Text style={[styles.statusBadgeText, { color: statusInfo.color }]}>
-                {statusInfo.label}
-              </Text>
-            </View>
-          </View>
-        </View>
+        <SubTabBar
+          tabs={TABS}
+          activeKey={activeTab}
+          onTabPress={(key) => setActiveTab(key as TabKey)}
+        />
 
-        <View style={styles.statsGrid}>
-          <StatBox icon="🐑" label="Animaux" value={String(batch.animalCount)} />
-          <StatBox icon="⚖️" label="Poids initial" value={`${Number(batch.initialAverageWeight).toFixed(2)} kg`} />
-          <StatBox icon="🎯" label="Poids cible" value={`${Number(batch.targetWeight).toFixed(2)} kg`} />
-          <StatBox icon="📈" label="Gain visé" value={`+${avgGain} kg`} />
-        </View>
-
-        <View style={styles.section}>
-          <SectionTitle index={1} label="Actions rapides" />
-          <View style={styles.actionsGrid}>
-            <ActionCard
-              icon="analytics"
-              iconBg="#ECFDF5"
-              iconColor={GREEN}
-              label="Performance"
-              onPress={() => router.push("/fattening/performance" as any)}
-            />
-            <ActionCard
-              icon="nutrition"
-              iconBg="#FEF3C7"
-              iconColor="#D97706"
-              label="Alimentation"
-              onPress={() => router.push(`/fattening/${batch.id}/feed` as any)}
-            />
-            <ActionCard
-              icon="cash"
-              iconBg="#EFF6FF"
-              iconColor="#2563EB"
-              label="Coûts"
-              onPress={() => router.push(`/fattening/${batch.id}/costs` as any)}
-            />
-            <ActionCard
-              icon="barbell"
-              iconBg="#F5F3FF"
-              iconColor="#7C3AED"
-              label="Poids ind."
-              onPress={() => router.push(`/fattening/${batch.id}/individual-weights` as any)}
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <SectionTitle index={2} label="Suivi GMQ" />
-          {loadingGmq ? (
-            <View style={styles.gmqLoading}>
-              <ActivityIndicator size="small" color="#15803D" />
-            </View>
-          ) : gmqStats && gmqStats.history.totalRecords > 0 ? (
-            <View>
-              <View style={styles.gmqGrid}>
-                <View style={styles.gmqBox}>
-                  <Text style={styles.gmqLabel}>GMQ global</Text>
-                  <Text style={styles.gmqValue}>
-                    {overallGmqG ? `${overallGmqG} g/j` : "—"}
+        {activeTab === "overview" && (
+          <View>
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.name}>{batch.name}</Text>
+                <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
+                  <Text style={[styles.statusBadgeText, { color: statusInfo.color }]}>
+                    {statusInfo.label}
                   </Text>
-                  {gmqStatus && (
-                    <View style={[styles.gmqBadge, { backgroundColor: gmqStatus.bgColor }]}>
-                      <Text style={[styles.gmqBadgeText, { color: gmqStatus.color }]}>
-                        {gmqStatus.label}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-                <View style={styles.gmqBox}>
-                  <Text style={styles.gmqLabel}>GMQ moyen</Text>
-                  <Text style={styles.gmqValue}>
-                    {avgDailyGmqG ? `${avgDailyGmqG} g/j` : "—"}
-                  </Text>
-                  <Text style={styles.gmqTarget}>Cible : 180-250 g/j</Text>
-                </View>
-                <View style={styles.gmqBox}>
-                  <Text style={styles.gmqLabel}>Pesées</Text>
-                  <Text style={styles.gmqValue}>{gmqStats.history.totalRecords}</Text>
-                  <Text style={styles.gmqTarget}>
-                    {gmqStats.history.firstWeight !== null && gmqStats.history.lastWeight !== null
-                      ? `${gmqStats.history.firstWeight.toFixed(2)} → ${gmqStats.history.lastWeight.toFixed(2)} kg`
-                      : "—"}
-                  </Text>
-                </View>
-                <View style={styles.gmqBox}>
-                  <Text style={styles.gmqLabel}>Jours écoulés</Text>
-                  <Text style={styles.gmqValue}>{Math.floor(gmqStats.daysElapsed)}</Text>
-                  {gmqStats.projectedFinalWeight !== null && (
-                    <Text style={styles.gmqTarget}>
-                      Proj. : {gmqStats.projectedFinalWeight.toFixed(2)} kg
-                    </Text>
-                  )}
                 </View>
               </View>
+            </View>
 
-              <View style={styles.gmqHistory}>
-                <Text style={styles.gmqHistoryTitle}>Historique des pesées</Text>
-                {gmqStats.history.dataPoints.map((point) => (
-                  <View key={point.id} style={styles.gmqHistoryRow}>
-                    <Text style={styles.gmqHistoryDate}>{point.dateStr}</Text>
-                    <Text style={styles.gmqHistoryWeight}>{point.weight.toFixed(2)} kg</Text>
-                    <Text style={styles.gmqHistoryGmq}>
-                      {point.dailyGmq !== null
-                        ? `${(point.dailyGmq * 1000).toFixed(0)} g/j`
+            <View style={styles.statsGrid}>
+              <StatBox icon="🐑" label="Animaux" value={String(batch.animalCount)} />
+              <StatBox icon="⚖️" label="Poids initial" value={`${Number(batch.initialAverageWeight).toFixed(2)} kg`} />
+              <StatBox icon="🎯" label="Poids cible" value={`${Number(batch.targetWeight).toFixed(2)} kg`} />
+              <StatBox icon="📈" label="Gain visé" value={`+${avgGain} kg`} />
+            </View>
+
+            <View style={styles.section}>
+              <SectionTitle index={1} label="Actions rapides" />
+              <View style={styles.actionsGrid}>
+                <ActionCard
+                  icon="analytics"
+                  iconBg="#ECFDF5"
+                  iconColor={GREEN}
+                  label="Performance"
+                  onPress={() => router.push("/fattening/performance" as any)}
+                />
+                <ActionCard
+                  icon="nutrition"
+                  iconBg="#FEF3C7"
+                  iconColor="#D97706"
+                  label="Alimentation"
+                  onPress={() => setActiveTab("feed")}
+                />
+                <ActionCard
+                  icon="cash"
+                  iconBg="#EFF6FF"
+                  iconColor="#2563EB"
+                  label="Coûts"
+                  onPress={() => setActiveTab("costs")}
+                />
+                <ActionCard
+                  icon="barbell"
+                  iconBg="#F5F3FF"
+                  iconColor="#7C3AED"
+                  label="Poids ind."
+                  onPress={() => setActiveTab("individual")}
+                />
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <SectionTitle index={2} label="Dates" />
+              <DetailRow icon="📅" label="Date de début" value={new Date(batch.startDate).toLocaleDateString("fr-FR")} />
+              {batch.estimatedEndDate ? (
+                <DetailRow icon="🏁" label="Date de fin prévue" value={new Date(batch.estimatedEndDate).toLocaleDateString("fr-FR")} />
+              ) : null}
+              <DetailRow icon="🕐" label="Créé le" value={new Date(batch.createdAt).toLocaleDateString("fr-FR")} />
+            </View>
+
+            {batch.notes ? (
+              <View style={styles.section}>
+                <SectionTitle index={3} label="Notes" />
+                <View style={styles.notesBox}>
+                  <Text style={styles.notesText}>{batch.notes}</Text>
+                </View>
+              </View>
+            ) : null}
+
+            {hasPermission("FATTENING", "UPDATE") && (
+              <Pressable
+                style={styles.editButton}
+                onPress={() => router.push(`/fattening/${batch.id}/edit` as any)}
+              >
+                <Feather name="edit" size={18} color="#fff" />
+                <Text style={styles.editButtonText}>MODIFIER</Text>
+              </Pressable>
+            )}
+
+            {hasPermission("FATTENING", "DELETE") && (
+              <Pressable style={styles.deleteButton} onPress={handleDelete}>
+                <Feather name="trash-2" size={18} color="#fff" />
+                <Text style={styles.deleteButtonText}>SUPPRIMER</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+
+        {activeTab === "weighings" && (
+          <View>
+            {gmqStats && gmqStats.history.totalRecords > 0 ? (
+              <View style={styles.section}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.sectionTitle}>Suivi GMQ</Text>
+                  <Pressable
+                    style={styles.linkButton}
+                    onPress={() => router.push(`/fattening/${batchId}/weighing-history` as any)}
+                  >
+                    <Text style={styles.linkButtonText}>Voir tout ›</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.gmqGrid}>
+                  <View style={styles.gmqBox}>
+                    <Text style={styles.gmqLabel}>GMQ global</Text>
+                    <Text style={styles.gmqValue}>
+                      {overallGmqG ? `${overallGmqG} g/j` : "—"}
+                    </Text>
+                  </View>
+                  <View style={styles.gmqBox}>
+                    <Text style={styles.gmqLabel}>Pesées</Text>
+                    <Text style={styles.gmqValue}>{gmqStats.history.totalRecords}</Text>
+                  </View>
+                  <View style={styles.gmqBox}>
+                    <Text style={styles.gmqLabel}>Début</Text>
+                    <Text style={styles.gmqValue}>
+                      {gmqStats.history.firstWeight !== null
+                        ? `${gmqStats.history.firstWeight.toFixed(2)} kg`
                         : "—"}
                     </Text>
                   </View>
-                ))}
-              </View>
-
-              {hasPermission("FATTENING", "UPDATE") && (
-                <Pressable
-                  style={styles.addWeighingButton}
-                  onPress={() => router.push(`/fattening/${batch.id}/add-weighing` as any)}
-                >
-                  <Feather name="plus" size={16} color="#fff" style={{ marginRight: 6 }} />
-                  <Text style={styles.addWeighingButtonText}>NOUVELLE PESÉE</Text>
-                </Pressable>
-              )}
-            </View>
-          ) : (
-            <View style={styles.gmqEmpty}>
-              <Text style={styles.gmqEmptyText}>Aucune pesée enregistrée</Text>
-              <Text style={styles.gmqEmptySubtext}>
-                Ajoutez une pesée pour suivre le GMQ du lot.
-              </Text>
-              {hasPermission("FATTENING", "UPDATE") && (
-                <Pressable
-                  style={styles.addWeighingButton}
-                  onPress={() => router.push(`/fattening/${batch.id}/add-weighing` as any)}
-                >
-                  <Feather name="plus" size={16} color="#fff" style={{ marginRight: 6 }} />
-                  <Text style={styles.addWeighingButtonText}>AJOUTER UNE PESÉE</Text>
-                </Pressable>
-              )}
-            </View>
-          )}
-        </View>
-
-        <View style={styles.section}>
-          <SectionTitle index={3} label="Alertes" />
-          {loadingAlerts ? (
-            <View style={styles.alertLoading}>
-              <ActivityIndicator size="small" color="#15803D" />
-            </View>
-          ) : alerts.length > 0 ? (
-            <View>
-              {alerts.map((alert) => (
-                <View key={alert.id} style={styles.alertRow}>
-                  <View style={styles.alertIconWrap}>
-                    <Text style={styles.alertIcon}>
-                      {alert.type === "LOW_GMQ" ? "📉" : "⚖️"}
+                  <View style={styles.gmqBox}>
+                    <Text style={styles.gmqLabel}>Fin</Text>
+                    <Text style={styles.gmqValue}>
+                      {gmqStats.history.lastWeight !== null
+                        ? `${gmqStats.history.lastWeight.toFixed(2)} kg`
+                        : "—"}
                     </Text>
                   </View>
-                  <View style={styles.alertContent}>
-                    <Text style={styles.alertMessage}>{alert.message}</Text>
-                    <Text style={styles.alertMeta}>
-                      {alert.type === "LOW_GMQ" ? "GMQ faible" : "Écart poids"} · {alert.severity === "CRITICAL" ? "Critique" : "Avertissement"}
-                    </Text>
-                  </View>
-                  {hasPermission("FATTENING", "UPDATE") && (
-                    <Pressable
-                      style={styles.alertResolveButton}
-                      onPress={() => handleResolveAlert(alert.id)}
-                    >
-                      <Text style={styles.alertResolveText}>✓</Text>
-                    </Pressable>
-                  )}
                 </View>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.alertEmpty}>
-              <Text style={styles.alertEmptyText}>Aucune alerte active</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.section}>
-          <SectionTitle index={4} label="Dates" />
-          <DetailRow icon="📅" label="Date de début" value={new Date(batch.startDate).toLocaleDateString("fr-FR")} />
-          {batch.estimatedEndDate ? (
-            <DetailRow icon="🏁" label="Date de fin prévue" value={new Date(batch.estimatedEndDate).toLocaleDateString("fr-FR")} />
-          ) : null}
-          <DetailRow icon="🕐" label="Créé le" value={new Date(batch.createdAt).toLocaleDateString("fr-FR")} />
-        </View>
-
-        {batch.notes ? (
-          <View style={styles.section}>
-            <SectionTitle index={5} label="Notes" />
-            <View style={styles.notesBox}>
-              <Text style={styles.notesText}>{batch.notes}</Text>
-            </View>
+                <View style={styles.recentHistory}>
+                  <Text style={styles.recentHistoryTitle}>Dernières pesées</Text>
+                  {records.slice(0, 5).map((point) => (
+                    <View key={point.id} style={styles.gmqHistoryRow}>
+                      <Text style={styles.gmqHistoryDate}>{new Date(point.date).toLocaleDateString("fr-FR")}</Text>
+                      <Text style={styles.gmqHistoryWeight}>{Number(point.averageWeight).toFixed(2)} kg</Text>
+                      <Text style={styles.gmqHistoryGmq}>
+                        {point.note ? point.note : "—"}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>Aucune pesée enregistrée</Text>
+                <Text style={styles.emptySubtext}>Ajoutez une pesée pour suivre le GMQ.</Text>
+              </View>
+            )}
+            {hasPermission("FATTENING", "UPDATE") && (
+              <Pressable
+                style={styles.addButton}
+                onPress={() => router.push(`/fattening/${batchId}/add-weighing` as any)}
+              >
+                <Feather name="plus" size={16} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.addButtonText}>NOUVELLE PESÉE</Text>
+              </Pressable>
+            )}
           </View>
-        ) : null}
-
-        {hasPermission("FATTENING", "UPDATE") && (
-          <Pressable
-            style={styles.editButton}
-            onPress={() => router.push(`/fattening/${batch.id}/edit` as any)}
-          >
-            <Feather name="edit" size={18} color="#fff" />
-            <Text style={styles.editButtonText}>MODIFIER</Text>
-          </Pressable>
         )}
 
-        {hasPermission("FATTENING", "DELETE") && (
-          <Pressable style={styles.deleteButton} onPress={handleDelete}>
-            <Feather name="trash-2" size={18} color="#fff" />
-            <Text style={styles.deleteButtonText}>SUPPRIMER</Text>
-          </Pressable>
+        {activeTab === "individual" && (
+          <View>
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Poids individuels</Text>
+                <Pressable
+                  style={styles.linkButton}
+                  onPress={() => router.push(`/fattening/${batchId}/individual-weights` as any)}
+                >
+                  <Text style={styles.linkButtonText}>Gérer ›</Text>
+                </Pressable>
+              </View>
+              {individualWeights.length > 0 ? (
+                <View>
+                  <View style={styles.miniStatsGrid}>
+                    <View style={styles.miniStatBox}>
+                      <Text style={styles.miniStatValue}>{individualWeights.length}</Text>
+                      <Text style={styles.miniStatLabel}>Enregistrements</Text>
+                    </View>
+                    <View style={styles.miniStatBox}>
+                      <Text style={styles.miniStatValue}>
+                        {(individualWeights.reduce((s, w) => s + Number(w.weight), 0) / individualWeights.length).toFixed(2)} kg
+                      </Text>
+                      <Text style={styles.miniStatLabel}>Moyenne</Text>
+                    </View>
+                  </View>
+                  <View style={styles.recentHistory}>
+                    {individualWeights.slice(0, 5).map((w) => (
+                      <View key={w.id} style={styles.gmqHistoryRow}>
+                        <Text style={styles.gmqHistoryDate}>{new Date(w.date).toLocaleDateString("fr-FR")}</Text>
+                        <Text style={styles.gmqHistoryWeight}>{Number(w.weight).toFixed(2)} kg</Text>
+                        <Text style={styles.gmqHistoryGmq}>
+                          {w.animalId ? `#${w.animalId}` : "—"}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>Aucun poids individuel</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        {activeTab === "feed" && (
+          <View>
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Alimentation</Text>
+                <Pressable
+                  style={styles.linkButton}
+                  onPress={() => router.push(`/fattening/${batchId}/feed` as any)}
+                >
+                  <Text style={styles.linkButtonText}>Gérer ›</Text>
+                </Pressable>
+              </View>
+              {feedRecords.length > 0 ? (
+                <View>
+                  <View style={styles.miniStatsGrid}>
+                    <View style={styles.miniStatBox}>
+                      <Text style={styles.miniStatValue}>{totalFeedKg.toFixed(1)} kg</Text>
+                      <Text style={styles.miniStatLabel}>Total feed</Text>
+                    </View>
+                    <View style={styles.miniStatBox}>
+                      <Text style={styles.miniStatValue}>{totalFeedCost.toFixed(2)} €</Text>
+                      <Text style={styles.miniStatLabel}>Coût total</Text>
+                    </View>
+                  </View>
+                  <View style={styles.recentHistory}>
+                    {feedRecords.slice(0, 5).map((r) => (
+                      <View key={r.id} style={styles.gmqHistoryRow}>
+                        <Text style={styles.gmqHistoryDate}>{new Date(r.date).toLocaleDateString("fr-FR")}</Text>
+                        <Text style={styles.gmqHistoryWeight}>{r.feedType}</Text>
+                        <Text style={styles.gmqHistoryGmq}>
+                          {Number(r.quantityKg).toFixed(1)} kg — {(Number(r.quantityKg) * Number(r.unitPrice)).toFixed(2)} €
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>Aucun enregistrement alimentaire</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        {activeTab === "costs" && (
+          <View>
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Coûts</Text>
+                <Pressable
+                  style={styles.linkButton}
+                  onPress={() => router.push(`/fattening/${batchId}/costs` as any)}
+                >
+                  <Text style={styles.linkButtonText}>Gérer ›</Text>
+                </Pressable>
+              </View>
+              {costs.length > 0 ? (
+                <View>
+                  <View style={styles.miniStatsGrid}>
+                    <View style={styles.miniStatBox}>
+                      <Text style={styles.miniStatValue}>{totalCosts.toFixed(2)} €</Text>
+                      <Text style={styles.miniStatLabel}>Total coûts</Text>
+                    </View>
+                    <View style={styles.miniStatBox}>
+                      <Text style={styles.miniStatValue}>{costs.length}</Text>
+                      <Text style={styles.miniStatLabel}>Enregistrements</Text>
+                    </View>
+                  </View>
+                  <View style={styles.recentHistory}>
+                    {costs.slice(0, 5).map((c) => (
+                      <View key={c.id} style={styles.gmqHistoryRow}>
+                        <Text style={styles.gmqHistoryDate}>{new Date(c.date).toLocaleDateString("fr-FR")}</Text>
+                        <Text style={styles.gmqHistoryWeight}>{c.category}</Text>
+                        <Text style={styles.gmqHistoryGmq}>
+                          {Number(c.amount).toFixed(2)} €
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>Aucun coût enregistré</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        {activeTab === "alerts" && (
+          <View>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Alertes actives</Text>
+              {loadingAlerts ? (
+                <View style={styles.centerContainer}>
+                  <ActivityIndicator size="small" color="#15803D" />
+                </View>
+              ) : alerts.length > 0 ? (
+                <View>
+                  {alerts.map((alert) => (
+                    <View key={alert.id} style={styles.alertRow}>
+                      <View style={styles.alertIconWrap}>
+                        <Text style={styles.alertIcon}>
+                          {alert.type === "LOW_GMQ" ? "📉" : "⚖️"}
+                        </Text>
+                      </View>
+                      <View style={styles.alertContent}>
+                        <Text style={styles.alertMessage}>{alert.message}</Text>
+                        <Text style={styles.alertMeta}>
+                          {alert.type === "LOW_GMQ" ? "GMQ faible" : "Écart poids"} · {alert.severity === "CRITICAL" ? "Critique" : "Avertissement"}
+                        </Text>
+                      </View>
+                      {hasPermission("FATTENING", "UPDATE") && (
+                        <Pressable
+                          style={styles.alertResolveButton}
+                          onPress={() => handleResolveAlert(alert.id)}
+                        >
+                          <Text style={styles.alertResolveText}>✓</Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>Aucune alerte active</Text>
+                </View>
+              )}
+            </View>
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -470,8 +672,6 @@ function SectionTitle({ index, label }: { index: number; label: string }) {
   );
 }
 
-const GREEN = "#14532d";
-
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
   container: { padding: 16, paddingBottom: 40 },
@@ -479,7 +679,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   headerTitle: { fontSize: 17, fontWeight: "700", color: GREEN },
@@ -508,10 +708,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
   },
   name: { fontSize: 20, fontWeight: "800", color: GREEN, flex: 1, marginRight: 12 },
-  idText: { fontSize: 12, color: "#999", fontWeight: "600" },
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -541,6 +739,27 @@ const styles = StyleSheet.create({
   statIcon: { fontSize: 22, marginBottom: 6 },
   statValue: { fontSize: 15, fontWeight: "800", color: "#111" },
   statLabel: { fontSize: 11, color: "#666", fontWeight: "600", marginTop: 2 },
+
+  section: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  sectionBar: { width: 4, height: 14, backgroundColor: GREEN, borderRadius: 2, marginRight: 8 },
+  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1f2937" },
 
   actionsGrid: {
     flexDirection: "row",
@@ -580,22 +799,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  section: {
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  sectionTitleRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
-  sectionBar: { width: 4, height: 14, backgroundColor: GREEN, borderRadius: 2, marginRight: 8 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1f2937" },
-
-  gmqLoading: { paddingVertical: 16, alignItems: "center" },
   gmqGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -612,21 +815,13 @@ const styles = StyleSheet.create({
   },
   gmqLabel: { fontSize: 11, color: "#666", fontWeight: "600", marginBottom: 4 },
   gmqValue: { fontSize: 16, fontWeight: "800", color: "#111" },
-  gmqBadge: {
-    marginTop: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  gmqBadgeText: { fontSize: 11, fontWeight: "700" },
-  gmqTarget: { fontSize: 10, color: "#888", fontWeight: "500", marginTop: 4 },
 
-  gmqHistory: {
+  recentHistory: {
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
     paddingTop: 10,
   },
-  gmqHistoryTitle: { fontSize: 12, fontWeight: "700", color: "#555", marginBottom: 8 },
+  recentHistoryTitle: { fontSize: 12, fontWeight: "700", color: "#555", marginBottom: 8 },
   gmqHistoryRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -638,20 +833,22 @@ const styles = StyleSheet.create({
   gmqHistoryWeight: { flex: 1, fontSize: 13, fontWeight: "700", color: "#111", textAlign: "center" },
   gmqHistoryGmq: { flex: 1, fontSize: 13, fontWeight: "600", color: "#15803D", textAlign: "right" },
 
-  gmqEmpty: { alignItems: "center", paddingVertical: 20 },
-  gmqEmptyText: { fontSize: 14, fontWeight: "600", color: "#666", marginBottom: 4 },
-  gmqEmptySubtext: { fontSize: 13, color: "#999", marginBottom: 14 },
-
-  addWeighingButton: {
+  miniStatsGrid: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: GREEN,
-    borderRadius: 12,
-    paddingVertical: 12,
-    marginTop: 12,
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 14,
   },
-  addWeighingButtonText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+  miniStatBox: {
+    flex: 1,
+    minWidth: "45%",
+    backgroundColor: "#F9FAFB",
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+  },
+  miniStatValue: { fontSize: 16, fontWeight: "800", color: GREEN },
+  miniStatLabel: { fontSize: 11, color: "#666", fontWeight: "600", marginTop: 2 },
 
   detailRow: {
     flexDirection: "row",
@@ -727,6 +924,40 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   alertResolveText: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  alertEmpty: { alignItems: "center", paddingVertical: 16 },
-  alertEmptyText: { fontSize: 13, fontWeight: "600", color: "#999" },
+
+  emptyCard: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 24,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  emptyText: { fontSize: 14, fontWeight: "600", color: "#666" },
+  emptySubtext: { fontSize: 13, color: "#999", marginTop: 4 },
+
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: GREEN,
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginBottom: 10,
+    gap: 8,
+  },
+  addButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+
+  linkButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  linkButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: GREEN,
+  },
 });

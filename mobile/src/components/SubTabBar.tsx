@@ -1,28 +1,43 @@
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { router, usePathname } from "expo-router";
 
-const TABS = [
+const DEFAULT_TABS = [
   { key: "users", label: "Users", route: "/users" },
   { key: "sessions", label: "Sessions", route: "/audit/sessions" },
   { key: "audit", label: "Audit", route: "/audit" },
 ];
 
-export default function SubTabBar() {
-  const pathname = usePathname();
+type Tab = { key: string; label: string; route?: string };
 
-  function handleTabPress(route: string) {
-    router.push(route as any);
+type Props = {
+  tabs?: Tab[];
+  activeKey?: string;
+  onTabPress?: (key: string) => void;
+};
+
+export default function SubTabBar({ tabs = DEFAULT_TABS, activeKey, onTabPress }: Props) {
+  const pathname = usePathname();
+  const isDynamic = !!onTabPress;
+
+  function handleTabPress(tab: Tab) {
+    if (isDynamic && onTabPress) {
+      onTabPress(tab.key);
+    } else if (tab.route) {
+      router.push(tab.route as any);
+    }
   }
+
+  const resolvedActiveKey = isDynamic ? activeKey : (activeKey || pathname);
 
   return (
     <View style={styles.tabBar}>
-      {TABS.map((tab) => {
-        const isActive = pathname === tab.route;
+      {tabs.map((tab) => {
+        const isActive = resolvedActiveKey === tab.key;
         return (
           <Pressable
             key={tab.key}
             style={[styles.tabItem, isActive && styles.tabItemActive]}
-            onPress={() => handleTabPress(tab.route)}
+            onPress={() => handleTabPress(tab)}
           >
             <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
               {tab.label}
@@ -55,7 +70,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E6F7EC",
   },
   tabLabel: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     color: "#7EAB91",
   },
