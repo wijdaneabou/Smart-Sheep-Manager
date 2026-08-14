@@ -3,6 +3,8 @@ import {
   getOrderedReadingsWithPosition,
   getAnimalShieldsForExploitation,
 } from "../repositories/iotAnalytics.repository.js";
+import { findIotShieldById } from "../repositories/iotShields.repository.js";
+import { getUserExploitationIdsWithAdmin } from "../utils/userHelpers.js";
 
 function haversineDistanceKm(
   lat1: number,
@@ -25,6 +27,17 @@ function sinceDaysAgo(days: number): Date {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 }
 
+// ── Helper: check if shield belongs to user's exploitations ──
+
+async function shieldBelongsToUser(shieldId: number, user: any): Promise<boolean> {
+  const shield = await findIotShieldById(shieldId);
+  if (!shield) return false;
+  if (user.roleName?.toLowerCase() === 'admin') return true;
+  const userExploitationIds = await getUserExploitationIdsWithAdmin(user);
+  if (!userExploitationIds || userExploitationIds.length === 0) return false;
+  return userExploitationIds.includes(shield.exploitationId!);
+}
+
 // ── Tendance de température ─────────────────────────────────────
 
 export type TemperaturePoint = {
@@ -33,7 +46,19 @@ export type TemperaturePoint = {
   maxTemperature: number;
 };
 
-export async function getTemperatureTrend(shieldId: number, days: number) {
+export async function getTemperatureTrend(
+  shieldId: number,
+  days: number,
+  user: any
+) {
+  if (!(await shieldBelongsToUser(shieldId, user))) {
+    return {
+      success: false as const,
+      status: 403 as const,
+      message: "Accès interdit à ce bouclier.",
+    };
+  }
+
   const rows = await getDailyStats(shieldId, sinceDaysAgo(days));
   const points: TemperaturePoint[] = rows.map((r) => ({
     day: r.day,
@@ -47,16 +72,23 @@ export async function getTemperatureTrend(shieldId: number, days: number) {
 
 export type GrazingPoint = {
   day: string;
-  grazingPercent: number; // % des lectures en GRAZING ce jour-là
-  estimatedHours: number; // approximation : % * 24h
+  grazingPercent: number;
+  estimatedHours: number;
 };
 
-/**
- * NOTE : l'estimation en heures suppose une couverture ~continue de 24h/jour
- * par le capteur. Avec des capteurs réels à fréquence variable, ce chiffre
- * reste une approximation basée sur la proportion de lectures GRAZING.
- */
-export async function getGrazingTime(shieldId: number, days: number) {
+export async function getGrazingTime(
+  shieldId: number,
+  days: number,
+  user: any
+) {
+  if (!(await shieldBelongsToUser(shieldId, user))) {
+    return {
+      success: false as const,
+      status: 403 as const,
+      message: "Accès interdit à ce bouclier.",
+    };
+  }
+
   const rows = await getDailyStats(shieldId, sinceDaysAgo(days));
   const points: GrazingPoint[] = rows.map((r) => {
     const total = Number(r.totalCount) || 1;
@@ -75,7 +107,19 @@ export async function getGrazingTime(shieldId: number, days: number) {
 
 export type DistancePoint = { day: string; distanceKm: number };
 
-export async function getDistanceTraveled(shieldId: number, days: number) {
+export async function getDistanceTraveled(
+  shieldId: number,
+  days: number,
+  user: any
+) {
+  if (!(await shieldBelongsToUser(shieldId, user))) {
+    return {
+      success: false as const,
+      status: 403 as const,
+      message: "Accès interdit à ce bouclier.",
+    };
+  }
+
   const readings = await getOrderedReadingsWithPosition(shieldId, sinceDaysAgo(days));
 
   const perDay = new Map<string, number>();
@@ -122,46 +166,56 @@ export type AnimalComparison = {
   distanceKm: number;
 };
 
-export async function compareAnimals(exploitationId: number, days: number) {
-  const shields = await getAnimalShieldsForExploitation(exploitationId);
+export async function compareAnimals(user: any, days: number) {
+  const exploitationIds = await getUserExploitationIdsWithAdmin(user);
+
+  // ✅ Fix: Type guard ensures exploitationIds is number[]
+  if (!exploitationIds || exploitationIds.length === 0) {
+    return { success: true as const, status: 200 as const, data: [] };
+  }
 
   const results: AnimalComparison[] = [];
-  for (const s of shields) {
-    const dailyStats = await getDailyStats(s.shieldId, sinceDaysAgo(days));
-    const readings = await getOrderedReadingsWithPosition(s.shieldId, sinceDaysAgo(days));
 
-    let avgTemp: number | null = null;
-    let grazingPercent: number | null = null;
-    if (dailyStats.length > 0) {
-      const totalGrazing = dailyStats.reduce((sum, r) => sum + Number(r.grazingCount), 0);
-      const totalCount = dailyStats.reduce((sum, r) => sum + Number(r.totalCount), 0);
-      const tempSum = dailyStats.reduce((sum, r) => sum + Number(r.avgTemperature), 0);
-      avgTemp = Math.round((tempSum / dailyStats.length) * 10) / 10;
-      grazingPercent = totalCount > 0 ? Math.round((totalGrazing / totalCount) * 1000) / 10 : 0;
+  for (const exploitationId of exploitationIds) {
+    const shields = await getAnimalShieldsForExploitation(exploitationId);
+
+    for (const s of shields) {
+      const dailyStats = await getDailyStats(s.shieldId, sinceDaysAgo(days));
+      const readings = await getOrderedReadingsWithPosition(s.shieldId, sinceDaysAgo(days));
+
+      let avgTemp: number | null = null;
+      let grazingPercent: number | null = null;
+      if (dailyStats.length > 0) {
+        const totalGrazing = dailyStats.reduce((sum, r) => sum + Number(r.grazingCount), 0);
+        const totalCount = dailyStats.reduce((sum, r) => sum + Number(r.totalCount), 0);
+        const tempSum = dailyStats.reduce((sum, r) => sum + Number(r.avgTemperature), 0);
+        avgTemp = Math.round((tempSum / dailyStats.length) * 10) / 10;
+        grazingPercent = totalCount > 0 ? Math.round((totalGrazing / totalCount) * 1000) / 10 : 0;
+      }
+
+      let distanceKm = 0;
+      for (let i = 1; i < readings.length; i++) {
+        const prev = readings[i - 1];
+        const curr = readings[i];
+        if (!prev.latitude || !prev.longitude || !curr.latitude || !curr.longitude) continue;
+        distanceKm += haversineDistanceKm(
+          parseFloat(prev.latitude),
+          parseFloat(prev.longitude),
+          parseFloat(curr.latitude),
+          parseFloat(curr.longitude)
+        );
+      }
+
+      results.push({
+        shieldId: s.shieldId,
+        animalId: s.animalId,
+        animalName: s.animalName,
+        animalRfid: s.animalRfid,
+        avgTemperature: avgTemp,
+        grazingPercent,
+        distanceKm: Math.round(distanceKm * 100) / 100,
+      });
     }
-
-    let distanceKm = 0;
-    for (let i = 1; i < readings.length; i++) {
-      const prev = readings[i - 1];
-      const curr = readings[i];
-      if (!prev.latitude || !prev.longitude || !curr.latitude || !curr.longitude) continue;
-      distanceKm += haversineDistanceKm(
-        parseFloat(prev.latitude),
-        parseFloat(prev.longitude),
-        parseFloat(curr.latitude),
-        parseFloat(curr.longitude)
-      );
-    }
-
-    results.push({
-      shieldId: s.shieldId,
-      animalId: s.animalId,
-      animalName: s.animalName,
-      animalRfid: s.animalRfid,
-      avgTemperature: avgTemp,
-      grazingPercent,
-      distanceKm: Math.round(distanceKm * 100) / 100,
-    });
   }
 
   return { success: true as const, status: 200 as const, data: results };

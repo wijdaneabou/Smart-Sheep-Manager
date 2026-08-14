@@ -19,7 +19,7 @@ import {
   type AlertType,
 } from "../../../services/iotAlertsService";
 import { BackButton } from "../../../components/BackButton";
-import { useAuth } from "../../../hooks/useAuth";
+import { usePermissions } from "../../../contexts/PermissionsContext";
 
 const GREEN = "#14532d";
 const BORDER = "#E7E4DC";
@@ -41,8 +41,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function IotAlertsScreen() {
-  const { user } = useAuth();
-  const exploitationId = (user as any)?.exploitationId;
+  const { hasPermission } = usePermissions();
 
   const [alerts, setAlerts] = useState<IotAlert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,9 +50,8 @@ export default function IotAlertsScreen() {
   const [resolvingId, setResolvingId] = useState<number | null>(null);
 
   async function fetchAlerts() {
-    if (!exploitationId) return;
     setError(null);
-    const result = await listAlerts({ exploitationId, resolved: false });
+    const result = await listAlerts({ resolved: false });
     if (result.success) {
       setAlerts(result.data);
     } else {
@@ -65,7 +63,7 @@ export default function IotAlertsScreen() {
     useCallback(() => {
       setLoading(true);
       fetchAlerts().finally(() => setLoading(false));
-    }, [exploitationId])
+    }, [])
   );
 
   async function onRefresh() {
@@ -84,6 +82,8 @@ export default function IotAlertsScreen() {
       Alert.alert("Erreur", result.message);
     }
   }
+
+  const canResolve = hasPermission('IOT', 'ALERTS:UPDATE');
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
@@ -153,20 +153,22 @@ export default function IotAlertsScreen() {
 
                   <Text style={styles.cardMessage}>{item.message}</Text>
 
-                  <Pressable
-                    style={styles.resolveButton}
-                    onPress={() => handleResolve(item)}
-                    disabled={resolvingId === item.id}
-                  >
-                    {resolvingId === item.id ? (
-                      <ActivityIndicator size="small" color={GREEN} />
-                    ) : (
-                      <>
-                        <Ionicons name="checkmark" size={16} color={GREEN} />
-                        <Text style={styles.resolveButtonText}>Marquer comme résolu</Text>
-                      </>
-                    )}
-                  </Pressable>
+                  {canResolve && (
+                    <Pressable
+                      style={styles.resolveButton}
+                      onPress={() => handleResolve(item)}
+                      disabled={resolvingId === item.id}
+                    >
+                      {resolvingId === item.id ? (
+                        <ActivityIndicator size="small" color={GREEN} />
+                      ) : (
+                        <>
+                          <Ionicons name="checkmark" size={16} color={GREEN} />
+                          <Text style={styles.resolveButtonText}>Marquer comme résolu</Text>
+                        </>
+                      )}
+                    </Pressable>
+                  )}
                 </View>
               );
             }}

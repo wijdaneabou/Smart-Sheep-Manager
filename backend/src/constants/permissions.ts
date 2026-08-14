@@ -26,74 +26,49 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'IOT:ANALYTICS:READ',
   ],
   manager: [
-    'EXPLOITATIONS:READ',
-    'EXPLOITATIONS:UPDATE',
-    'EXPLOITATIONS:EXPORT',
-    'HERD:READ',
-    'HERD:VALIDATE',
-    'HERD:EXPORT',
-    'HEALTH:READ',
-    'HEALTH:VALIDATE',
-    'HEALTH:EXPORT',
-    'REPRODUCTION:READ',
-    'REPRODUCTION:EXPORT',
+    'EXPLOITATIONS:READ', 'EXPLOITATIONS:UPDATE', 'EXPLOITATIONS:EXPORT',
+    'HERD:READ', 'HERD:VALIDATE', 'HERD:EXPORT',
+    'HEALTH:READ', 'HEALTH:VALIDATE', 'HEALTH:EXPORT',
+    'REPRODUCTION:READ', 'REPRODUCTION:EXPORT',
     // ============================================
-    // 🟢 IOT - Manager
-    // ============================================
-    'IOT:SHIELDS:READ', 'IOT:SHIELDS:CREATE',
-    'IOT:SENSOR:READ',
-    'IOT:ALERTS:READ', 'IOT:ALERTS:CREATE',
-    'IOT:ZONES:READ',
-    'IOT:ANALYTICS:READ',
-  ],
-  eleveur: [
-    'EXPLOITATIONS:READ',
-    'EXPLOITATIONS:UPDATE',
-    'HERD:READ',
-    'HERD:CREATE',
-    'HERD:UPDATE',
-    'HERD:DELETE',
-    'HEALTH:READ',
-    'HEALTH:CREATE',
-    'HEALTH:UPDATE',
-    'REPRODUCTION:READ',
-    'REPRODUCTION:CREATE',
-    'REPRODUCTION:UPDATE',
-    'REPRODUCTION:DELETE',
-    // ============================================
-    // 🟢 IOT - Eleveur
+    // 🟢 IOT - Manager (READ ONLY - US-4.5)
     // ============================================
     'IOT:SHIELDS:READ',
     'IOT:SENSOR:READ',
     'IOT:ALERTS:READ',
     'IOT:ZONES:READ',
+    'IOT:ANALYTICS:READ',
+  ],
+  eleveur: [
+    'EXPLOITATIONS:READ', 'EXPLOITATIONS:UPDATE',
+    'HERD:READ', 'HERD:CREATE', 'HERD:UPDATE', 'HERD:DELETE',
+    'HEALTH:READ', 'HEALTH:CREATE', 'HEALTH:UPDATE',
+    'REPRODUCTION:READ', 'REPRODUCTION:CREATE', 'REPRODUCTION:UPDATE', 'REPRODUCTION:DELETE',
+    // ============================================
+    // 🟢 IOT - Eleveur (FULL CRUD - US-4.1 à 4.4)
+    // ============================================
+    'IOT:SHIELDS:READ', 'IOT:SHIELDS:CREATE', 'IOT:SHIELDS:UPDATE', 'IOT:SHIELDS:DELETE',
+    'IOT:SENSOR:READ', 'IOT:SENSOR:CREATE',
+    'IOT:ALERTS:READ', 'IOT:ALERTS:CREATE', 'IOT:ALERTS:UPDATE', 'IOT:ALERTS:DELETE',
+    'IOT:ZONES:READ', 'IOT:ZONES:CREATE', 'IOT:ZONES:UPDATE', 'IOT:ZONES:DELETE',
     'IOT:ANALYTICS:READ',
   ],
   ouvrier: [
     'EXPLOITATIONS:READ',
     'HERD:READ',
-    'HEALTH:READ',
-    'HEALTH:UPDATE',
+    'HEALTH:READ', 'HEALTH:UPDATE',
     // ============================================
-    // 🟢 IOT - Ouvrier 
+    // ❌ IOT - Ouvrier (aucune permission)
     // ============================================
-    'IOT:SHIELDS:READ',
-    'IOT:SENSOR:READ',
-    'IOT:ALERTS:READ',
+    // Aucune ligne IOT
   ],
   veterinaire: [
     'EXPLOITATIONS:READ',
-    'HERD:READ',
-    'HERD:UPDATE',
-    'HEALTH:READ',
-    'HEALTH:CREATE',
-    'HEALTH:UPDATE',
-    'HEALTH:DELETE',
-    'HEALTH:VALIDATE',
-    'REPRODUCTION:READ',
-    'REPRODUCTION:UPDATE',
+    'HERD:READ', 'HERD:UPDATE',
+    'HEALTH:READ', 'HEALTH:CREATE', 'HEALTH:UPDATE', 'HEALTH:DELETE', 'HEALTH:VALIDATE',
+    'REPRODUCTION:READ', 'REPRODUCTION:UPDATE',
     // ============================================
-    // 🟢 IOT - Veterinaire
+    // 🟢 IOT - Veterinaire (READ ONLY - US-4.6)
     // ============================================
     'IOT:SHIELDS:READ',
     'IOT:SENSOR:READ',
@@ -101,21 +76,11 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'IOT:ANALYTICS:READ',
   ],
   cooperative: [
-    'EXPLOITATIONS:READ',
-    'EXPLOITATIONS:AGGREGATE',
-    'HERD:READ',
-    'HERD:AGGREGATE',
-    'HEALTH:READ',
-    'HEALTH:AGGREGATE',
-    'REPRODUCTION:READ',
-    'REPRODUCTION:AGGREGATE',
-    // ============================================
-    // 🟢 IOT - Cooperative 
-    // ============================================
-    'IOT:SHIELDS:READ',
-    'IOT:SENSOR:READ',
-    'IOT:ALERTS:READ',
-    'IOT:ANALYTICS:READ',
+    'EXPLOITATIONS:READ', 'EXPLOITATIONS:AGGREGATE',
+    'HERD:READ', 'HERD:AGGREGATE',
+    'HEALTH:READ', 'HEALTH:AGGREGATE',
+    'REPRODUCTION:READ', 'REPRODUCTION:AGGREGATE',
+    
   ],
 };
 

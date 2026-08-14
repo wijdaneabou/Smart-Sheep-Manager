@@ -9,12 +9,6 @@ type AccessTokenPayload = {
   roleId: number;
 };
 
-/**
- * Verifie le token genere par generateAccessToken() (utils/jwt.ts).
- * Le payload signe ne contient que { userId, roleId } (pas de roleName),
- * donc on resout le nom du role ici via la table roles pour permettre
- * le RBAC dans requireRole() (middlewares/rbac.middleware.ts).
- */
 export async function isAuthenticated(c: Context, next: Next) {
   const authHeader = c.req.header("Authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
@@ -29,18 +23,27 @@ export async function isAuthenticated(c: Context, next: Next) {
       process.env.JWT_SECRET!
     ) as AccessTokenPayload;
 
+    console.log(`[auth] Decoded token:`, payload);
+
     const role = await db.query.roles.findFirst({
       where: eq(roles.id, payload.roleId),
     });
 
-    c.set("user", {
+    console.log(`[auth] Found role:`, role);
+
+    const user = {
       id: payload.userId,
       roleId: payload.roleId,
       roleName: role?.name ?? null,
-    });
+    };
+
+    console.log(`[auth] Setting user:`, user);
+
+    c.set("user", user);
 
     await next();
-  } catch {
+  } catch (error) {
+    console.error(`[auth] Token verification error:`, error);
     return c.json({ error: "Token invalide ou expire." }, 401);
   }
 }

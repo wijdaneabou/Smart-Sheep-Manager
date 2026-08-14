@@ -18,7 +18,6 @@ export type Animal = {
   healthStatus: HealthStatus;
   exploitationId: number | null;
   photoUrl: string | null;
-
   createdAt: string;
   updatedAt: string;
 };
@@ -29,7 +28,6 @@ export type Pagination = {
   limit: number;
   totalPages?: number;
 };
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pedigree / Genealogical Tree
@@ -69,14 +67,25 @@ export interface PedigreeResult {
 
 function extractError(err: any): string {
   console.log("FULL ERROR RESPONSE DATA:", JSON.stringify(err?.response?.data, null, 2));
-
   const apiError = err?.response?.data?.error;
   if (typeof apiError === "string") return apiError;
   return err?.response?.data?.message ?? "Impossible de contacter le serveur.";
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ✅ Updated listAnimals with optional exploitationId filter
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function listAnimals(
-  params: { page?: number; limit?: number; search?: string; breed?: string; sex?: string; healthStatus?: string } = {}
+  params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    breed?: string;
+    sex?: string;
+    healthStatus?: string;
+    exploitationId?: number;   // ✅ NEW – filter by exploitation
+  } = {}
 ) {
   try {
     const response = await api.get<{
@@ -88,6 +97,10 @@ export async function listAnimals(
     return { success: false as const, message: extractError(err) };
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CRUD operations (unchanged)
+// ─────────────────────────────────────────────────────────────────────────────
 
 export async function getAnimalById(id: number) {
   try {
@@ -104,13 +117,10 @@ export async function createAnimal(input: {
   breed: Breed;
   sex: Sex;
   birthDate?: string;
-
   fatherRfid?: string;
   motherRfid?: string;
-
   fatherId?: number;
   motherId?: number;
-
   weight?: number;
   bcs?: number;
   healthStatus?: HealthStatus;
@@ -125,25 +135,13 @@ export async function createAnimal(input: {
     formData.append("breed", input.breed);
     formData.append("sex", input.sex);
 
-    if (input.birthDate)
-      formData.append("birthDate", input.birthDate);
-
-    if (input.weight !== undefined)
-      formData.append("weight", String(input.weight));
-
-    if (input.bcs !== undefined)
-      formData.append("bcs", String(input.bcs));
-
-    if (input.healthStatus)
-      formData.append("healthStatus", input.healthStatus);
-
-    if (input.fatherRfid)
-      formData.append("fatherRfid", input.fatherRfid);
-
-    if (input.motherRfid)
-      formData.append("motherRfid", input.motherRfid);
-    if (input.exploitationId !== undefined)
-      formData.append("exploitationId", String(input.exploitationId));
+    if (input.birthDate) formData.append("birthDate", input.birthDate);
+    if (input.weight !== undefined) formData.append("weight", String(input.weight));
+    if (input.bcs !== undefined) formData.append("bcs", String(input.bcs));
+    if (input.healthStatus) formData.append("healthStatus", input.healthStatus);
+    if (input.fatherRfid) formData.append("fatherRfid", input.fatherRfid);
+    if (input.motherRfid) formData.append("motherRfid", input.motherRfid);
+    if (input.exploitationId !== undefined) formData.append("exploitationId", String(input.exploitationId));
 
     if (input.photoUri) {
       formData.append("photo", {
@@ -168,10 +166,7 @@ export async function createAnimal(input: {
       animal: response.data.data,
     };
   } catch (err: any) {
-    console.log(
-      "CREATE ANIMAL ERROR:",
-      JSON.stringify(err?.response?.data ?? err?.message)
-    );
+    console.log("CREATE ANIMAL ERROR:", JSON.stringify(err?.response?.data ?? err?.message));
     return {
       success: false as const,
       message: extractError(err),
@@ -203,27 +198,13 @@ export async function updateAnimal(
     if (input.name) formData.append("name", input.name);
     if (input.breed) formData.append("breed", input.breed);
     if (input.sex) formData.append("sex", input.sex);
-
-    if (input.birthDate)
-      formData.append("birthDate", input.birthDate);
-
-    if (input.weight != null)
-      formData.append("weight", String(input.weight));
-
-    if (input.bcs != null)
-      formData.append("bcs", String(input.bcs));
-
-    if (input.healthStatus)
-      formData.append("healthStatus", input.healthStatus);
-
-    if (input.fatherRfid)
-      formData.append("fatherRfid", input.fatherRfid);
-
-    if (input.motherRfid)
-      formData.append("motherRfid", input.motherRfid);
-
-    if (input.exploitationId != null)
-      formData.append("exploitationId", String(input.exploitationId));
+    if (input.birthDate) formData.append("birthDate", input.birthDate);
+    if (input.weight != null) formData.append("weight", String(input.weight));
+    if (input.bcs != null) formData.append("bcs", String(input.bcs));
+    if (input.healthStatus) formData.append("healthStatus", input.healthStatus);
+    if (input.fatherRfid) formData.append("fatherRfid", input.fatherRfid);
+    if (input.motherRfid) formData.append("motherRfid", input.motherRfid);
+    if (input.exploitationId != null) formData.append("exploitationId", String(input.exploitationId));
 
     if (input.photoUri) {
       formData.append("photo", {
@@ -264,14 +245,7 @@ export async function deleteAnimal(id: number) {
   }
 }
 
-
-/**
- * Récupère l'arbre généalogique (3 générations) d'un animal.
- */
-export async function getPedigree(
-  animalId: number,
-  generations: number = 3
-) {
+export async function getPedigree(animalId: number, generations: number = 3) {
   try {
     const response = await api.get<{ data: PedigreeResult }>(
       `/animals/${animalId}/pedigree`,

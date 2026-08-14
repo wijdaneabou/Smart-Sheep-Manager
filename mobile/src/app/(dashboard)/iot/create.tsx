@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
+import { Picker } from "@react-native-picker/picker";
 import {
   createIotShield,
   type SensorType,
@@ -25,13 +26,13 @@ import {
   listAnimals,
   type Animal,
 } from "../../../services/animalsService";
+import { getExploitations } from "../../../services/exploitationservice"; // we'll create this
 import { SENSOR_TYPES, SHIELD_STATUSES } from "../../../constants/iot";
-
-// Import du Picker
-import { Picker } from "@react-native-picker/picker";
+import { useAuth } from "../../../hooks/useAuth";
 
 export default function CreateIotShieldScreen() {
   const router = useRouter();
+  const { user } = useAuth();
 
   // --- Identité ---
   const [ssmIotNumber, setSsmIotNumber] = useState("SSM-IOT-000001");
@@ -42,34 +43,64 @@ export default function CreateIotShieldScreen() {
   const [status, setStatus] = useState<ShieldStatus>("ACTIVE");
 
   // --- Association ---
+  const [exploitations, setExploitations] = useState<{ id: number; name: string }[]>([]);
+  const [selectedExploitationId, setSelectedExploitationId] = useState<number | null>(null);
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [selectedAnimalId, setSelectedAnimalId] = useState<number | null>(null);
 
   const [loading, setLoading] = useState(false);
+  const [loadingAnimals, setLoadingAnimals] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // --- Clé API du bouclier créé (affichée une seule fois) ---
+  // --- Clé API du bouclier créé ---
   const [createdShield, setCreatedShield] = useState<{
     ssmIotNumber: string;
     apiKey: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // ── Load exploitations on mount ──
   useEffect(() => {
-    loadAnimals();
+    loadExploitations();
   }, []);
 
-  async function loadAnimals() {
+  async function loadExploitations() {
+    try {
+      const data = await getExploitations();
+      setExploitations(data);
+      if (data.length === 1) {
+        setSelectedExploitationId(data[0].id);
+        loadAnimals(data[0].id);
+      } else if (data.length > 1) {
+        // Let user choose; don't auto-select
+        setSelectedExploitationId(null);
+      }
+    } catch (error) {
+      Alert.alert("Erreur", "Impossible de charger les exploitations.");
+    }
+  }
+
+  async function loadAnimals(exploitationId: number) {
+    if (!exploitationId) return;
+    setLoadingAnimals(true);
     const result = await listAnimals({
       page: 1,
       limit: 100,
+      exploitationId, // ✅ filter by exploitation
     });
-
+    setLoadingAnimals(false);
     if (result.success) {
       setAnimals(result.data);
     } else {
       Alert.alert("Erreur", result.message);
     }
+  }
+
+  // ── When exploitation selection changes, reload animals ──
+  function handleExploitationChange(expId: number) {
+    setSelectedExploitationId(expId);
+    setSelectedAnimalId(null);
+    loadAnimals(expId);
   }
 
   function validate(): string | null {
@@ -79,6 +110,9 @@ export default function CreateIotShieldScreen() {
       return "La batterie doit être un nombre.";
     if (Number(battery) < 0 || Number(battery) > 100)
       return "La batterie doit être entre 0 et 100.";
+    if (!selectedExploitationId) {
+      return "Veuillez sélectionner une exploitation.";
+    }
     return null;
   }
 
@@ -98,13 +132,12 @@ export default function CreateIotShieldScreen() {
       battery: battery ? Number(battery) : undefined,
       animalId: selectedAnimalId,
       status,
+      exploitationId: selectedExploitationId!, // ✅ pass selected
     });
 
     setLoading(false);
 
     if (result.success) {
-      // On affiche la clé API générée avant de quitter l'écran,
-      // car elle ne sera plus jamais renvoyée par le serveur ensuite.
       setCreatedShield({
         ssmIotNumber: result.shield.ssmIotNumber,
         apiKey: result.shield.apiKey,
@@ -126,7 +159,6 @@ export default function CreateIotShieldScreen() {
     router.back();
   }
 
-  // Fonction pour obtenir le style du statut sélectionné
   const getStatusStyle = (statusId: ShieldStatus) => {
     const statusObj = SHIELD_STATUSES.find((s) => s.id === statusId);
     return statusObj ? statusObj.color : GREEN;
@@ -230,14 +262,49 @@ export default function CreateIotShieldScreen() {
             </View>
           </View>
 
-          {/* --- 3. Association --- */}
-          <SectionTitle index={3} label="Association" />
+          {/* --- 3. Exploitation --- */}
+          <SectionTitle index={3} label="Exploitation" />
+
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Choisir une exploitation</Text>
+            {exploitations.length === 0 ? (
+              <Text style={{ color: "#666" }}>Chargement des exploitations...</Text>
+            ) : exploitations.length === 1 ? (
+              <Text style={styles.fixedValue}>{exploitations[0].name}</Text>
+            ) : (
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={selectedExploitationId}
+                  onValueChange={(itemValue) => {
+                    if (itemValue) handleExploitationChange(itemValue);
+                  }}
+                  style={styles.picker}
+                  dropdownIconColor="#14532d"
+                >
+                  <Picker.Item label="Sélectionnez une exploitation" value={null} />
+                  {exploitations.map((exp) => (
+                    <Picker.Item key={exp.id} label={exp.name} value={exp.id} />
+                  ))}
+                </Picker>
+                <View style={styles.pickerIcon}>
+                  <Ionicons name="chevron-down" size={20} color="#14532d" />
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* --- 4. Association --- */}
+          <SectionTitle index={4} label="Association" />
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Animal</Text>
 
-            {animals.length === 0 ? (
-              <Text style={{ color: "#666" }}>Aucun animal disponible.</Text>
+            {!selectedExploitationId ? (
+              <Text style={{ color: "#999" }}>Veuillez d'abord sélectionner une exploitation.</Text>
+            ) : loadingAnimals ? (
+              <ActivityIndicator size="small" color={GREEN} />
+            ) : animals.length === 0 ? (
+              <Text style={{ color: "#999" }}>Aucun animal dans cette exploitation.</Text>
             ) : (
               <View style={styles.pickerContainer}>
                 <Picker
@@ -261,6 +328,7 @@ export default function CreateIotShieldScreen() {
               </View>
             )}
           </View>
+
           {error && <Text style={styles.error}>{error}</Text>}
 
           <View style={styles.actionsRow}>
@@ -281,7 +349,7 @@ export default function CreateIotShieldScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* --- Modal : clé API générée, affichée une seule fois --- */}
+      {/* --- Modal clé API --- */}
       <Modal visible={!!createdShield} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
@@ -378,8 +446,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#1f2937",
   },
+  fixedValue: {
+    backgroundColor: "#f0f0f0",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+    fontSize: 15,
+    color: "#1f2937",
+  },
 
-  // Styles pour le Picker
   pickerContainer: {
     position: "relative",
     backgroundColor: "#fff",
@@ -436,7 +511,6 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: "#fff", fontWeight: "700", fontSize: 12, textAlign: "center" },
 
-  // --- Modal clé API ---
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",

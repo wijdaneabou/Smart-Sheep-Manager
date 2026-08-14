@@ -27,11 +27,14 @@ function extractError(err: any): string {
   return err?.response?.data?.message ?? "Impossible de contacter le serveur.";
 }
 
+/**
+ * ✅ Updated: exploitationId removed from params.
+ * Backend now filters based on authenticated user's exploitations.
+ */
 export async function listAlerts(params: {
-  exploitationId: number;
   resolved?: boolean;
   type?: AlertType;
-}) {
+} = {}) {
   try {
     const response = await api.get<{ data: IotAlert[]; total: number }>(
       "/iot-alerts",
@@ -43,11 +46,14 @@ export async function listAlerts(params: {
   }
 }
 
-export async function getAlertSummary(exploitationId: number) {
+/**
+ * ✅ Updated: exploitationId removed from params.
+ * Backend now filters based on authenticated user's exploitations.
+ */
+export async function getAlertSummary() {
   try {
     const response = await api.get<{ data: Record<string, number> }>(
-      "/iot-alerts/summary",
-      { params: { exploitationId } }
+      "/iot-alerts/summary"
     );
     return { success: true as const, summary: response.data.data };
   } catch (err: any) {

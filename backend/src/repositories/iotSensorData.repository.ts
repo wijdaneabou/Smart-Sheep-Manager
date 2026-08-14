@@ -2,7 +2,7 @@ import { db } from "../db/connection.js";
 import { iotSensorData } from "../db/schema/iotSensorData.js";
 import { iotShields } from "../db/schema/iotShields.js";
 import { animals } from "../db/schema/animals.js";
-import { eq, desc, and, gte, sql } from "drizzle-orm";
+import { eq, desc, and, gte, sql, inArray } from "drizzle-orm"; // added inArray
 
 type CreateSensorData = typeof iotSensorData.$inferInsert;
 
@@ -91,9 +91,20 @@ export async function getLatestSensorData(shieldId: number) {
 }
 
 /**
- * Get the latest sensor data for ALL shields belonging to an exploitation.
+ * 🟢 MODIFIED: Get the latest sensor data for ALL shields belonging to
+ * one or more exploitations. Joins with iot_shields to filter by exploitation.
+ * If exploitationIds is null or empty, no filter (admin).
  */
-export async function getLatestSensorDataForExploitation(exploitationId: number) {
+export async function getLatestSensorDataForExploitationIds(
+  exploitationIds: number[] | null
+) {
+  const conditions = [];
+  if (exploitationIds && exploitationIds.length > 0) {
+    conditions.push(inArray(iotShields.exploitationId, exploitationIds));
+  }
+
+  const whereClause = conditions.length ? and(...conditions) : undefined;
+
   const result = await db
     .select({
       id: iotSensorData.id,
@@ -115,7 +126,7 @@ export async function getLatestSensorDataForExploitation(exploitationId: number)
     })
     .from(iotSensorData)
     .innerJoin(iotShields, eq(iotSensorData.shieldId, iotShields.id))
-    .where(eq(iotShields.exploitationId, exploitationId))
+    .where(whereClause)
     .orderBy(desc(iotSensorData.measuredAt))
     .limit(100);
 
@@ -123,7 +134,9 @@ export async function getLatestSensorDataForExploitation(exploitationId: number)
 }
 
 /**
- * Get historical sensor data for a shield, optionally filtered by a "since" date.
+ * 🟢 MODIFIED: Get historical sensor data for a shield,
+ * optionally filtered by a "since" date.
+ * (No change here – individual shield access controlled by service.)
  */
 export async function getHistoricalSensorData(params: {
   shieldId: number;
@@ -147,11 +160,12 @@ export async function getHistoricalSensorData(params: {
 }
 
 /**
- * Get the latest sensor data for all shields (optionally filtered by exploitation).
- * Uses a CTE (WITH) to get only the most recent reading per shield — CTEs are
- * supported by MariaDB 10.2+, unlike Drizzle's `with:` relational LATERAL joins.
+ * 🟢 MODIFIED: Get the latest sensor data for all shields,
+ * optionally filtered by one or more exploitations.
+ * Uses a CTE (WITH) to get only the most recent reading per shield.
+ * Now accepts exploitationIds array instead of single ID.
  */
-export async function getLatestForAllShields(exploitationId?: number) {
+export async function getLatestForAllShields(exploitationIds?: number[] | null) {
   const latestSubquery = db
     .$with("latest_readings")
     .as(
@@ -164,10 +178,12 @@ export async function getLatestForAllShields(exploitationId?: number) {
         .groupBy(iotSensorData.shieldId)
     );
 
-  // Construire la condition AVANT d'appeler .where(), pour ne jamais perdre le filtre
-  const whereClause = exploitationId
-    ? eq(iotShields.exploitationId, exploitationId)
-    : undefined;
+  // Construire la condition AVANT d'appeler .where()
+  const conditions = [];
+  if (exploitationIds && exploitationIds.length > 0) {
+    conditions.push(inArray(iotShields.exploitationId, exploitationIds));
+  }
+  const whereClause = conditions.length ? and(...conditions) : undefined;
 
   return db
     .with(latestSubquery)

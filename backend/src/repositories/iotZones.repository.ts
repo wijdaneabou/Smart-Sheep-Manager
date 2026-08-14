@@ -1,6 +1,6 @@
 import { db } from "../db/connection.js";
 import { iotZones, type NewIotZone } from "../db/schema/iotZones.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm"; // added inArray
 
 export async function createZone(data: NewIotZone) {
   const [result] = await db.insert(iotZones).values(data).$returningId();
@@ -12,11 +12,17 @@ export async function findZoneById(id: number) {
   return rows[0] ?? null;
 }
 
-export async function listZonesByExploitation(exploitationId: number) {
-  return db
-    .select()
-    .from(iotZones)
-    .where(eq(iotZones.exploitationId, exploitationId));
+/**
+ * Liste les zones d'une ou plusieurs exploitations.
+ * Si exploitationIds est null ou vide, aucune restriction (admin).
+ */
+export async function listZonesByExploitationIds(exploitationIds: number[] | null) {
+  const conditions = [];
+  if (exploitationIds && exploitationIds.length > 0) {
+    conditions.push(inArray(iotZones.exploitationId, exploitationIds));
+  }
+  const whereClause = conditions.length ? and(...conditions) : undefined;
+  return db.select().from(iotZones).where(whereClause);
 }
 
 export async function updateZone(

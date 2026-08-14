@@ -10,41 +10,59 @@ import {
   toggleStatusHandler,
 } from "../controllers/iotShields.controller.js";
 import { isAuthenticated } from "../middlewares/auth.middleware.js";
-import { requireRole } from "../middlewares/rbac.middleware.js";
+import { requirePermission } from "../middlewares/permissions.middleware.js"; // ✅ your existing file
 
 const iotShieldsRoutes = new Hono();
 
 iotShieldsRoutes.use("*", isAuthenticated);
 
 // CRUD
-iotShieldsRoutes.post("/", requireRole("ADMIN", "MANAGER", "ELEVEUR"), createIotShieldHandler);
-iotShieldsRoutes.put("/:id", requireRole("ADMIN", "MANAGER", "ELEVEUR"), updateIotShieldHandler);
-iotShieldsRoutes.delete("/:id", requireRole("ADMIN", "MANAGER", "ELEVEUR"), deleteIotShieldHandler);
+iotShieldsRoutes.post(
+  "/",
+  requirePermission('IOT', 'SHIELDS:CREATE'),  // ✅ uses your middleware
+  createIotShieldHandler
+);
+
+iotShieldsRoutes.put(
+  "/:id",
+  requirePermission('IOT', 'SHIELDS:UPDATE'),
+  updateIotShieldHandler
+);
+
+iotShieldsRoutes.delete(
+  "/:id",
+  requirePermission('IOT', 'SHIELDS:DELETE'),
+  deleteIotShieldHandler
+);
+
 iotShieldsRoutes.get(
   "/:id",
-  requireRole("ADMIN", "MANAGER", "ELEVEUR", "VETERINAIRE", "OUVRIER"),
+  requirePermission('IOT', 'SHIELDS:READ'),
   getIotShieldByIdHandler
 );
+
 iotShieldsRoutes.get(
   "/",
-  requireRole("ADMIN", "MANAGER", "ELEVEUR", "VETERINAIRE", "OUVRIER"),
+  requirePermission('IOT', 'SHIELDS:READ'),
   listIotShieldsHandler
 );
 
 // IoT-specific actions
 iotShieldsRoutes.patch(
   "/:id/associate",
-  requireRole("ADMIN", "MANAGER", "ELEVEUR"),
+  requirePermission('IOT', 'SHIELDS:UPDATE'),
   associateAnimalHandler
 );
+
 iotShieldsRoutes.patch(
   "/:id/battery",
-  requireRole("ADMIN", "MANAGER", "ELEVEUR"),
+  requirePermission('IOT', 'SHIELDS:UPDATE'),
   updateBatteryHandler
 );
+
 iotShieldsRoutes.patch(
   "/:id/toggle-status",
-  requireRole("ADMIN", "MANAGER", "ELEVEUR"),
+  requirePermission('IOT', 'SHIELDS:UPDATE'),
   toggleStatusHandler
 );
 

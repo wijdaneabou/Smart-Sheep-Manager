@@ -26,6 +26,7 @@ import {
 import { searchLocation as searchLocationApi } from "../../../services/geocodeService";
 import { BackButton } from "../../../components/BackButton";
 import { useAuth } from "../../../hooks/useAuth";
+import { usePermissions } from "../../../contexts/PermissionsContext";
 
 const GREEN = "#14532d";
 const BORDER = "#E7E4DC";
@@ -134,7 +135,7 @@ type ViewMode = "list" | "view" | "draw";
 
 export default function IotZonesScreen() {
   const { user } = useAuth();
-  const exploitationId = user?.exploitationId;
+  const { hasPermission } = usePermissions();
 
   const [zones, setZones] = useState<IotZone[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,7 +150,6 @@ export default function IotZonesScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedZone, setSelectedZone] = useState<IotZone | null>(null);
 
-  // Recherche de lieu
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<
     { display_name: string; lat: string; lon: string }[]
@@ -158,9 +158,11 @@ export default function IotZonesScreen() {
   const [searching, setSearching] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const canCreate = hasPermission('IOT', 'ZONES:CREATE');
+  const canDelete = hasPermission('IOT', 'ZONES:DELETE');
+
   async function fetchZones() {
-    if (!exploitationId) return;
-    const result = await listZones(exploitationId);
+    const result = await listZones();
     if (result.success) {
       setZones(result.data);
     } else {
@@ -172,7 +174,7 @@ export default function IotZonesScreen() {
     useCallback(() => {
       setLoading(true);
       fetchZones().finally(() => setLoading(false));
-    }, [exploitationId])
+    }, [])
   );
 
   useEffect(() => {
@@ -257,17 +259,9 @@ export default function IotZonesScreen() {
       Alert.alert("Nom requis", "Donnez un nom à cette zone.");
       return;
     }
-    if (!exploitationId) {
-      Alert.alert(
-        "Erreur",
-        "Aucune exploitation associée à votre compte. Contactez l'administrateur."
-      );
-      return;
-    }
 
     setSaving(true);
     const result = await createZone({
-      exploitationId,
       name: zoneName.trim(),
       polygon: draftPoints,
     });
@@ -306,7 +300,6 @@ export default function IotZonesScreen() {
     ]);
   }
 
-  // ---- RECHERCHE via le proxy backend (plus d'appel direct à Nominatim) ----
   const searchLocation = async (query: string) => {
     if (query.trim().length < 2) {
       setSearchResults([]);
@@ -324,8 +317,6 @@ export default function IotZonesScreen() {
     } else {
       setSearchResults([]);
       setShowSuggestions(false);
-      // Erreur silencieuse : une recherche qui ne trouve rien n'est pas
-      // bloquante, pas besoin d'une alerte intrusive à chaque frappe.
       console.error("Erreur lors de la recherche de lieu :", result.message);
     }
   };
@@ -443,22 +434,26 @@ export default function IotZonesScreen() {
                 {item.polygon.length} points
               </Text>
             </View>
-            <Pressable
-              onPress={() => handleDeleteZone(item)}
-              hitSlop={8}
-              style={styles.deleteBtn}
-            >
-              <Ionicons name="trash-outline" size={16} color="#B42318" />
-            </Pressable>
+            {canDelete && (
+              <Pressable
+                onPress={() => handleDeleteZone(item)}
+                hitSlop={8}
+                style={styles.deleteBtn}
+              >
+                <Ionicons name="trash-outline" size={16} color="#B42318" />
+              </Pressable>
+            )}
           </Pressable>
         )}
       />
-      <View style={styles.newZoneWrap}>
-        <Pressable style={styles.newZoneBtn} onPress={startDrawing}>
-          <Ionicons name="add-circle" size={19} color="#fff" />
-          <Text style={styles.newZoneBtnText}>Nouvelle zone</Text>
-        </Pressable>
-      </View>
+      {canCreate && (
+        <View style={styles.newZoneWrap}>
+          <Pressable style={styles.newZoneBtn} onPress={startDrawing}>
+            <Ionicons name="add-circle" size={19} color="#fff" />
+            <Text style={styles.newZoneBtnText}>Nouvelle zone</Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 
@@ -719,7 +714,6 @@ const styles = StyleSheet.create({
   loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10 },
   loadingText: { fontSize: 13, color: TEXT_MUTED },
 
-  // Carte
   mapWrap: {
     ...StyleSheet.absoluteFill,
     top: 120,
@@ -737,7 +731,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // Recherche
   searchContainer: {
     position: "absolute",
     top: 16,
@@ -815,7 +808,6 @@ const styles = StyleSheet.create({
   },
   drawingBadgeText: { color: "#fff", fontSize: 11.5, fontWeight: "600" },
 
-  // Barre de dessin
   drawBar: {
     position: "absolute",
     bottom: 0,
@@ -895,7 +887,6 @@ const styles = StyleSheet.create({
   drawBtnPrimaryDisabled: { backgroundColor: "#A9C4B3" },
   drawBtnPrimaryText: { color: "#fff", fontWeight: "700", fontSize: 13 },
 
-  // Liste des zones
   listContainer: {
     flex: 1,
     marginTop: 12,
@@ -973,7 +964,6 @@ const styles = StyleSheet.create({
   },
   newZoneBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 
-  // Barre info en mode visualisation
   viewInfoBar: {
     position: "absolute",
     bottom: 0,
@@ -1015,7 +1005,6 @@ const styles = StyleSheet.create({
     color: "#5A5A56",
   },
 
-  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.45)",

@@ -93,7 +93,6 @@ export const MODULES: SSMModule[] = [
     bgColor: "#F3E8FF",
     route: "/herd",
     available: true,
-
     priority: 2,
     tabLabel: "Troupeau",
   },
@@ -108,11 +107,7 @@ export const MODULES: SSMModule[] = [
     bgColor: "#E6F8ED",
     route: "/health",
     available: true,
-
-    
     priority: 3,
-
-
     tabLabel: "Santé",
   },
   {
@@ -292,6 +287,15 @@ export const getModulesByPriority = () =>
 export const getModuleByRoute = (route: string) =>
   MODULES.find((mod) => mod.route === route);
 
+/**
+ * Helper: Check if user has ANY permission for a module.
+ * Since we use granular permissions like "IOT:SHIELDS:READ" instead of "IOT:READ",
+ * this function checks if any permission in the list starts with the module prefix.
+ */
+function hasModuleAccess(permissions: string[], moduleId: ModuleId): boolean {
+  return permissions.some((p) => p.startsWith(`${moduleId}:`));
+}
+
 export const getPermittedModules = (
   permissions: string[],
   isAdmin: boolean
@@ -304,7 +308,8 @@ export const getPermittedModules = (
 
   return allModules.filter((mod) => {
     if (mod.adminOnly) return false;
-    return permissions.includes(`${mod.module}:READ`);
+    // Use helper to check ANY permission for this module
+    return hasModuleAccess(permissions, mod.module);
   });
 };
 

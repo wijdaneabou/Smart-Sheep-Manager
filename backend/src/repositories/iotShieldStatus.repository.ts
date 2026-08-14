@@ -1,7 +1,7 @@
 import { db } from "../db/connection.js";
 import { iotShieldStatus } from "../db/schema/iotShieldStatus.js";
 import { iotShields } from "../db/schema/iotShields.js";
-import { eq } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm"; // added inArray
 
 type UpsertShieldStatusData = {
   shieldId: number;
@@ -32,11 +32,16 @@ export async function upsertShieldStatus(data: UpsertShieldStatusData) {
 }
 
 /**
- * Récupère l'état courant de tous les boucliers d'une exploitation.
- * Requête simple (pas de CTE) — une jointure directe suffit puisqu'il
- * n'y a plus qu'une ligne par bouclier.
+ * Récupère l'état courant de tous les boucliers d'une ou plusieurs exploitations.
+ * Si exploitationIds est null ou vide, aucune restriction (admin).
  */
-export async function findLatestByExploitation(exploitationId: number) {
+export async function findLatestByExploitation(exploitationIds: number[] | null) {
+  const conditions = [];
+  if (exploitationIds && exploitationIds.length > 0) {
+    conditions.push(inArray(iotShields.exploitationId, exploitationIds));
+  }
+  const whereClause = conditions.length ? and(...conditions) : undefined;
+
   return db
     .select({
       shieldId: iotShieldStatus.shieldId,
@@ -56,5 +61,5 @@ export async function findLatestByExploitation(exploitationId: number) {
     })
     .from(iotShieldStatus)
     .innerJoin(iotShields, eq(iotShieldStatus.shieldId, iotShields.id))
-    .where(eq(iotShields.exploitationId, exploitationId));
+    .where(whereClause);
 }

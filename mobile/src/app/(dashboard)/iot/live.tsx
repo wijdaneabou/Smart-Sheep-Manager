@@ -22,7 +22,7 @@ import { BackButton } from "../../../components/BackButton";
 import { useAuth } from "../../../hooks/useAuth";
 import * as iotAlertsService from "../../../services/iotAlertsService";
 
-const POLL_INTERVAL = 5000; // 5 secondes
+const POLL_INTERVAL = 5000;
 
 const ACTIVITY_LABELS: Record<string, string> = {
   REST: "Repos",
@@ -36,7 +36,6 @@ const ACTIVITY_ICONS: Record<string, keyof typeof MaterialCommunityIcons.glyphMa
   GRAZING: "grass",
 };
 
-// Mapping des types de capteurs vers des noms d'icônes Ionicons
 const SENSOR_TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   LOCALIZATION: "location",
   TEMPERATURE: "thermometer",
@@ -46,7 +45,6 @@ const SENSOR_TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   HEART_RATE: "heart",
 };
 
-// ── Quelles métriques sont pertinentes pour quel type de capteur ──
 const SENSOR_METRICS: Record<string, { temperature: boolean; activity: boolean; battery: boolean }> = {
   LOCALIZATION: { temperature: false, activity: true, battery: true },
   TEMPERATURE: { temperature: true, activity: false, battery: true },
@@ -58,9 +56,8 @@ const SENSOR_METRICS: Record<string, { temperature: boolean; activity: boolean; 
 
 const DEFAULT_METRICS = { temperature: true, activity: true, battery: true };
 
-// ── Reverse geocoding: coordonnées → nom de lieu ──
-const COORD_PRECISION = 4; // ≈ 11m : regroupe les pings très proches sous la même clé de cache
-const NOMINATIM_MIN_INTERVAL_MS = 1100; // respecte la politique d'usage Nominatim (≈1 req/s)
+const COORD_PRECISION = 4;
+const NOMINATIM_MIN_INTERVAL_MS = 1100;
 
 function coordKey(lat: number, lng: number): string {
   return `${lat.toFixed(COORD_PRECISION)},${lng.toFixed(COORD_PRECISION)}`;
@@ -133,18 +130,13 @@ export default function IoTLiveScreen() {
   const [unresolvedCount, setUnresolvedCount] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ── Détail du capteur sélectionné (modale) ──
   const [selectedReading, setSelectedReading] = useState<LatestSensorData | null>(null);
 
-  // ── État du reverse geocoding ──
   const [placeNames, setPlaceNames] = useState<Record<string, string>>({});
   const geocodeCacheRef = useRef<Map<string, string>>(new Map());
   const pendingGeocodesRef = useRef<Set<string>>(new Set());
   const failedGeocodesRef = useRef<Set<string>>(new Set());
   const geocodeQueueRef = useRef<Promise<void>>(Promise.resolve());
-
-  // Récupérer l'exploitationId (à typer correctement dans le type User)
-  const exploitationId = (user as any)?.exploitationId;
 
   function queueGeocode(lat: number, lng: number, key: string) {
     geocodeQueueRef.current = geocodeQueueRef.current
@@ -214,8 +206,7 @@ export default function IoTLiveScreen() {
   }
 
   async function loadAlertCount() {
-    if (!exploitationId) return;
-    const result = await iotAlertsService.getAlertSummary(exploitationId);
+    const result = await iotAlertsService.getAlertSummary();
     if (result.success) {
       const total = Object.values(result.summary).reduce((a, b) => a + b, 0);
       setUnresolvedCount(total);
@@ -250,15 +241,12 @@ export default function IoTLiveScreen() {
     setRefreshing(false);
   }
 
-  // Garde le détail affiché synchronisé avec les nouvelles données qui arrivent
-  // (le polling met à jour `readings` toutes les 5s pendant que la modale est ouverte)
   useEffect(() => {
     if (!selectedReading) return;
     const updated = readings.find((r) => r.shield.id === selectedReading.shield.id);
     if (updated) setSelectedReading(updated);
   }, [readings]);
 
-  // ── Le compteur d'alertes ne doit compter que les capteurs de température ──
   const alertCount = readings.filter((r) => {
     if (r.shield.sensorType !== "TEMPERATURE") return false;
     const t = r.temperature ? parseFloat(r.temperature) : null;
@@ -283,7 +271,6 @@ export default function IoTLiveScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.container}>
-        {/* ── Header ── */}
         <View style={styles.header}>
           <BackButton variant="dark" style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
@@ -297,7 +284,6 @@ export default function IoTLiveScreen() {
             </View>
           </View>
 
-          {/* 📊 Bouton Historique & Analytics */}
           <Pressable
             onPress={() => router.push("/iot/analytics" as any)}
             style={styles.analyticsButton}
@@ -306,7 +292,6 @@ export default function IoTLiveScreen() {
             <Ionicons name="stats-chart-outline" size={22} color="#1A1A18" />
           </Pressable>
 
-          {/* 🗺️ Bouton Zones de pâturage */}
           <Pressable
             onPress={() => router.push("/iot/zones" as any)}
             style={styles.zonesButton}
@@ -315,7 +300,6 @@ export default function IoTLiveScreen() {
             <Ionicons name="map-outline" size={22} color="#1A1A18" />
           </Pressable>
 
-          {/* 🔔 Bouton Alertes avec badge */}
           <Pressable
             onPress={() => router.push("/iot/alerts" as any)}
             style={styles.alertButton}
@@ -341,7 +325,6 @@ export default function IoTLiveScreen() {
             </Text>
           </Pressable>
 
-          {/* 🔄 Bouton Actualiser — icône seule, à côté du toggle Auto/Manuel */}
           <Pressable
             onPress={onRefresh}
             style={styles.refreshIconButton}
@@ -355,7 +338,6 @@ export default function IoTLiveScreen() {
           </Pressable>
         </View>
 
-        {/* ── Summary bar ── */}
         {!loading && readings.length > 0 && (
           <View style={styles.summaryBar}>
             <View style={styles.summaryItem}>
@@ -435,7 +417,6 @@ export default function IoTLiveScreen() {
                   style={[styles.sensorCard, isAlert && styles.sensorCardAlert]}
                   onPress={() => setSelectedReading(item)}
                 >
-                  {/* Header row */}
                   <View style={styles.cardTopRow}>
                     <View style={styles.cardIdentity}>
                       <View style={styles.cardIconWrap}>
@@ -459,7 +440,6 @@ export default function IoTLiveScreen() {
                     </View>
                   )}
 
-                  {/* Metrics grid — n'affiche que les métriques pertinentes pour ce capteur */}
                   {visibleMetricsCount > 0 && (
                     <View style={styles.metricsGrid}>
                       {showTemperature && (
@@ -504,7 +484,6 @@ export default function IoTLiveScreen() {
                     </View>
                   )}
 
-                  {/* GPS row — affiche le nom du lieu résolu au lieu des coordonnées brutes */}
                   <View style={styles.gpsRow}>
                     <Ionicons
                       name="location-outline"
@@ -519,7 +498,6 @@ export default function IoTLiveScreen() {
                     )}
                   </View>
 
-                  {/* Footer */}
                   <View style={styles.cardFooter}>
                     <Text style={styles.footerTime}>
                       {formatTime(item.measuredAt)} · {timeAgoLabel(item.measuredAt)}
@@ -536,7 +514,6 @@ export default function IoTLiveScreen() {
         )}
       </View>
 
-      {/* ── Modale de détail des données du capteur (pas la fiche du bouclier) ── */}
       <Modal
         visible={!!selectedReading}
         animationType="slide"
@@ -594,7 +571,6 @@ export default function IoTLiveScreen() {
                   </View>
 
                   <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-                    {/* Section données du relevé */}
                     <Text style={styles.modalSectionTitle}>Données du relevé</Text>
 
                     {showTemperature && (
@@ -634,7 +610,6 @@ export default function IoTLiveScreen() {
                       </Text>
                     </View>
 
-                    {/* Section position */}
                     <Text style={styles.modalSectionTitle}>Position</Text>
 
                     <View style={styles.modalDataRow}>
@@ -662,7 +637,6 @@ export default function IoTLiveScreen() {
                       </View>
                     )}
 
-                    {/* Section horodatage */}
                     <Text style={styles.modalSectionTitle}>Horodatage</Text>
 
                     <View style={styles.modalDataRow}>
@@ -676,8 +650,6 @@ export default function IoTLiveScreen() {
                     <View style={{ height: 24 }} />
                   </ScrollView>
 
-                  {/* Lien vers la fiche du bouclier, pour ceux qui en ont besoin, sans que
-                      ce soit le comportement par défaut au clic sur la carte */}
                   <Pressable
                     style={styles.modalShieldLink}
                     onPress={() => {
@@ -709,7 +681,6 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FAF8F4" },
   container: { flex: 1, paddingHorizontal: 16 },
 
-  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -782,7 +753,6 @@ const styles = StyleSheet.create({
     borderColor: BORDER,
   },
 
-  // Summary bar
   summaryBar: {
     flexDirection: "row",
     backgroundColor: "#fff",
@@ -834,7 +804,6 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 15, fontWeight: "700", color: "#1A1A18", marginBottom: 4 },
   emptyBody: { fontSize: 13, color: TEXT_MUTED, textAlign: "center", lineHeight: 18 },
 
-  // Sensor card
   sensorCard: {
     backgroundColor: "#fff",
     borderRadius: 16,
@@ -918,7 +887,6 @@ const styles = StyleSheet.create({
   detailLink: { flexDirection: "row", alignItems: "center", gap: 2 },
   detailLinkText: { fontSize: 12, fontWeight: "700", color: GREEN },
 
-  // ── Modale de détail ──
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(26, 26, 24, 0.4)",

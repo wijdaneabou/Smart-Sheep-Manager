@@ -6,38 +6,38 @@ import {
   resolveAlertHandler,
 } from "../controllers/iotAlerts.controller.js";
 import { isAuthenticated } from "../middlewares/auth.middleware.js";
-import { requireRole } from "../middlewares/rbac.middleware.js";
+import { requirePermission } from "../middlewares/permissions.middleware.js"; 
 
 const iotAlertsRoutes = new Hono();
 
 // Toutes les routes nécessitent une authentification JWT
 iotAlertsRoutes.use("*", isAuthenticated);
 
-// GET /api/iot-alerts?exploitationId=1&resolved=false&type=HIGH_TEMPERATURE
+// GET /api/iot-alerts?resolved=false&type=HIGH_TEMPERATURE
 iotAlertsRoutes.get(
   "/",
-  requireRole("ADMIN", "MANAGER", "ELEVEUR", "VETERINAIRE", "OUVRIER"),
+  requirePermission('IOT', 'ALERTS:READ'),  
   listAlertsHandler
 );
 
-// GET /api/iot-alerts/summary?exploitationId=1
+// GET /api/iot-alerts/summary
 iotAlertsRoutes.get(
   "/summary",
-  requireRole("ADMIN", "MANAGER", "ELEVEUR", "VETERINAIRE", "OUVRIER"),
+  requirePermission('IOT', 'ALERTS:READ'),
   getAlertSummaryHandler
 );
 
 // GET /api/iot-alerts/:id
 iotAlertsRoutes.get(
   "/:id",
-  requireRole("ADMIN", "MANAGER", "ELEVEUR", "VETERINAIRE", "OUVRIER"),
+  requirePermission('IOT', 'ALERTS:READ'),
   getAlertByIdHandler
 );
 
 // PATCH /api/iot-alerts/:id/resolve
 iotAlertsRoutes.patch(
   "/:id/resolve",
-  requireRole("ADMIN", "MANAGER", "ELEVEUR", "VETERINAIRE", "OUVRIER"),
+  requirePermission('IOT', 'ALERTS:UPDATE'), // Resolving is an update action
   resolveAlertHandler
 );
 

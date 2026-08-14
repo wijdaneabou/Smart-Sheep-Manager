@@ -1,15 +1,16 @@
 import {
   createAlert as createAlertInDb,
   findAlertById,
-  listAlertsByExploitation as listAlertsByExploitationInDb,
+  listAlertsByExploitationIds,
   resolveAlert as resolveAlertInDb,
   hasUnresolvedAlert,
   listUnresolvedAlertsByShield,
-  countUnresolvedAlertsByExploitation as countUnresolvedAlertsByExploitationInDb,
+  countUnresolvedAlertsByExploitationIds,
 } from "../repositories/iotAlerts.repository.js";
 import { isPointInsideAnyZone } from "./iotZones.service.js";
 import { findIotShieldById } from "../repositories/iotShields.repository.js";
 import { findExploitationById } from "../repositories/exploitations.repository.js";
+import { getUserExploitationIdsWithAdmin } from "../utils/userHelpers.js";
 import { db } from "../db/connection.js";
 import { iotSensorData } from "../db/schema/iotSensorData.js";
 import { eq, and, desc, asc, ne } from "drizzle-orm";
@@ -119,15 +120,19 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+// ── Helper: check if alert belongs to user's exploitations ──
+
+async function alertBelongsToUser(alertId: number, user: any): Promise<boolean> {
+  const alert = await findAlertById(alertId);
+  if (!alert) return false;
+  if (user.roleName?.toLowerCase() === 'admin') return true;
+  const userExploitationIds = await getUserExploitationIdsWithAdmin(user);
+  if (!userExploitationIds || userExploitationIds.length === 0) return false;
+  return userExploitationIds.includes(alert.exploitationId!);
+}
+
 // ── Core alert detection ──────────────────────────────────────────
 
-/**
- * NOTE : on ne charge plus la lecture + shield + animal + exploitation via
- * db.query.iotSensorData.findFirst({ with: { shield: { with: {...} } } } }).
- * Ce pattern génère un LEFT JOIN LATERAL que MariaDB rejette (ER_PARSE_ERROR).
- * On récupère donc la lecture par un simple select, puis on réutilise
- * findIotShieldById (déjà en jointures explicites) + findExploitationById.
- */
 export async function evaluateSensorDataForAlerts(sensorDataId: number) {
   const rows = await db
     .select()
@@ -188,7 +193,7 @@ export async function evaluateSensorDataForAlerts(sensorDataId: number) {
     }
   }
 
-  // 3. Inactivity > 2h — pas de `with:`, donc pas de LATERAL, OK sous MariaDB
+  // 3. Inactivity > 2h
   if (sensorData.activity === "REST" && animal) {
     const lastActive = await db.query.iotSensorData.findFirst({
       where: and(
@@ -231,10 +236,7 @@ export async function evaluateSensorDataForAlerts(sensorDataId: number) {
     }
   }
 
-  // 4. Out of zone — test polygonal réel contre les zones définies (US-4.4),
-  // plus le cercle approximatif de 5km. Si aucune zone n'est définie pour
-  // l'exploitation, on ne déclenche pas d'alerte (pas de faux positif tant
-  // que l'éleveur n'a pas configuré de zone de pâturage).
+  // 4. Out of zone
   if (sensorData.latitude && sensorData.longitude && exploitationId) {
     const lat = parseFloat(sensorData.latitude);
     const lng = parseFloat(sensorData.longitude);
@@ -257,7 +259,6 @@ export async function evaluateSensorDataForAlerts(sensorDataId: number) {
         });
       }
     } else if (insideZone) {
-      // De retour dans une zone : résoudre une éventuelle alerte active
       const already = await hasUnresolvedAlert(shield.id, "OUT_OF_ZONE");
       if (already) {
         const zoneAlert = await listUnresolvedAlertsByShield(shield.id);
@@ -290,18 +291,24 @@ export type ListAlertsResult =
   | { success: true; status: 200; alerts: SerializedAlert[]; total: number }
   | { success: false; status: 400; message: string };
 
-export async function listAlerts(params: {
-  exploitationId?: number;
-  resolved?: boolean;
-  type?: string;
-  limit?: number;
-  offset?: number;
-}): Promise<ListAlertsResult> {
-  if (!params.exploitationId) {
-    return { success: false, status: 400, message: "exploitationId requis." };
+export async function listAlerts(
+  user: any,
+  params: {
+    resolved?: boolean;
+    type?: string;
+    limit?: number;
+    offset?: number;
   }
-  const { rows, total } = await listAlertsByExploitationInDb(
-    params.exploitationId,
+): Promise<ListAlertsResult> {
+  const exploitationIds = await getUserExploitationIdsWithAdmin(user);
+
+  // ✅ Early return if no exploitations
+  if (exploitationIds !== null && exploitationIds.length === 0) {
+    return { success: true, status: 200, alerts: [], total: 0 };
+  }
+
+  const { rows, total } = await listAlertsByExploitationIds(
+    exploitationIds,
     {
       resolved: params.resolved,
       type: params.type,
@@ -309,6 +316,7 @@ export async function listAlerts(params: {
       offset: params.offset,
     }
   );
+
   return {
     success: true,
     status: 200,
@@ -319,23 +327,37 @@ export async function listAlerts(params: {
 
 export type GetAlertResult =
   | { success: true; status: 200; alert: SerializedAlert }
+  | { success: false; status: 403; message: string }
   | { success: false; status: 404; message: string };
 
-export async function getAlertById(id: number): Promise<GetAlertResult> {
+export async function getAlertById(id: number, user: any): Promise<GetAlertResult> {
+  if (!(await alertBelongsToUser(id, user))) {
+    return { success: false, status: 403, message: "Accès interdit à cette alerte." };
+  }
   const alert = await findAlertById(id);
-  if (!alert) return { success: false, status: 404, message: "Alerte introuvable." };
+  if (!alert) {
+    return { success: false, status: 404, message: "Alerte introuvable." };
+  }
   return { success: true, status: 200, alert: serializeAlert(alert) };
 }
 
 export type ResolveAlertResult =
   | { success: true; status: 200; alert: SerializedAlert }
+  | { success: false; status: 403; message: string }
   | { success: false; status: 404; message: string };
 
-export async function resolveAlert(id: number): Promise<ResolveAlertResult> {
+export async function resolveAlert(id: number, user: any): Promise<ResolveAlertResult> {
+  if (!(await alertBelongsToUser(id, user))) {
+    return { success: false, status: 403, message: "Accès interdit à cette alerte." };
+  }
   const existing = await findAlertById(id);
-  if (!existing) return { success: false, status: 404, message: "Alerte introuvable." };
+  if (!existing) {
+    return { success: false, status: 404, message: "Alerte introuvable." };
+  }
   const resolved = await resolveAlertInDb(id);
-  if (!resolved) return { success: false, status: 404, message: "Alerte introuvable." };
+  if (!resolved) {
+    return { success: false, status: 404, message: "Alerte introuvable." };
+  }
   return { success: true, status: 200, alert: serializeAlert(resolved) };
 }
 
@@ -343,9 +365,15 @@ export type AlertSummaryResult =
   | { success: true; status: 200; summary: Record<string, number> }
   | { success: false; status: 400; message: string };
 
-export async function getAlertSummary(exploitationId: number): Promise<AlertSummaryResult> {
-  if (!exploitationId) return { success: false, status: 400, message: "exploitationId requis." };
-  const counts = await countUnresolvedAlertsByExploitationInDb(exploitationId);
+export async function getAlertSummary(user: any): Promise<AlertSummaryResult> {
+  const exploitationIds = await getUserExploitationIdsWithAdmin(user);
+
+  // ✅ Early return if no exploitations
+  if (exploitationIds !== null && exploitationIds.length === 0) {
+    return { success: true, status: 200, summary: {} };
+  }
+
+  const counts = await countUnresolvedAlertsByExploitationIds(exploitationIds);
   const summary: Record<string, number> = {};
   for (const row of counts) {
     summary[row.type] = Number(row.count);

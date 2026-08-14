@@ -51,8 +51,11 @@ function extractError(err: any): string {
   return err?.response?.data?.message ?? "Impossible de contacter le serveur.";
 }
 
+/**
+ * ✅ Updated: exploitationId removed from list params.
+ * Backend now filters based on authenticated user's exploitations.
+ */
 export async function listIotShields(params: {
-  exploitationId?: number;
   page?: number;
   limit?: number;
   search?: string;
@@ -79,13 +82,16 @@ export async function getIotShieldById(id: number) {
   }
 }
 
+/**
+ * ✅ Updated: exploitationId is optional; backend will validate or use user's first exploitation.
+ */
 export async function createIotShield(input: {
   ssmIotNumber: string;
   sensorType: SensorType;
   battery?: number;
   animalId?: number | null;
   status?: ShieldStatus;
-  exploitationId?: number | null;
+  exploitationId?: number | null; // optional, backend will validate
 }) {
   try {
     const response = await api.post<{ data: IotShield }>("/iot-shields", input);
@@ -134,10 +140,6 @@ export async function deleteIotShield(id: number) {
   }
 }
 
-/**
- * Associate (or dissociate) an animal with an IoT shield.
- * Pass null to dissociate.
- */
 export async function associateAnimalToShield(
   shieldId: number,
   animalId: number | null
@@ -153,9 +155,6 @@ export async function associateAnimalToShield(
   }
 }
 
-/**
- * Update the battery level of a shield.
- */
 export async function updateBatteryLevel(shieldId: number, battery: number) {
   try {
     const response = await api.patch<{ data: IotShield }>(
@@ -168,9 +167,6 @@ export async function updateBatteryLevel(shieldId: number, battery: number) {
   }
 }
 
-/**
- * Toggle the active/inactive status of a shield.
- */
 export async function toggleShieldStatus(shieldId: number) {
   try {
     const response = await api.patch<{ data: IotShield }>(

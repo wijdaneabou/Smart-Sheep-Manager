@@ -18,19 +18,24 @@ function extractError(err: any): string {
   return err?.response?.data?.message ?? "Impossible de contacter le serveur.";
 }
 
-export async function listZones(exploitationId: number) {
+/**
+ * ✅ Updated: exploitationId removed from params.
+ * Backend now filters based on authenticated user's exploitations.
+ */
+export async function listZones() {
   try {
-    const response = await api.get<{ data: IotZone[] }>("/iot-zones", {
-      params: { exploitationId },
-    });
+    const response = await api.get<{ data: IotZone[] }>("/iot-zones");
     return { success: true as const, data: response.data.data };
   } catch (err: any) {
     return { success: false as const, message: extractError(err) };
   }
 }
 
+/**
+ * ✅ Updated: exploitationId is optional; backend will validate or use user's first exploitation.
+ */
 export async function createZone(input: {
-  exploitationId: number;
+  exploitationId?: number; // optional, backend will validate
   name: string;
   color?: string;
   polygon: ZonePoint[];

@@ -2,7 +2,7 @@ import { db } from "../db/connection.js";
 import { iotShields } from "../db/schema/iotShields.js";
 import { animals } from "../db/schema/animals.js";
 import { exploitations } from "../db/schema/exploitations.js";
-import { eq, and, like, desc, count, or, ne } from "drizzle-orm";
+import { eq, and, like, desc, count, or, ne, inArray } from "drizzle-orm"; // added inArray
 
 type CreateIotShieldData = typeof iotShields.$inferInsert;
 type UpdateIotShieldData = Partial<CreateIotShieldData>;
@@ -48,9 +48,6 @@ export async function findIotShieldBySsmIotNumber(ssmIotNumber: string) {
   return result ?? null;
 }
 
-/**
- * Utilisé par le middleware de clé API pour authentifier un capteur.
- */
 export async function findIotShieldByApiKey(apiKey: string) {
   const result = await db.query.iotShields.findFirst({
     where: eq(iotShields.apiKey, apiKey),
@@ -86,8 +83,9 @@ export async function deleteIotShield(id: number) {
   await db.delete(iotShields).where(eq(iotShields.id, id));
 }
 
+// 🔽 MODIFIED FUNCTION
 export async function listIotShields(params: {
-  exploitationId?: number;
+  exploitationIds?: number[] | null;          // changed: was exploitationId?: number;
   page: number;
   limit: number;
   search?: string;
@@ -96,8 +94,9 @@ export async function listIotShields(params: {
 }) {
   const conditions = [];
 
-  if (params.exploitationId) {
-    conditions.push(eq(iotShields.exploitationId, params.exploitationId));
+  // 🔁 Use inArray instead of eq
+  if (params.exploitationIds && params.exploitationIds.length > 0) {
+    conditions.push(inArray(iotShields.exploitationId, params.exploitationIds));
   }
 
   if (params.search) {

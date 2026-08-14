@@ -3,23 +3,15 @@ import { iotAlerts } from "../db/schema/iotAlerts.js";
 import { iotShields } from "../db/schema/iotShields.js";
 import { animals } from "../db/schema/animals.js";
 import { exploitations } from "../db/schema/exploitations.js";
-import { eq, and, desc, count, sql } from "drizzle-orm";
+import { eq, and, desc, count, sql, inArray } from "drizzle-orm"; // added inArray
 
 type CreateAlertData = typeof iotAlerts.$inferInsert;
 
-/**
- * Créer une nouvelle alerte
- */
 export async function createAlert(data: CreateAlertData) {
   const [result] = await db.insert(iotAlerts).values(data).$returningId();
   return findAlertById(result.id);
 }
 
-/**
- * Récupérer une alerte par son ID avec toutes les relations.
- * Jointures explicites (pas de db.query...with) — MariaDB ne supporte pas
- * le LEFT JOIN LATERAL que Drizzle génère pour les relations imbriquées.
- */
 export async function findAlertById(id: number) {
   const rows = await db
     .select({
@@ -70,10 +62,11 @@ export async function findAlertById(id: number) {
 }
 
 /**
- * Lister les alertes d'une exploitation avec filtres
+ * Lister les alertes pour une ou plusieurs exploitations avec filtres.
+ * Si exploitationIds est null ou vide, aucune restriction (admin).
  */
-export async function listAlertsByExploitation(
-  exploitationId: number,
+export async function listAlertsByExploitationIds(
+  exploitationIds: number[] | null, // changed from single exploitationId
   options?: {
     resolved?: boolean;
     type?: string;
@@ -81,7 +74,12 @@ export async function listAlertsByExploitation(
     offset?: number;
   }
 ) {
-  const conditions = [eq(iotAlerts.exploitationId, exploitationId)];
+  const conditions = [];
+
+  // ✅ Appliquer le filtre si exploitationIds est fourni et non vide
+  if (exploitationIds && exploitationIds.length > 0) {
+    conditions.push(inArray(iotAlerts.exploitationId, exploitationIds));
+  }
 
   if (options?.resolved !== undefined) {
     conditions.push(eq(iotAlerts.resolved, options.resolved ? 1 : 0));
@@ -90,7 +88,7 @@ export async function listAlertsByExploitation(
     conditions.push(eq(iotAlerts.type, options.type as any));
   }
 
-  const whereClause = and(...conditions);
+  const whereClause = conditions.length ? and(...conditions) : undefined;
   const limit = options?.limit ?? 100;
   const offset = options?.offset ?? 0;
 
@@ -110,9 +108,6 @@ export async function listAlertsByExploitation(
   return { rows, total };
 }
 
-/**
- * Vérifier si une alerte non résolue existe déjà pour un bouclier et un type
- */
 export async function hasUnresolvedAlert(
   shieldId: number,
   type: string
@@ -130,9 +125,6 @@ export async function hasUnresolvedAlert(
   return Number(result[0]?.count ?? 0) > 0;
 }
 
-/**
- * Marquer une alerte comme résolue
- */
 export async function resolveAlert(id: number) {
   await db
     .update(iotAlerts)
@@ -142,30 +134,30 @@ export async function resolveAlert(id: number) {
 }
 
 /**
- * Compter les alertes non résolues par type pour une exploitation
+ * Compter les alertes non résolues par type pour une ou plusieurs exploitations.
  */
-export async function countUnresolvedAlertsByExploitation(
-  exploitationId: number
+export async function countUnresolvedAlertsByExploitationIds(
+  exploitationIds: number[] | null
 ) {
+  const conditions = [];
+  if (exploitationIds && exploitationIds.length > 0) {
+    conditions.push(inArray(iotAlerts.exploitationId, exploitationIds));
+  }
+  conditions.push(eq(iotAlerts.resolved, 0));
+
+  const whereClause = and(...conditions);
+
   const result = await db
     .select({
       type: iotAlerts.type,
       count: sql<number>`count(*)`,
     })
     .from(iotAlerts)
-    .where(
-      and(
-        eq(iotAlerts.exploitationId, exploitationId),
-        eq(iotAlerts.resolved, 0)
-      )
-    )
+    .where(whereClause)
     .groupBy(iotAlerts.type);
   return result;
 }
 
-/**
- * Lister les alertes non résolues d'un bouclier
- */
 export async function listUnresolvedAlertsByShield(shieldId: number) {
   return db
     .select()
@@ -174,9 +166,6 @@ export async function listUnresolvedAlertsByShield(shieldId: number) {
     .orderBy(desc(iotAlerts.createdAt));
 }
 
-/**
- * Lister les alertes non résolues d'un animal
- */
 export async function listUnresolvedAlertsByAnimal(animalId: number) {
   return db
     .select()

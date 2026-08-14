@@ -1,13 +1,14 @@
 import {
   createZone as createZoneInDb,
   findZoneById,
-  listZonesByExploitation as listZonesByExploitationInDb,
+  listZonesByExploitationIds,
   updateZone as updateZoneInDb,
   deleteZone as deleteZoneInDb,
 } from "../repositories/iotZones.repository.js";
 import type { ZonePoint } from "../db/schema/iotZones.js";
+import { getUserExploitationIdsWithAdmin } from "../utils/userHelpers.js";
 
-// ── Sérialisation ─────────────────────────────────────────────────
+// ── Serialization ─────────────────────────────────────────────────
 
 export interface SerializedZone {
   id: number;
@@ -50,7 +51,7 @@ function validatePolygon(polygon: ZonePoint[]): string | null {
   return null;
 }
 
-// ── Test point-dans-polygone (ray casting) ─────────────────────────
+// ── Test point-in-polygon ─────────────────────────────────────────
 
 function isPointInPolygon(point: ZonePoint, polygon: ZonePoint[]): boolean {
   let inside = false;
@@ -67,18 +68,12 @@ function isPointInPolygon(point: ZonePoint, polygon: ZonePoint[]): boolean {
   return inside;
 }
 
-/**
- * Vérifie si un point (lat/lng) se trouve dans au moins une des zones de
- * l'exploitation. Si l'exploitation n'a défini AUCUNE zone, on considère
- * qu'il n'y a pas de restriction (retourne true) — pas de fausse alerte
- * tant que l'éleveur n'a pas configuré de zone.
- */
 export async function isPointInsideAnyZone(
   exploitationId: number,
   lat: number,
   lng: number
 ): Promise<{ insideZone: boolean; hasZonesDefined: boolean }> {
-  const zones = await listZonesByExploitationInDb(exploitationId);
+  const zones = await listZonesByExploitationIds([exploitationId]);
   if (zones.length === 0) {
     return { insideZone: true, hasZonesDefined: false };
   }
@@ -91,25 +86,66 @@ export async function isPointInsideAnyZone(
   return { insideZone, hasZonesDefined: true };
 }
 
-// ── API publique (CRUD) ─────────────────────────────────────────────
+// ── Helper: zone ownership ─────────────────────────────────────────
+
+async function zoneBelongsToUser(zoneId: number, user: any): Promise<boolean> {
+  const zone = await findZoneById(zoneId);
+  if (!zone) return false;
+  if (user.roleName?.toLowerCase() === 'admin') return true;
+  const userExploitationIds = await getUserExploitationIdsWithAdmin(user);
+  if (!userExploitationIds || userExploitationIds.length === 0) return false;
+  return userExploitationIds.includes(zone.exploitationId);
+}
+
+// ── API ─────────────────────────────────────────────────────────────
 
 export type CreateZoneResult =
   | { success: true; status: 201; zone: SerializedZone }
-  | { success: false; status: 400; message: string };
+  | { success: false; status: 400; message: string }
+  | { success: false; status: 403; message: string };
 
-export async function createZone(input: {
-  exploitationId: number;
-  name: string;
-  color?: string;
-  polygon: ZonePoint[];
-}): Promise<CreateZoneResult> {
+export async function createZone(
+  input: {
+    exploitationId?: number;
+    name: string;
+    color?: string;
+    polygon: ZonePoint[];
+  },
+  user: any
+): Promise<CreateZoneResult> {
   const validationError = validatePolygon(input.polygon);
   if (validationError) {
     return { success: false, status: 400, message: validationError };
   }
 
+  let exploitationId: number | null = input.exploitationId ?? null;
+
+  if (!exploitationId) {
+    const userExploitationIds = await getUserExploitationIdsWithAdmin(user);
+    if (userExploitationIds && userExploitationIds.length > 0) {
+      exploitationId = userExploitationIds[0];
+    } else {
+      return {
+        success: false,
+        status: 400,
+        message: "Aucune exploitation associée à cet utilisateur. Veuillez en spécifier une.",
+      };
+    }
+  } else {
+    if (user.roleName?.toLowerCase() !== 'admin') {
+      const userExploitationIds = await getUserExploitationIdsWithAdmin(user);
+      if (!userExploitationIds || !userExploitationIds.includes(exploitationId)) {
+        return {
+          success: false,
+          status: 403,
+          message: "Vous n'avez pas accès à cette exploitation.",
+        };
+      }
+    }
+  }
+
   const zone = await createZoneInDb({
-    exploitationId: input.exploitationId,
+    exploitationId,
     name: input.name,
     color: input.color ?? "#0F7A3C",
     polygon: JSON.stringify(input.polygon),
@@ -121,22 +157,36 @@ export async function createZone(input: {
   return { success: true, status: 201, zone: serializeZone(zone) };
 }
 
-export type ListZonesResult = { success: true; status: 200; zones: SerializedZone[] };
+export type ListZonesResult =
+  | { success: true; status: 200; zones: SerializedZone[] };
 
-export async function listZones(exploitationId: number): Promise<ListZonesResult> {
-  const rows = await listZonesByExploitationInDb(exploitationId);
+export async function listZones(user: any): Promise<ListZonesResult> {
+  const exploitationIds = await getUserExploitationIdsWithAdmin(user);
+
+  // ✅ Early return if no exploitations
+  if (exploitationIds !== null && exploitationIds.length === 0) {
+    return { success: true, status: 200, zones: [] };
+  }
+
+  const rows = await listZonesByExploitationIds(exploitationIds);
   return { success: true, status: 200, zones: rows.map(serializeZone) };
 }
 
 export type UpdateZoneResult =
   | { success: true; status: 200; zone: SerializedZone }
   | { success: false; status: 400; message: string }
+  | { success: false; status: 403; message: string }
   | { success: false; status: 404; message: string };
 
 export async function updateZone(
   id: number,
-  input: { name?: string; color?: string; polygon?: ZonePoint[] }
+  input: { name?: string; color?: string; polygon?: ZonePoint[] },
+  user: any
 ): Promise<UpdateZoneResult> {
+  if (!(await zoneBelongsToUser(id, user))) {
+    return { success: false, status: 403, message: "Accès interdit à cette zone." };
+  }
+
   const existing = await findZoneById(id);
   if (!existing) {
     return { success: false, status: 404, message: "Zone introuvable." };
@@ -163,9 +213,13 @@ export async function updateZone(
 
 export type DeleteZoneResult =
   | { success: true; status: 200 }
+  | { success: false; status: 403; message: string }
   | { success: false; status: 404; message: string };
 
-export async function deleteZone(id: number): Promise<DeleteZoneResult> {
+export async function deleteZone(id: number, user: any): Promise<DeleteZoneResult> {
+  if (!(await zoneBelongsToUser(id, user))) {
+    return { success: false, status: 403, message: "Accès interdit à cette zone." };
+  }
   const existing = await findZoneById(id);
   if (!existing) {
     return { success: false, status: 404, message: "Zone introuvable." };

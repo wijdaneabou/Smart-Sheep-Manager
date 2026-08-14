@@ -20,6 +20,7 @@ import {
 } from "../../../services/iotShieldsService";
 import { SENSOR_TYPES, getSensorTypeInfo, getShieldStatusInfo } from "../../../constants/iot";
 import { BackButton } from "../../../components/BackButton";
+import { usePermissions } from "../../../contexts/PermissionsContext";
 
 type FilterType = "TOUT" | SensorType;
 type StatusFilterType = "TOUT" | ShieldStatus;
@@ -35,13 +36,10 @@ export default function IoTShieldScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Garde une référence "vivante" des filtres pour que fetchShields()
-  // utilise toujours les valeurs les plus récentes, même appelée depuis
-  // un callback capturé plus tôt (ex: useFocusEffect).
+  const { hasPermission } = usePermissions();
+
   const filtersRef = useRef({ search, sensorFilter, statusFilter });
   filtersRef.current = { search, sensorFilter, statusFilter };
-
-  // Pour ignorer les réponses obsolètes si l'utilisateur change vite les filtres
   const requestIdRef = useRef(0);
 
   async function fetchShields() {
@@ -56,7 +54,6 @@ export default function IoTShieldScreen() {
       limit: 50,
     });
 
-    // Une requête plus récente est déjà partie/arrivée : on ignore ce résultat périmé
     if (requestId !== requestIdRef.current) return;
 
     if (result.success) {
@@ -66,7 +63,6 @@ export default function IoTShieldScreen() {
     }
   }
 
-  // Premier chargement + rechargement à chaque retour sur l'écran
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
@@ -74,8 +70,6 @@ export default function IoTShieldScreen() {
     }, [])
   );
 
-  // ── Relance la recherche automatiquement quand les filtres changent ──
-  // (on saute le tout premier rendu, déjà couvert par useFocusEffect ci-dessus)
   const isFirstRender = useRef(true);
   useEffect(() => {
     if (isFirstRender.current) {
@@ -86,9 +80,8 @@ export default function IoTShieldScreen() {
     fetchShields().finally(() => setLoading(false));
   }, [sensorFilter, statusFilter]);
 
-  // ── Recherche texte debouncée : on attend que l'utilisateur arrête de taper ──
   useEffect(() => {
-    if (isFirstRender.current) return; // déjà géré par le focus effect initial
+    if (isFirstRender.current) return;
     const timeout = setTimeout(() => {
       setLoading(true);
       fetchShields().finally(() => setLoading(false));
@@ -109,7 +102,6 @@ export default function IoTShieldScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.headerRow}>
           <BackButton variant="dark" style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
@@ -121,7 +113,6 @@ export default function IoTShieldScreen() {
           </View>
         </View>
 
-        {/* Real-time tracking link */}
         <Link href={"/iot/live" as any} asChild>
           <Pressable style={styles.liveButton}>
             <Text style={styles.liveButtonIcon}>📡</Text>
@@ -129,7 +120,6 @@ export default function IoTShieldScreen() {
           </Pressable>
         </Link>
 
-        {/* Search */}
         <View style={styles.searchRow}>
           <View style={styles.searchInputWrap}>
             <Text style={styles.searchIcon}>🔍</Text>
@@ -156,7 +146,6 @@ export default function IoTShieldScreen() {
           </View>
         </View>
 
-        {/* Sensor Type Filter */}
         <View style={styles.filterRow}>
           <FilterPill
             label="Tous les capteurs"
@@ -173,7 +162,6 @@ export default function IoTShieldScreen() {
           ))}
         </View>
 
-        {/* Status Filter */}
         <View style={styles.filterRow}>
           <FilterPill
             label={`Tous (${shields.length})`}
@@ -285,11 +273,13 @@ export default function IoTShieldScreen() {
           />
         )}
 
-        <Link href={"/iot/create" as any} asChild>
-          <Pressable style={styles.fab}>
-            <Text style={styles.fabIcon}>+</Text>
-          </Pressable>
-        </Link>
+        {hasPermission('IOT', 'SHIELDS:CREATE') && (
+          <Link href={"/iot/create" as any} asChild>
+            <Pressable style={styles.fab}>
+              <Text style={styles.fabIcon}>+</Text>
+            </Pressable>
+          </Link>
+        )}
       </View>
     </SafeAreaView>
   );

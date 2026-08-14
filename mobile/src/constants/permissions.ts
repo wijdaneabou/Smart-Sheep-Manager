@@ -19,10 +19,10 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'HERD:READ', 'HERD:VALIDATE', 'HERD:EXPORT',
     'HEALTH:READ', 'HEALTH:VALIDATE', 'HEALTH:EXPORT',
     'REPRODUCTION:READ', 'REPRODUCTION:EXPORT',
-    // 🟢 IOT - Manager (lecture + création limitée)
-    'IOT:SHIELDS:READ', 'IOT:SHIELDS:CREATE',
+    // 🟢 IOT - Manager (READ ONLY - US-4.5)
+    'IOT:SHIELDS:READ',
     'IOT:SENSOR:READ',
-    'IOT:ALERTS:READ', 'IOT:ALERTS:CREATE',
+    'IOT:ALERTS:READ',
     'IOT:ZONES:READ',
     'IOT:ANALYTICS:READ',
   ],
@@ -31,31 +31,29 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'HERD:READ', 'HERD:CREATE', 'HERD:UPDATE', 'HERD:DELETE',
     'HEALTH:READ', 'HEALTH:CREATE', 'HEALTH:UPDATE',
     'REPRODUCTION:READ', 'REPRODUCTION:CREATE', 'REPRODUCTION:UPDATE', 'REPRODUCTION:DELETE',
-    // 🟢 IOT - Eleveur (lecture seulement)
-    'IOT:SHIELDS:READ',
-    'IOT:SENSOR:READ',
-    'IOT:ALERTS:READ',
-    'IOT:ZONES:READ',
+    // 🟢 IOT - Eleveur (FULL CRUD - US-4.1 à 4.4)
+    'IOT:SHIELDS:READ', 'IOT:SHIELDS:CREATE', 'IOT:SHIELDS:UPDATE', 'IOT:SHIELDS:DELETE',
+    'IOT:SENSOR:READ', 'IOT:SENSOR:CREATE',
+    'IOT:ALERTS:READ', 'IOT:ALERTS:CREATE', 'IOT:ALERTS:UPDATE', 'IOT:ALERTS:DELETE',
+    'IOT:ZONES:READ', 'IOT:ZONES:CREATE', 'IOT:ZONES:UPDATE', 'IOT:ZONES:DELETE',
     'IOT:ANALYTICS:READ',
   ],
   ouvrier: [
     'EXPLOITATIONS:READ',
     'HERD:READ',
     'HEALTH:READ', 'HEALTH:UPDATE',
-    // 🟢 IOT - Ouvrier (lecture limitée)
-    'IOT:SHIELDS:READ',
-    'IOT:SENSOR:READ',
-    'IOT:ALERTS:READ',
+    // ❌ IOT - Ouvrier (aucune permission)
+    // Aucune ligne IOT
   ],
   veterinaire: [
     'EXPLOITATIONS:READ',
     'HERD:READ', 'HERD:UPDATE',
     'HEALTH:READ', 'HEALTH:CREATE', 'HEALTH:UPDATE', 'HEALTH:DELETE', 'HEALTH:VALIDATE',
     'REPRODUCTION:READ', 'REPRODUCTION:UPDATE',
-    // 🟢 IOT - Veterinaire (lecture + alertes)
+    // 🟢 IOT - Veterinaire (READ ONLY - US-4.6)
     'IOT:SHIELDS:READ',
     'IOT:SENSOR:READ',
-    'IOT:ALERTS:READ', 'IOT:ALERTS:UPDATE',
+    'IOT:ALERTS:READ',
     'IOT:ANALYTICS:READ',
   ],
   cooperative: [
@@ -63,11 +61,7 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'HERD:READ', 'HERD:AGGREGATE',
     'HEALTH:READ', 'HEALTH:AGGREGATE',
     'REPRODUCTION:READ', 'REPRODUCTION:AGGREGATE',
-    // 🟢 IOT - Cooperative (lecture + agrégation)
-    'IOT:SHIELDS:READ',
-    'IOT:SENSOR:READ',
-    'IOT:ALERTS:READ',
-    'IOT:ANALYTICS:READ',
+    
   ],
 };
 

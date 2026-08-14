@@ -3,18 +3,13 @@ import {
   getLatestSensorData as getLatestSensorDataInDb,
   getHistoricalSensorData as getHistoricalSensorDataInDb,
   getLatestForAllShields as getLatestForAllShieldsInDb,
-  getLatestSensorDataForExploitation as getLatestSensorDataForExploitationInDb,
+  getLatestSensorDataForExploitationIds,
   findSensorDataById,
 } from "../repositories/iotSensorData.repository.js";
 import { findIotShieldById } from "../repositories/iotShields.repository.js";
 import { upsertShieldStatus, findLatestByExploitation } from "../repositories/iotShieldStatus.repository.js";
 import { evaluateSensorDataForAlerts } from "./iotAlerts.service.js";
-import { db } from "../db/connection.js";
-import { iotSensorData } from "../db/schema/iotSensorData.js";
-import { iotShields } from "../db/schema/iotShields.js";
-import { animals } from "../db/schema/animals.js";
-import { exploitations } from "../db/schema/exploitations.js";
-import { eq, desc, and, sql, max } from "drizzle-orm";
+import { getUserExploitationIdsWithAdmin } from "../utils/userHelpers.js";
 
 type SensorRow = NonNullable<Awaited<ReturnType<typeof findSensorDataById>>>;
 
@@ -42,6 +37,19 @@ function serializeSensorData(row: SensorRow) {
 
 export type SerializedSensorData = ReturnType<typeof serializeSensorData>;
 
+// ── Helper: check if shield belongs to user's exploitations ──
+
+async function shieldBelongsToUser(shieldId: number, user: any): Promise<boolean> {
+  const shield = await findIotShieldById(shieldId);
+  if (!shield) return false;
+  if (user.roleName?.toLowerCase() === 'admin') return true;
+  const userExploitationIds = await getUserExploitationIdsWithAdmin(user);
+  if (!userExploitationIds || userExploitationIds.length === 0) return false;
+  return userExploitationIds.includes(shield.exploitationId!);
+}
+
+// ── CREATE (uses API key) ──
+
 export type CreateSensorDataResult =
   | { success: true; status: 201; data: SerializedSensorData }
   | { success: false; status: 400; message: string };
@@ -54,7 +62,6 @@ export async function createSensorData(input: {
   longitude?: number | null;
   measuredAt?: Date;
 }): Promise<CreateSensorDataResult> {
-  // Vérifier que le bouclier existe
   const shield = await findIotShieldById(input.shieldId);
   if (!shield) {
     return {
@@ -64,7 +71,6 @@ export async function createSensorData(input: {
     };
   }
 
-  // Vérifier que le bouclier est actif
   if (shield.status !== "ACTIVE") {
     return {
       success: false,
@@ -92,9 +98,6 @@ export async function createSensorData(input: {
     return { success: false, status: 400, message: "Erreur lors de l'enregistrement." };
   }
 
-  // Met à jour l'état courant (une seule ligne par bouclier, pour le
-  // suivi en temps réel US-4.2) — évite de reparcourir tout l'historique
-  // à chaque poll du frontend, quel que soit le volume de iot_sensor_data.
   try {
     await upsertShieldStatus({
       shieldId: input.shieldId,
@@ -108,7 +111,6 @@ export async function createSensorData(input: {
     console.error("Erreur lors de la mise à jour du statut courant :", error);
   }
 
-  // Évaluer les alertes automatiques (US-4.3)
   try {
     await evaluateSensorDataForAlerts(row.id);
   } catch (error) {
@@ -118,16 +120,23 @@ export async function createSensorData(input: {
   return { success: true, status: 201, data: serializeSensorData(row) };
 }
 
+// ── GET LATEST FOR A SINGLE SHIELD ──
+
 export type GetLatestResult =
   | { success: true; status: 200; data: SerializedSensorData | null }
+  | { success: false; status: 403; message: string }
   | { success: false; status: 404; message: string };
 
 export async function getLatestSensorData(
-  shieldId: number
+  shieldId: number,
+  user: any
 ): Promise<GetLatestResult> {
   const shield = await findIotShieldById(shieldId);
   if (!shield) {
     return { success: false, status: 404, message: "Bouclier IoT introuvable." };
+  }
+  if (!(await shieldBelongsToUser(shieldId, user))) {
+    return { success: false, status: 403, message: "Accès interdit à ce bouclier." };
   }
 
   const row = await getLatestSensorDataInDb(shieldId);
@@ -138,55 +147,29 @@ export async function getLatestSensorData(
   return { success: true, status: 200, data: serializeSensorData(row) };
 }
 
-/**
- * Récupère la dernière mesure pour chaque bouclier d'une exploitation.
- * Version compatible avec MariaDB (sans LATERAL).
- */
+// ── GET LATEST FOR ALL SHIELDS ──
+
 export type GetLatestAllResult =
   | { success: true; status: 200; data: any[] }
   | { success: false; status: 400; message: string };
 
-export async function getLatestForAllShields(
-  exploitationId?: number
-): Promise<GetLatestAllResult> {
-  const rows = await getLatestForAllShieldsInDb(exploitationId);
-  return {
-    success: true,
-    status: 200,
-    data: rows.map((row) => ({
-      id: row.id,
-      shieldId: row.shieldId,
-      temperature: row.temperature,
-      activity: row.activity,
-      latitude: row.latitude,
-      longitude: row.longitude,
-      measuredAt: row.measuredAt,
-      createdAt: row.createdAt,
-      shield: row.shield,
-    })),
-  };
-}
-
-/**
- * Récupère l'état courant de chaque bouclier d'une exploitation, via la
- * table iot_shield_status (une seule ligne par bouclier, mise à jour en
- * continu). Beaucoup plus léger que de scanner tout iot_sensor_data,
- * quel que soit le nombre de mesures historiques accumulées.
- */
 export async function getLatestAllByExploitation(
-  exploitationId: number
+  user: any
 ): Promise<GetLatestAllResult> {
-  if (!exploitationId) {
-    return { success: false, status: 400, message: "exploitationId requis." };
+  const exploitationIds = await getUserExploitationIdsWithAdmin(user);
+
+  // ✅ Early return if no exploitations
+  if (exploitationIds !== null && exploitationIds.length === 0) {
+    return { success: true, status: 200, data: [] };
   }
 
-  const rows = await findLatestByExploitation(exploitationId);
+  const rows = await findLatestByExploitation(exploitationIds);
 
   return {
     success: true,
     status: 200,
     data: rows.map((row) => ({
-      id: row.shieldId, // pas d'id auto-incrémenté dans iot_shield_status : shieldId sert de clé stable
+      id: row.shieldId,
       shieldId: row.shieldId,
       temperature: row.temperature,
       activity: row.activity,
@@ -206,18 +189,27 @@ export async function getLatestAllByExploitation(
   };
 }
 
+// ── GET HISTORICAL DATA ──
+
 export type GetHistoricalResult =
   | { success: true; status: 200; data: any[] }
+  | { success: false; status: 403; message: string }
   | { success: false; status: 404; message: string };
 
-export async function getHistoricalSensorData(params: {
-  shieldId: number;
-  limit: number;
-  since?: Date;
-}): Promise<GetHistoricalResult> {
+export async function getHistoricalSensorData(
+  params: {
+    shieldId: number;
+    limit: number;
+    since?: Date;
+  },
+  user: any
+): Promise<GetHistoricalResult> {
   const shield = await findIotShieldById(params.shieldId);
   if (!shield) {
     return { success: false, status: 404, message: "Bouclier IoT introuvable." };
+  }
+  if (!(await shieldBelongsToUser(params.shieldId, user))) {
+    return { success: false, status: 403, message: "Accès interdit à ce bouclier." };
   }
 
   const rows = await getHistoricalSensorDataInDb(params);
@@ -237,14 +229,10 @@ export async function getHistoricalSensorData(params: {
   };
 }
 
-export type GetExploitationLatestResult =
-  | { success: true; status: 200; data: any[] }
-  | { success: false; status: 400; message: string };
+// ── (Optional) getLatestForAllShields ── not directly used by controllers
 
-export async function getLatestSensorDataForExploitation(
-  exploitationId: number
-): Promise<GetExploitationLatestResult> {
-  const rows = await getLatestSensorDataForExploitationInDb(exploitationId);
+export async function getLatestForAllShields(exploitationIds?: number[] | null) {
+  const rows = await getLatestForAllShieldsInDb(exploitationIds);
   return {
     success: true,
     status: 200,

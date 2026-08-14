@@ -1,8 +1,6 @@
 import type { Context } from "hono";
 import { createSensorDataSchema } from "../validators/iotSensorData.validator.js";
 import * as sensorDataService from "../services/iotSensorData.service.js";
-import { evaluateSensorDataForAlerts } from "../services/iotAlerts.service.js";
-import { findExploitationByOwnerId } from "../repositories/exploitations.repository.js";
 
 export async function createSensorDataHandler(c: Context) {
   const shield = c.get("shield");
@@ -29,39 +27,51 @@ export async function createSensorDataHandler(c: Context) {
   return c.json({ data: result.data }, 201);
 }
 
+/**
+ * GET /api/sensor-data/latest/:shieldId
+ * Récupère la dernière mesure d'un bouclier spécifique.
+ * Vérifie que l'utilisateur a accès au bouclier via son exploitation.
+ */
 export async function getLatestByShieldHandler(c: Context) {
+  const user = c.get("user");
   const shieldId = Number(c.req.param("shieldId"));
   if (isNaN(shieldId)) return c.json({ error: "ID invalide" }, 400);
 
-  const result = await sensorDataService.getLatestSensorData(shieldId);
+  const result = await sensorDataService.getLatestSensorData(shieldId, user);
   if (!result.success) return c.json({ error: result.message }, result.status);
   return c.json({ data: result.data }, result.status);
 }
 
+/**
+ * GET /api/sensor-data/latest
+ * Récupère les dernières mesures de tous les boucliers de l'utilisateur.
+ * Filtre automatiquement par les exploitations de l'utilisateur.
+ */
 export async function getLatestAllHandler(c: Context) {
   const user = c.get("user");
 
-  const exploitation = await findExploitationByOwnerId(user.id);
-  if (!exploitation) {
-    return c.json({ data: [] }, 200);
-  }
-
-  const result = await sensorDataService.getLatestAllByExploitation(exploitation.id);
+  const result = await sensorDataService.getLatestAllByExploitation(user);
   if (!result.success) return c.json({ error: result.message }, result.status);
   return c.json({ data: result.data }, result.status);
 }
 
+/**
+ * GET /api/sensor-data/history/:shieldId?limit=100&offset=0&since=2024-01-01
+ * Historique des mesures d'un bouclier.
+ * Vérifie que l'utilisateur a accès au bouclier.
+ */
 export async function getHistoryHandler(c: Context) {
+  const user = c.get("user");
   const shieldId = Number(c.req.param("shieldId"));
   const limit = Number(c.req.query("limit") || 100);
-  const offset = Number(c.req.query("offset") || 0);
+  const since = c.req.query("since") ? new Date(c.req.query("since")!) : undefined;
+
   if (isNaN(shieldId)) return c.json({ error: "ID invalide" }, 400);
 
-  const result = await sensorDataService.getHistoricalSensorData({
-    shieldId,
-    limit,
-    since: c.req.query("since") ? new Date(c.req.query("since")!) : undefined,
-  });
+  const result = await sensorDataService.getHistoricalSensorData(
+    { shieldId, limit, since },
+    user
+  );
   if (!result.success) return c.json({ error: result.message }, result.status);
   return c.json({ data: result.data }, result.status);
 }
