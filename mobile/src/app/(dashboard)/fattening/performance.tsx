@@ -173,7 +173,6 @@ export default function FatteningPerformanceScreen() {
           <Text style={styles.batchName} numberOfLines={1}>
             {item.batchName}
           </Text>
-          <Text style={styles.batchId}>#{item.batchId}</Text>
         </View>
 
         <View style={styles.infoRow}>

@@ -196,7 +196,6 @@ export default function FatteningBatchDetailScreen() {
               </Text>
             </View>
           </View>
-          <Text style={styles.idText}>Lot #{batch.id}</Text>
         </View>
 
         <View style={styles.statsGrid}>

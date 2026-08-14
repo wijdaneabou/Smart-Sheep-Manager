@@ -98,7 +98,6 @@ export default function FatteningScreen() {
                 </Text>
               </View>
             </View>
-            <Text style={styles.idText}>Lot #{item.id}</Text>
           </View>
 
           <View style={styles.statsRow}>
