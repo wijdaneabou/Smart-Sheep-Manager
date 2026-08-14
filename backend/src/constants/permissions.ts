@@ -16,6 +16,9 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     // Module REPRODUCTION
     'REPRODUCTION:READ', 'REPRODUCTION:CREATE', 'REPRODUCTION:UPDATE',
     'REPRODUCTION:DELETE', 'REPRODUCTION:EXPORT', 'REPRODUCTION:AGGREGATE',
+    // Module FATTENING
+    'FATTENING:READ', 'FATTENING:CREATE', 'FATTENING:UPDATE',
+    'FATTENING:DELETE', 'FATTENING:EXPORT', 'FATTENING:AGGREGATE',
     // ============================================
     // 🟢 MODULE IOT 
     // ============================================
@@ -37,6 +40,9 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'HEALTH:EXPORT',
     'REPRODUCTION:READ',
     'REPRODUCTION:EXPORT',
+    // Module FATTENING
+    'FATTENING:READ',
+    'FATTENING:EXPORT',
     // ============================================
     // 🟢 IOT - Manager
     // ============================================
@@ -60,6 +66,11 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'REPRODUCTION:CREATE',
     'REPRODUCTION:UPDATE',
     'REPRODUCTION:DELETE',
+    // Module FATTENING
+    'FATTENING:READ',
+    'FATTENING:CREATE',
+    'FATTENING:UPDATE',
+    'FATTENING:DELETE',
     // ============================================
     // 🟢 IOT - Eleveur
     // ============================================
@@ -92,6 +103,8 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'HEALTH:VALIDATE',
     'REPRODUCTION:READ',
     'REPRODUCTION:UPDATE',
+    // Module FATTENING
+    'FATTENING:READ',
     // ============================================
     // 🟢 IOT - Veterinaire
     // ============================================
@@ -109,6 +122,9 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'HEALTH:AGGREGATE',
     'REPRODUCTION:READ',
     'REPRODUCTION:AGGREGATE',
+    // Module FATTENING
+    'FATTENING:READ',
+    'FATTENING:AGGREGATE',
     // ============================================
     // 🟢 IOT - Cooperative 
     // ============================================

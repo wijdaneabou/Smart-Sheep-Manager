@@ -22,6 +22,27 @@
       "when": 1786025548431,
       "tag": "0002_even_texas_twister",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1786624943509,
+      "tag": "0003_hesitant_silver_samurai",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1786659892869,
+      "tag": "0004_right_echo",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1786663614062,
+      "tag": "0005_shiny_mindworm",
+      "breakpoints": true
     }
   ]
 }

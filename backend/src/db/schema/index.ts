@@ -28,7 +28,7 @@ export * from './vaccinations.js';
 export * from './veterinaryInterventions.js';
 
 export * from './reproductionCycles.js';
-export * from './matingServices.js';
+export * from "./matingServices.js";
 export * from "./userExploitations.js";
 
 export * from "./iotShields.js";
@@ -36,3 +36,10 @@ export * from "./iotSensorData.js";
 export * from "./iotAlerts.js";
 export * from "./iotZones.js";
 export * from "./iotShieldStatus.js";
+
+export * from "./fatteningBatches.js";
+export * from "./fatteningBatchWeightRecords.js";
+export * from "./fatteningAlerts.js";
+export * from "./fatteningFeedRecords.js";
+export * from "./fatteningBatchCosts.js";
+export * from "./fatteningBatchIndividualWeights.js";

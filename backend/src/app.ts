@@ -26,6 +26,13 @@ import iotAlertsRoutes from "./routes/iotAlerts.routes.js";
 import geocodeRoutes from "./routes/geocode.routes.js";
 import iotZonesRoutes from "./routes/iotZones.routes.js";
 import iotAnalyticsRoutes from "./routes/iotAnalytics.routes.js";
+import fatteningBatchesRoutes from "./routes/fatteningBatches.routes.js";
+import fatteningBatchWeightRecordsRoutes from "./routes/fatteningBatchWeightRecords.routes.js";
+import fatteningAlertsRoutes from "./routes/fatteningAlerts.routes.js";
+import fatteningFeedRecordsRoutes from "./routes/fatteningFeedRecords.routes.js";
+import fatteningBatchCostsRoutes from "./routes/fatteningBatchCosts.routes.js";
+import fatteningBatchIndividualWeightsRoutes from "./routes/fatteningBatchIndividualWeights.routes.js";
+import fatteningPerformanceRoutes from "./routes/fatteningPerformance.routes.js";
 
 const app = new Hono();
 
@@ -76,6 +83,14 @@ app.route("/api/iot-alerts", iotAlertsRoutes);
 app.route("/api/iot-zones", iotZonesRoutes);
 app.route("/api/geocode", geocodeRoutes);
 app.route("/api/iot-analytics", iotAnalyticsRoutes);
+
+app.route("/api/fattening-batches/weight-records", fatteningBatchWeightRecordsRoutes);
+app.route("/api/fattening-batches/alerts", fatteningAlertsRoutes);
+app.route("/api/fattening-batches/feed-records", fatteningFeedRecordsRoutes);
+app.route("/api/fattening-batches/costs", fatteningBatchCostsRoutes);
+app.route("/api/fattening-batches/individual-weights", fatteningBatchIndividualWeightsRoutes);
+app.route("/api/fattening-batches/performance", fatteningPerformanceRoutes);
+app.route("/api/fattening-batches", fatteningBatchesRoutes);
 
 // ============================================
 //
