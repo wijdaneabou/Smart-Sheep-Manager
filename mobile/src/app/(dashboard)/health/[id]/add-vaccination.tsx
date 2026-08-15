@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../../services/api";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -20,6 +21,15 @@ export default function AddVaccinationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const healthRecordId = Number(id);
   const router = useRouter();
+  const { hasPermission } = usePermissions();
+
+  // ✅ Check with fallback
+  useEffect(() => {
+    if (!hasPermission('VACCINATION', 'CREATE') && !hasPermission('HEALTH', 'CREATE')) {
+      Alert.alert("Accès refusé", "Vous n'avez pas les droits pour ajouter une vaccination.");
+      router.replace(`/health/${healthRecordId}/detail` as any);
+    }
+  }, [hasPermission, router, healthRecordId]);
 
   const [animalId, setAnimalId] = useState<number | null>(null);
   const [form, setForm] = useState({
@@ -42,7 +52,6 @@ export default function AddVaccinationScreen() {
         console.error(err);
       }
     }
-
     fetchRecord();
   }, [healthRecordId]);
 
@@ -80,7 +89,9 @@ export default function AddVaccinationScreen() {
         vaccineType: form.vaccineType.trim(),
         batchNumber: form.batchNumber.trim() || undefined,
         date: new Date(`${form.date.trim()}T00:00:00.000Z`).toISOString(),
-        boosterDate: form.boosterDate.trim() ? new Date(`${form.boosterDate.trim()}T00:00:00.000Z`).toISOString() : undefined,
+        boosterDate: form.boosterDate.trim()
+          ? new Date(`${form.boosterDate.trim()}T00:00:00.000Z`).toISOString()
+          : undefined,
         notes: form.notes.trim() || undefined,
       };
 

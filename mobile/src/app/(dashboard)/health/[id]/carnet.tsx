@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,11 +7,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../../services/api";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 type CarnetEventType = "health_record" | "treatment" | "vaccination";
 
@@ -84,6 +86,19 @@ export default function CarnetScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const animalId = Number(id);
   const router = useRouter();
+  const { hasPermission } = usePermissions();
+
+  // ✅ Vérification d'accès
+  useEffect(() => {
+    if (!hasPermission('HEALTH_RECORD', 'READ')) {
+      Alert.alert(
+        "Accès refusé",
+        "Vous n'avez pas les droits pour consulter le carnet sanitaire."
+      );
+      router.replace("/health");
+    }
+  }, [hasPermission, router]);
+
   const [carnet, setCarnet] = useState<CarnetData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -124,42 +139,30 @@ export default function CarnetScreen() {
     return carnet.events[0]?.date ?? null;
   }, [carnet]);
 
-  const getEventIcon = (type: CarnetEventType) => {
+  const getEventIconName = (type: CarnetEventType): string => {
     switch (type) {
-      case "health_record":
-        return "🏥";
-      case "treatment":
-        return "💊";
-      case "vaccination":
-        return "💉";
-      default:
-        return "📋";
+      case "health_record": return "medical";
+      case "treatment": return "medkit";
+      case "vaccination": return "needle";
+      default: return "documents";
     }
   };
 
   const getEventColor = (type: CarnetEventType) => {
     switch (type) {
-      case "health_record":
-        return "#2563eb";
-      case "treatment":
-        return "#ea580c";
-      case "vaccination":
-        return "#16a34a";
-      default:
-        return "#6b7280";
+      case "health_record": return "#2563eb";
+      case "treatment": return "#ea580c";
+      case "vaccination": return "#16a34a";
+      default: return "#6b7280";
     }
   };
 
   const getEventTitle = (type: CarnetEventType) => {
     switch (type) {
-      case "health_record":
-        return "Diagnostic";
-      case "treatment":
-        return "Traitement";
-      case "vaccination":
-        return "Vaccination";
-      default:
-        return "Événement";
+      case "health_record": return "Diagnostic";
+      case "treatment": return "Traitement";
+      case "vaccination": return "Vaccination";
+      default: return "Événement";
     }
   };
 
@@ -220,7 +223,12 @@ export default function CarnetScreen() {
         <View style={styles.eventCard}>
           <View style={styles.eventTopBar}>
             <View style={[styles.eventPill, { backgroundColor: getEventColor(event.type) + "18" }]}>
-              <Text style={styles.eventIcon}>{getEventIcon(event.type)}</Text>
+              <Ionicons
+                name={getEventIconName(event.type) as any}
+                size={14}
+                color={getEventColor(event.type)}
+                style={{ marginRight: 6 }}
+              />
               <Text style={[styles.eventPillText, { color: getEventColor(event.type) }]}>{getEventTitle(event.type)}</Text>
             </View>
             <Text style={styles.eventDate}>{formatDate(event.date)}</Text>
@@ -269,7 +277,7 @@ export default function CarnetScreen() {
       >
         <View style={styles.animalCard}>
           <View style={styles.animalAvatarWrap}>
-            <Text style={styles.animalAvatar}>🐑</Text>
+            <Ionicons name="paw" size={34} color="#14532d" />
           </View>
           <View style={styles.animalMeta}>
             <Text style={styles.animalName}>{carnet.animal.name}</Text>
@@ -302,7 +310,7 @@ export default function CarnetScreen() {
 
         {carnet.events.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📭</Text>
+            <Ionicons name="documents" size={42} color="#6b7280" style={{ marginBottom: 8 }} />
             <Text style={styles.emptyText}>Aucun événement médical</Text>
             <Text style={styles.emptySubtext}>Le carnet apparaîtra dès qu'un dossier, traitement ou vaccin est enregistré.</Text>
           </View>
@@ -389,7 +397,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 14,
   },
-  animalAvatar: { fontSize: 34 },
   animalMeta: { flex: 1 },
   animalName: { fontSize: 20, fontWeight: "800", color: GREEN_DARK },
   animalSubtle: { fontSize: 13, color: "#6b7280", marginTop: 3 },
@@ -474,7 +481,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
   },
-  eventIcon: { fontSize: 16, marginRight: 6 },
   eventPillText: { fontSize: 12, fontWeight: "800" },
   eventDate: { fontSize: 11, color: "#6b7280", fontWeight: "600" },
   eventBody: { paddingHorizontal: 14, paddingBottom: 14 },
@@ -503,7 +509,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  emptyIcon: { fontSize: 42, marginBottom: 8 },
   emptyText: { fontSize: 16, fontWeight: "800", color: GREEN_DARK },
   emptySubtext: { fontSize: 12, color: "#6b7280", marginTop: 6, textAlign: "center", lineHeight: 18 },
 });

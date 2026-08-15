@@ -17,13 +17,14 @@ import { useRouter } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import api from "../../../services/api";
 import { BackButton } from "../../../components/BackButton";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 const STATUSES = [
-  { id: "HEALTHY", label: "Sain", icon: "✅" },
-  { id: "SURVEILLANCE", label: "Surveillance", icon: "👀" },
-  { id: "SICK", label: "Malade", icon: "🤒" },
-  { id: "UNDER_TREATMENT", label: "En traitement", icon: "💊" },
-  { id: "RECOVERED", label: "Rétabli", icon: "💪" },
+  { id: "HEALTHY", label: "Sain", iconName: "checkmark-circle" },
+  { id: "SURVEILLANCE", label: "Surveillance", iconName: "eye" },
+  { id: "SICK", label: "Malade", iconName: "medkit" },
+  { id: "UNDER_TREATMENT", label: "En traitement", iconName: "pill" },
+  { id: "RECOVERED", label: "Rétabli", iconName: "body" },
 ];
 
 const SEVERITIES = [
@@ -35,6 +36,22 @@ const SEVERITIES = [
 
 export default function CreateHealthRecord() {
   const router = useRouter();
+  const { hasPermission } = usePermissions();
+
+  // Vérification d'accès avec fallback
+  useEffect(() => {
+    const canCreate =
+      hasPermission('HEALTH_RECORD', 'CREATE') ||
+      hasPermission('HEALTH', 'CREATE');
+    if (!canCreate) {
+      Alert.alert(
+        "Accès refusé",
+        "Seuls les vétérinaires peuvent créer des dossiers médicaux."
+      );
+      router.replace("/health");
+    }
+  }, [hasPermission, router]);
+
   const [animals, setAnimals] = useState<any[]>([]);
   const [filteredAnimals, setFilteredAnimals] = useState<any[]>([]);
   const [loadingAnimals, setLoadingAnimals] = useState(true);
@@ -51,7 +68,6 @@ export default function CreateHealthRecord() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Charger la liste des animaux une fois
   useEffect(() => {
     api.get("/animals")
       .then(res => {
@@ -61,7 +77,6 @@ export default function CreateHealthRecord() {
       .catch(() => setLoadingAnimals(false));
   }, []);
 
-  // Filtrer les animaux en fonction de la recherche (RFID ou nom)
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredAnimals([]);
@@ -75,15 +90,13 @@ export default function CreateHealthRecord() {
     setFilteredAnimals(filtered);
   }, [searchQuery, animals]);
 
-  // Sélectionner un animal
   const selectAnimal = (animal: any) => {
     setSelectedAnimal(animal);
     setForm({ ...form, animalId: String(animal.id) });
-    setSearchQuery(animal.rfid); // Affiche le RFID dans la barre
-    setFilteredAnimals([]); // Cache la liste
+    setSearchQuery(animal.rfid);
+    setFilteredAnimals([]);
   };
 
-  // Effacer la sélection
   const clearSelection = () => {
     setSelectedAnimal(null);
     setForm({ ...form, animalId: "" });
@@ -130,7 +143,6 @@ export default function CreateHealthRecord() {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {/* Header */}
         <View style={styles.header}>
           <BackButton variant="dark" style={styles.backButton} />
           <Text style={styles.headerTitle}>Nouveau dossier médical</Text>
@@ -143,7 +155,6 @@ export default function CreateHealthRecord() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          {/* 1. Recherche et sélection de l'animal */}
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Rechercher un animal par RFID ou nom</Text>
             <View style={styles.searchWrapper}>
@@ -162,7 +173,6 @@ export default function CreateHealthRecord() {
               )}
             </View>
 
-            {/* Liste des résultats */}
             {filteredAnimals.length > 0 && (
               <View style={styles.resultsContainer}>
                 <FlatList
@@ -182,11 +192,10 @@ export default function CreateHealthRecord() {
               </View>
             )}
 
-            {/* Animal sélectionné */}
             {selectedAnimal && (
               <View style={styles.selectedCard}>
                 <View style={styles.selectedContent}>
-                  <Text style={styles.selectedIcon}>🐑</Text>
+                  <Ionicons name="paw" size={24} color="#0F2A1D" style={{ marginRight: 12 }} />
                   <View style={styles.selectedInfo}>
                     <Text style={styles.selectedName}>{selectedAnimal.name}</Text>
                     <Text style={styles.selectedRfid}>{selectedAnimal.rfid}</Text>
@@ -199,7 +208,6 @@ export default function CreateHealthRecord() {
             )}
           </View>
 
-          {/* 2. Statut (compact) */}
           <SectionTitle index={2} label="Statut" />
           <View style={styles.fieldGroup}>
             <View style={styles.optionsRowSmall}>
@@ -211,9 +219,12 @@ export default function CreateHealthRecord() {
                     onPress={() => setForm({ ...form, status: s.id })}
                     style={[styles.optionChipSmall, selected && styles.optionChipSelectedSmall]}
                   >
-                    <Text style={[styles.optionChipIconSmall, selected && { color: "#fff" }]}>
-                      {s.icon}
-                    </Text>
+                    <Ionicons
+                      name={s.iconName as any}
+                      size={14}
+                      color={selected ? "#fff" : "#555"}
+                      style={{ marginBottom: 2 }}
+                    />
                     <Text style={[styles.optionChipLabelSmall, selected && { color: "#fff" }]}>
                       {s.label}
                     </Text>
@@ -223,7 +234,6 @@ export default function CreateHealthRecord() {
             </View>
           </View>
 
-          {/* 3. Gravité (compact) */}
           <SectionTitle index={3} label="Gravité" />
           <View style={styles.fieldGroup}>
             <View style={styles.optionsRowSmall}>
@@ -247,7 +257,6 @@ export default function CreateHealthRecord() {
             </View>
           </View>
 
-          {/* 4. Symptômes */}
           <SectionTitle index={4} label="Symptômes" />
           <View style={styles.fieldGroup}>
             <TextInput
@@ -260,7 +269,6 @@ export default function CreateHealthRecord() {
             />
           </View>
 
-          {/* 5. Diagnostic */}
           <SectionTitle index={5} label="Diagnostic" />
           <View style={styles.fieldGroup}>
             <TextInput
@@ -339,7 +347,6 @@ const styles = StyleSheet.create({
   fieldGroup: { marginBottom: 14 },
   label: { fontSize: 13, fontWeight: "600", color: "#444", marginBottom: 6 },
 
-  // Search
   searchWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -401,7 +408,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
   },
-  selectedIcon: { fontSize: 24, marginRight: 12 },
   selectedInfo: { flex: 1 },
   selectedName: { fontSize: 16, fontWeight: "700", color: "#0F2A1D" },
   selectedRfid: { fontSize: 13, color: "#6B7280", marginTop: 2 },
@@ -414,7 +420,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  // Options compactes (Statuts et Gravités)
   optionsRowSmall: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -437,18 +442,12 @@ const styles = StyleSheet.create({
     backgroundColor: GREEN,
     borderColor: GREEN,
   },
-  optionChipIconSmall: {
-    fontSize: 14,
-    marginBottom: 2,
-    color: "#555",
-  },
   optionChipLabelSmall: {
     fontSize: 10,
     fontWeight: "700",
     color: "#555",
   },
 
-  // Champs texte
   textArea: {
     backgroundColor: "#fff",
     borderWidth: 1,

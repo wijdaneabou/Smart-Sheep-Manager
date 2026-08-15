@@ -15,16 +15,17 @@ import { Ionicons } from "@expo/vector-icons";
 import api from "../../../../services/api";
 
 const INTERVENTION_TYPES = [
-  { id: "CHECKUP", label: "Check-up" },
-  { id: "SURGERY", label: "Chirurgie" },
-  { id: "OBSTETRICS", label: "Obstétrique" },
-  { id: "ULTRASOUND", label: "Échographie" },
-  { id: "TREATMENT", label: "Traitement" },
-  { id: "EMERGENCY", label: "Urgence" },
+  { id: "CHECKUP", label: "Check-up", iconName: "stethoscope" },
+  { id: "SURGERY", label: "Chirurgie", iconName: "cut" },
+  { id: "OBSTETRICS", label: "Obstétrique", iconName: "baby" },
+  { id: "ULTRASOUND", label: "Échographie", iconName: "scan" },
+  { id: "TREATMENT", label: "Traitement", iconName: "medkit" },
+  { id: "EMERGENCY", label: "Urgence", iconName: "alert-circle" },
 ];
 
 export default function EditInterventionScreen() {
   const { id, interventionId } = useLocalSearchParams<{ id: string; interventionId: string }>();
+  const healthRecordId = Number(id);
   const interventionIdNum = Number(interventionId);
   const router = useRouter();
 
@@ -122,6 +123,12 @@ export default function EditInterventionScreen() {
                 ]}
                 onPress={() => setForm({ ...form, type: t.id })}
               >
+                <Ionicons
+                  name={t.iconName as any}
+                  size={16}
+                  color={form.type === t.id ? "#fff" : "#555"}
+                  style={{ marginRight: 6 }}
+                />
                 <Text
                   style={[
                     styles.optionChipText,
@@ -230,6 +237,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   optionChip: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,

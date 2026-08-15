@@ -12,19 +12,20 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import api, { API_URL } from "../../../services/api";
 import { BackButton } from "../../../components/BackButton";
 import { getBreedInfo, getSexInfo } from "../../../constants/breeds";
-import { usePermissions } from "@/contexts/PermissionsContext"; // 👈 NEW IMPORT
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 type HealthStatus = 'HEALTHY' | 'SURVEILLANCE' | 'SICK' | 'UNDER_TREATMENT' | 'RECOVERED';
 
-const statusConfig: Record<HealthStatus, { label: string; color: string; icon: string }> = {
-  HEALTHY:        { label: 'Sain',          color: '#10B981', icon: '✅' },
-  SURVEILLANCE:   { label: 'Surveillance',  color: '#F59E0B', icon: '👀' },
-  SICK:           { label: 'Malade',        color: '#EF4444', icon: '🤒' },
-  UNDER_TREATMENT:{ label: 'En traitement', color: '#F97316', icon: '💊' },
-  RECOVERED:      { label: 'Rétabli',       color: '#3B82F6', icon: '💪' },
+const statusConfig: Record<HealthStatus, { label: string; color: string; iconName: string }> = {
+  HEALTHY:        { label: 'Sain',          color: '#10B981', iconName: 'checkmark-circle' },
+  SURVEILLANCE:   { label: 'Surveillance',  color: '#F59E0B', iconName: 'eye' },
+  SICK:           { label: 'Malade',        color: '#EF4444', iconName: 'medkit' },
+  UNDER_TREATMENT:{ label: 'En traitement', color: '#F97316', iconName: 'pill' },
+  RECOVERED:      { label: 'Rétabli',       color: '#3B82F6', iconName: 'body' },
 };
 
 const statusFilterTypes = ["TOUT", "HEALTHY", "SURVEILLANCE", "SICK", "UNDER_TREATMENT", "RECOVERED"] as const;
@@ -32,7 +33,7 @@ type StatusFilter = typeof statusFilterTypes[number];
 
 export default function HealthRecordsList() {
   const router = useRouter();
-  const { hasPermission } = usePermissions(); // 👈 NEW
+  const { hasPermission } = usePermissions();
 
   const [records, setRecords] = useState<any[]>([]);
   const [search, setSearch] = useState("");
@@ -40,6 +41,10 @@ export default function HealthRecordsList() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ✅ Fallback: check both new and old permissions
+  const canCreateHealthRecord = hasPermission('HEALTH_RECORD', 'CREATE') || hasPermission('HEALTH', 'CREATE');
+  const canViewReport = hasPermission('HEALTH_REPORT', 'READ') || hasPermission('HEALTH', 'READ');
 
   async function fetchRecords() {
     setError(null);
@@ -85,7 +90,7 @@ export default function HealthRecordsList() {
   }, [records, search, filter]);
 
   const getStatusInfo = (status: string) => {
-    return statusConfig[status as HealthStatus] || { label: status, color: '#6B7280', icon: '❓' };
+    return statusConfig[status as HealthStatus] || { label: status, color: '#6B7280', iconName: 'help-circle' };
   };
 
   if (loading) {
@@ -99,7 +104,6 @@ export default function HealthRecordsList() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.container}>
-        {/* Header with Back Button */}
         <View style={styles.headerRow}>
           <BackButton variant="dark" style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
@@ -112,7 +116,7 @@ export default function HealthRecordsList() {
 
         <View style={styles.searchRow}>
           <View style={styles.searchInputWrap}>
-            <Text style={styles.searchIcon}>🔍</Text>
+            <Ionicons name="search" size={16} color="#999" style={{ marginRight: 8 }} />
             <TextInput
               style={styles.searchInput}
               placeholder="Rechercher par diagnostic ou animal..."
@@ -158,7 +162,6 @@ export default function HealthRecordsList() {
               ? `${API_URL}${item.animalPhotoUrl}`
               : undefined;
             
-            // Récupération des infos de race et sexe
             const breedInfo = item.breed ? getBreedInfo(item.breed) : null;
             const sexInfo = item.sex ? getSexInfo(item.sex) : null;
 
@@ -171,9 +174,7 @@ export default function HealthRecordsList() {
                   <Image source={{ uri: photoUrl }} style={styles.thumb} />
                 ) : (
                   <View style={styles.thumbFallback}>
-                    <Text style={styles.thumbFallbackIcon}>
-                      {breedInfo?.icon || '🐑'}
-                    </Text>
+                    <Ionicons name="paw" size={30} color="#0F7A3C" />
                   </View>
                 )}
 
@@ -188,49 +189,48 @@ export default function HealthRecordsList() {
                         { backgroundColor: statusInfo.color + "20" },
                       ]}
                     >
+                      <Ionicons name={statusInfo.iconName as any} size={10} color={statusInfo.color} />
                       <Text
                         style={[
                           styles.healthBadgeText,
                           { color: statusInfo.color },
                         ]}
                       >
-                        {statusInfo.icon} {statusInfo.label}
+                        {statusInfo.label}
                       </Text>
                     </View>
                   </View>
 
                   <Text style={styles.rfid}>{item.animalRfid}</Text>
 
-                  {/* Race et sexe */}
                   <View style={styles.infoRow}>
                     {breedInfo && (
                       <>
-                        <Text style={styles.infoIcon}>🐑</Text>
+                        <Ionicons name="paw" size={12} color="#666" />
                         <Text style={styles.infoValue}>{breedInfo.label}</Text>
                         <Text style={styles.separator}>·</Text>
                       </>
                     )}
                     {sexInfo && (
                       <>
-                        <Text style={styles.infoIcon}>{sexInfo.icon}</Text>
+                        <Ionicons name={sexInfo.icon === '♂' ? 'male' : 'female'} size={12} color="#666" />
                         <Text style={styles.infoValue}>{sexInfo.label}</Text>
                       </>
                     )}
                   </View>
 
-                  {/* Poids et BCS si disponibles */}
                   {(item.weight || item.bcs) && (
                     <View style={styles.infoRow}>
                       {item.weight && (
                         <>
-                          <Text style={styles.infoIcon}>⚖</Text>
+                          <Ionicons name="scale" size={12} color="#666" />
                           <Text style={styles.infoValue}>{item.weight} kg</Text>
                         </>
                       )}
                       {item.weight && item.bcs && <Text style={styles.separator}>·</Text>}
                       {item.bcs && (
                         <>
-                          <Text style={styles.infoIcon}>◐</Text>
+                          <Ionicons name="stats-chart" size={12} color="#666" />
                           <Text style={styles.infoValue}>BCS {item.bcs}</Text>
                         </>
                       )}
@@ -244,38 +244,37 @@ export default function HealthRecordsList() {
                   )}
 
                   <View style={styles.infoRow}>
-                    <Text style={styles.infoIcon}>📅</Text>
+                    <Ionicons name="calendar" size={12} color="#666" />
                     <Text style={styles.infoValue}>
                       {new Date(item.createdAt).toLocaleDateString("fr-FR")}
                     </Text>
                   </View>
                 </View>
 
-                <Text style={styles.chevron}>›</Text>
+                <Ionicons name="chevron-forward" size={20} color="#ccc" />
               </Pressable>
             );
           }}
         />
 
-        {/* Boutons flottants : + et Rapport */}
         <View style={styles.fabContainer}>
-          {/* 👇 FAB Ajouter dossier - HEALTH:CREATE */}
-          {hasPermission('HEALTH', 'CREATE') && (
+          {canCreateHealthRecord && (
             <Pressable
               style={styles.fab}
               onPress={() => router.push("/health/create")}
             >
-              <Text style={styles.fabIcon}>+</Text>
+              <Ionicons name="add" size={28} color="#fff" />
             </Pressable>
           )}
-
-          {/* Le bouton Rapport est visible pour tous ceux qui ont HEALTH:READ (toujours le cas) */}
-          <Pressable
-            style={styles.rapportFab}
-            onPress={() => router.push("/health/report" as any)}
-          >
-            <Text style={styles.rapportFabText}>📊 Rapport</Text>
-          </Pressable>
+          {canViewReport && (
+            <Pressable
+              style={styles.rapportFab}
+              onPress={() => router.push("/health/report" as any)}
+            >
+              <Ionicons name="stats-chart" size={16} color="#fff" style={{ marginRight: 4 }} />
+              <Text style={styles.rapportFabText}>Rapport</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     </SafeAreaView>
@@ -311,7 +310,6 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
   container: { flex: 1, paddingHorizontal: 16 },
 
-  // --- Header ---
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -335,7 +333,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 14,
   },
-  searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.6 },
   searchInput: { flex: 1, paddingVertical: 13, fontSize: 14 },
 
   filterRow: { flexDirection: "row", gap: 8, marginBottom: 14, flexWrap: "wrap" },
@@ -379,7 +376,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  thumbFallbackIcon: { fontSize: 30 },
 
   cardBody: { flex: 1 },
   cardTitleRow: {
@@ -392,18 +388,18 @@ const styles = StyleSheet.create({
   rfid: { fontSize: 12, color: "#888", marginBottom: 2 },
   diagnosis: { fontSize: 14, color: "#333", marginBottom: 2 },
   healthBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   healthBadgeText: { fontSize: 11, fontWeight: "700" },
 
-  infoRow: { flexDirection: "row", alignItems: "center", minHeight: 18, flexWrap: "wrap" },
-  infoIcon: { fontSize: 12, width: 20, color: "#666" },
+  infoRow: { flexDirection: "row", alignItems: "center", minHeight: 18, flexWrap: "wrap", gap: 2 },
   infoValue: { fontSize: 13, fontWeight: "600", color: "#333" },
   separator: { fontSize: 13, color: "#ccc", marginHorizontal: 4 },
-
-  chevron: { fontSize: 24, color: "#ccc", marginLeft: 6 },
 
   fabContainer: {
     position: "absolute",
@@ -425,15 +421,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  fabIcon: { fontSize: 28, color: "#fff", fontWeight: "300", marginTop: -2 },
 
   rapportFab: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: "#0B4A24",
-    alignItems: "center",
-    justifyContent: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,

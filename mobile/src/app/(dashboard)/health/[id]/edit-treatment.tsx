@@ -15,19 +15,19 @@ import { Ionicons } from "@expo/vector-icons";
 import api from "../../../../services/api";
 
 const FREQUENCIES = [
-  { id: "ONCE_DAILY", label: "1×/jour" },
-  { id: "TWICE_DAILY", label: "2×/jour" },
-  { id: "THREE_TIMES_DAILY", label: "3×/jour" },
-  { id: "WEEKLY", label: "1×/semaine" },
-  { id: "MONTHLY", label: "1×/mois" },
+  { id: "ONCE_DAILY", label: "1×/jour", iconName: "time" },
+  { id: "TWICE_DAILY", label: "2×/jour", iconName: "time" },
+  { id: "THREE_TIMES_DAILY", label: "3×/jour", iconName: "time" },
+  { id: "WEEKLY", label: "1×/semaine", iconName: "calendar" },
+  { id: "MONTHLY", label: "1×/mois", iconName: "calendar" },
 ];
 
 const ROUTES = [
-  { id: "ORAL", label: "Oral" },
-  { id: "INTRAMUSCULAR", label: "Intramusculaire" },
-  { id: "INTRAVENOUS", label: "Intraveineux" },
-  { id: "SUBCUTANEOUS", label: "Sous-cutané" },
-  { id: "TOPICAL", label: "Topique" },
+  { id: "ORAL", label: "Oral", iconName: "nutrition" },
+  { id: "INTRAMUSCULAR", label: "Intramusculaire", iconName: "fitness" },
+  { id: "INTRAVENOUS", label: "Intraveineux", iconName: "water" },
+  { id: "SUBCUTANEOUS", label: "Sous-cutané", iconName: "layers" },
+  { id: "TOPICAL", label: "Topique", iconName: "brush" },
 ];
 
 export default function EditTreatmentScreen() {
@@ -165,6 +165,12 @@ export default function EditTreatmentScreen() {
                 ]}
                 onPress={() => setForm({ ...form, frequency: f.id })}
               >
+                <Ionicons
+                  name={f.iconName as any}
+                  size={14}
+                  color={form.frequency === f.id ? "#fff" : "#555"}
+                  style={{ marginRight: 4 }}
+                />
                 <Text
                   style={[
                     styles.optionChipText,
@@ -188,6 +194,12 @@ export default function EditTreatmentScreen() {
                 ]}
                 onPress={() => setForm({ ...form, route: r.id })}
               >
+                <Ionicons
+                  name={r.iconName as any}
+                  size={14}
+                  color={form.route === r.id ? "#fff" : "#555"}
+                  style={{ marginRight: 4 }}
+                />
                 <Text
                   style={[
                     styles.optionChipText,
@@ -312,6 +324,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   optionChip: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,

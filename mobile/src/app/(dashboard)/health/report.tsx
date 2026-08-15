@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,11 +7,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../../services/api";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 interface ReportData {
   summary: {
@@ -30,19 +32,32 @@ interface ReportData {
   }>;
 }
 
-const statusConfig: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  HEALTHY:        { label: 'Sain',          color: '#059669', bg: '#ECFDF5', dot: '#10B981' },
-  SURVEILLANCE:   { label: 'Surveillance',  color: '#D97706', bg: '#FFFBEB', dot: '#F59E0B' },
-  SICK:           { label: 'Malade',        color: '#DC2626', bg: '#FEF2F2', dot: '#EF4444' },
-  UNDER_TREATMENT:{ label: 'En traitement', color: '#EA580C', bg: '#FFEDD5', dot: '#F97316' },
-  RECOVERED:      { label: 'Rétabli',       color: '#2563EB', bg: '#EFF6FF', dot: '#3B82F6' },
-  PENDING:        { label: 'En attente',    color: '#D97706', bg: '#FFFBEB', dot: '#F59E0B' },
-  DONE:           { label: 'Effectué',      color: '#059669', bg: '#ECFDF5', dot: '#10B981' },
-  OVERDUE:        { label: 'En retard',     color: '#DC2626', bg: '#FEF2F2', dot: '#EF4444' },
+const statusConfig: Record<string, { label: string; color: string; bg: string; dot: string; iconName: string }> = {
+  HEALTHY:        { label: 'Sain',          color: '#059669', bg: '#ECFDF5', dot: '#10B981', iconName: 'checkmark-circle' },
+  SURVEILLANCE:   { label: 'Surveillance',  color: '#D97706', bg: '#FFFBEB', dot: '#F59E0B', iconName: 'eye' },
+  SICK:           { label: 'Malade',        color: '#DC2626', bg: '#FEF2F2', dot: '#EF4444', iconName: 'medkit' },
+  UNDER_TREATMENT:{ label: 'En traitement', color: '#EA580C', bg: '#FFEDD5', dot: '#F97316', iconName: 'pill' },
+  RECOVERED:      { label: 'Rétabli',       color: '#2563EB', bg: '#EFF6FF', dot: '#3B82F6', iconName: 'body' },
+  PENDING:        { label: 'En attente',    color: '#D97706', bg: '#FFFBEB', dot: '#F59E0B', iconName: 'time' },
+  DONE:           { label: 'Effectué',      color: '#059669', bg: '#ECFDF5', dot: '#10B981', iconName: 'checkmark-circle' },
+  OVERDUE:        { label: 'En retard',     color: '#DC2626', bg: '#FEF2F2', dot: '#EF4444', iconName: 'alert-circle' },
 };
 
 export default function HealthReportScreen() {
   const router = useRouter();
+  const { hasPermission } = usePermissions();
+
+  // ✅ Vérification d'accès
+  useEffect(() => {
+    if (!hasPermission('HEALTH_REPORT', 'READ')) {
+      Alert.alert(
+        "Accès refusé",
+        "Vous n'avez pas les droits pour consulter le rapport sanitaire."
+      );
+      router.replace("/health");
+    }
+  }, [hasPermission, router]);
+
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -80,6 +95,7 @@ export default function HealthReportScreen() {
       color: '#64748B',
       bg: '#F8FAFC',
       dot: '#94A3B8',
+      iconName: 'ellipse',
     };
   };
 
@@ -110,6 +126,7 @@ export default function HealthReportScreen() {
         </View>
         <View style={styles.centerContainer}>
           <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle" size={24} color="#991B1B" />
             <Text style={styles.errorText}>⚠️ {error ?? "Rapport introuvable."}</Text>
           </View>
         </View>
@@ -121,12 +138,12 @@ export default function HealthReportScreen() {
   const totalAnimals = summary.totalAnimals || 1;
 
   const kpiItems = [
-    { label: "Total Animaux", value: summary.totalAnimals, sub: "Tête(s) enregistrée(s)", icon: "🐑" },
-    { label: "Dossiers Médicaux", value: summary.totalHealthRecords, sub: "Consultations", icon: "📂" },
-    { label: "Taux de Morbidité", value: `${summary.morbidityRate}%`, sub: "Cas détectés", icon: "🤒" },
-    { label: "Taux de Mortalité", value: `${summary.mortalityRate}%`, sub: "Pertes enregistrées", icon: "⚠️" },
-    { label: "Coût Moyen / Animal", value: `${summary.avgCostPerAnimal.toFixed(2)} MAD`, sub: "Dépenses de santé", icon: "💰" },
-    { label: "Durée de Guérison", value: `${summary.avgRecoveryDays} j`, sub: "Moyenne estimée", icon: "⏱️" },
+    { label: "Total Animaux", value: summary.totalAnimals, sub: "Tête(s) enregistrée(s)", iconName: "paw" },
+    { label: "Dossiers Médicaux", value: summary.totalHealthRecords, sub: "Consultations", iconName: "documents" },
+    { label: "Taux de Morbidité", value: `${summary.morbidityRate}%`, sub: "Cas détectés", iconName: "medkit" },
+    { label: "Taux de Mortalité", value: `${summary.mortalityRate}%`, sub: "Pertes enregistrées", iconName: "skull" },
+    { label: "Coût Moyen / Animal", value: `${summary.avgCostPerAnimal.toFixed(2)} MAD`, sub: "Dépenses de santé", iconName: "cash" },
+    { label: "Durée de Guérison", value: `${summary.avgRecoveryDays} j`, sub: "Moyenne estimée", iconName: "time" },
   ];
 
   return (
@@ -162,7 +179,7 @@ export default function HealthReportScreen() {
           {kpiItems.map((kpi, idx) => (
             <View key={idx} style={styles.kpiCard}>
               <View style={styles.kpiCardTop}>
-                <Text style={styles.kpiIcon}>{kpi.icon}</Text>
+                <Ionicons name={kpi.iconName as any} size={18} color="#10B981" />
                 <Text style={styles.kpiLabel}>{kpi.label}</Text>
               </View>
               <Text style={styles.kpiValue}>{kpi.value}</Text>
@@ -188,7 +205,7 @@ export default function HealthReportScreen() {
                 <View key={status} style={styles.statusRow}>
                   <View style={styles.statusHeaderRow}>
                     <View style={styles.statusLabelGroup}>
-                      <View style={[styles.statusDot, { backgroundColor: info.dot }]} />
+                      <Ionicons name={info.iconName as any} size={16} color={info.dot} />
                       <Text style={styles.statusLabelText}>{info.label}</Text>
                     </View>
                     <View style={styles.statusValueGroup}>
@@ -223,12 +240,12 @@ export default function HealthReportScreen() {
             <Text style={styles.emptyText}>Aucune activité récente</Text>
           ) : (
             recentActivities.map((activity, index) => {
-              const icon =
+              const iconName =
                 activity.type === "health_record"
-                  ? "🏥"
+                  ? "medical"
                   : activity.type === "treatment"
-                  ? "💊"
-                  : "💉";
+                  ? "medkit"
+                  : "needle";
 
               const isLast = index === recentActivities.length - 1;
 
@@ -238,7 +255,7 @@ export default function HealthReportScreen() {
                   style={[styles.activityItem, isLast && styles.activityItemLast]}
                 >
                   <View style={styles.activityAvatar}>
-                    <Text style={{ fontSize: 16 }}>{icon}</Text>
+                    <Ionicons name={iconName as any} size={18} color="#10B981" />
                   </View>
                   <View style={styles.activityContent}>
                     <Text style={styles.activityDescription}>{activity.description}</Text>
@@ -361,7 +378,6 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 8,
   },
-  kpiIcon: { fontSize: 14 },
   kpiLabel: {
     fontSize: 11,
     fontWeight: "700",
@@ -437,11 +453,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
   statusLabelText: {
     fontSize: 13,

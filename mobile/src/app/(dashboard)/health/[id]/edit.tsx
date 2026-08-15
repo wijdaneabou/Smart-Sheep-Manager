@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,18 +9,20 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import api from "../../../../services/api";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 const STATUSES = [
-  { id: "HEALTHY", label: "Sain", icon: "✅" },
-  { id: "SURVEILLANCE", label: "Surveillance", icon: "👀" },
-  { id: "SICK", label: "Malade", icon: "🤒" },
-  { id: "UNDER_TREATMENT", label: "En traitement", icon: "💊" },
-  { id: "RECOVERED", label: "Rétabli", icon: "💪" },
+  { id: "HEALTHY", label: "Sain", iconName: "checkmark-circle" },
+  { id: "SURVEILLANCE", label: "Surveillance", iconName: "eye" },
+  { id: "SICK", label: "Malade", iconName: "medkit" },
+  { id: "UNDER_TREATMENT", label: "En traitement", iconName: "pill" },
+  { id: "RECOVERED", label: "Rétabli", iconName: "body" },
 ];
 
 const SEVERITIES = [
@@ -34,6 +36,12 @@ export default function EditHealthRecord() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const recordId = Number(id);
   const router = useRouter();
+  const { hasPermission } = usePermissions();
+
+  // You can keep a guard here if you want, but we rely on the button in detail.tsx
+  // If you want to keep it, add fallback:
+  // const canEdit = hasPermission('HEALTH_RECORD', 'UPDATE') || hasPermission('HEALTH', 'UPDATE');
+  // useEffect(() => { if (!canEdit) { ... } }, [])
 
   const [loadingData, setLoadingData] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -129,7 +137,6 @@ export default function EditHealthRecord() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          {/* 1. Statut */}
           <SectionTitle index={1} label="Statut" />
           <View style={styles.fieldGroup}>
             <View style={styles.typeRow}>
@@ -141,9 +148,12 @@ export default function EditHealthRecord() {
                     onPress={() => setForm({ ...form, status: s.id })}
                     style={[styles.typeChip, selected && styles.typeChipSelected]}
                   >
-                    <Text style={[styles.typeChipIcon, selected && { color: "#fff" }]}>
-                      {s.icon}
-                    </Text>
+                    <Ionicons
+                      name={s.iconName as any}
+                      size={18}
+                      color={selected ? "#fff" : "#555"}
+                      style={{ marginBottom: 4 }}
+                    />
                     <Text style={[styles.typeChipLabel, selected && { color: "#fff" }]}>
                       {s.label}
                     </Text>
@@ -153,7 +163,6 @@ export default function EditHealthRecord() {
             </View>
           </View>
 
-          {/* 2. Gravité */}
           <SectionTitle index={2} label="Gravité" />
           <View style={styles.fieldGroup}>
             <View style={styles.typeRow}>
@@ -177,7 +186,6 @@ export default function EditHealthRecord() {
             </View>
           </View>
 
-          {/* 3. Symptômes */}
           <SectionTitle index={3} label="Symptômes" />
           <View style={styles.fieldGroup}>
             <TextInput
@@ -190,7 +198,6 @@ export default function EditHealthRecord() {
             />
           </View>
 
-          {/* 4. Diagnostic */}
           <SectionTitle index={4} label="Diagnostic" />
           <View style={styles.fieldGroup}>
             <TextInput
@@ -253,7 +260,6 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1f2937" },
 
   fieldGroup: { marginBottom: 14 },
-  label: { fontSize: 13, fontWeight: "600", color: "#444", marginBottom: 6 },
   input: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -278,7 +284,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   typeChipSelected: { backgroundColor: GREEN, borderColor: GREEN },
-  typeChipIcon: { fontSize: 18, marginBottom: 4, color: "#555" },
   typeChipLabel: { fontSize: 12, fontWeight: "700", color: "#555" },
 
   error: {

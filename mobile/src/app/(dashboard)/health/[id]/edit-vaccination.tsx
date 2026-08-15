@@ -18,16 +18,18 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 type VaccinationStatus = "PENDING" | "DONE" | "OVERDUE";
 
-const STATUS_OPTIONS: Array<{ id: VaccinationStatus; label: string }> = [
-  { id: "PENDING", label: "En attente" },
-  { id: "DONE", label: "Effectué" },
-  { id: "OVERDUE", label: "En retard" },
+const STATUS_OPTIONS: Array<{ id: VaccinationStatus; label: string; iconName: string }> = [
+  { id: "PENDING", label: "En attente", iconName: "time" },
+  { id: "DONE", label: "Effectué", iconName: "checkmark-circle" },
+  { id: "OVERDUE", label: "En retard", iconName: "alert-circle" },
 ];
 
 export default function EditVaccinationScreen() {
   const { id, vaccinationId } = useLocalSearchParams<{ id: string; vaccinationId: string }>();
-  const router = useRouter();
+  const healthRecordId = Number(id);
   const vaccinationIdNum = Number(vaccinationId);
+  const router = useRouter();
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -168,6 +170,12 @@ export default function EditVaccinationScreen() {
                 style={[styles.optionChip, form.status === status.id && styles.optionChipSelected]}
                 onPress={() => setForm({ ...form, status: status.id })}
               >
+                <Ionicons
+                  name={status.iconName as any}
+                  size={14}
+                  color={form.status === status.id ? "#fff" : "#555"}
+                  style={{ marginRight: 4 }}
+                />
                 <Text style={[styles.optionChipText, form.status === status.id && styles.optionChipTextSelected]}>
                   {status.label}
                 </Text>
@@ -232,6 +240,8 @@ const styles = StyleSheet.create({
   textArea: { height: 80, textAlignVertical: "top" },
   optionsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },
   optionChip: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
