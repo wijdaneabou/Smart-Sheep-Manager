@@ -23,6 +23,7 @@ import {
   type FatteningBatch,
 } from "../../../../services/fatteningService";
 import { BackButton } from "../../../../components/BackButton";
+import Pagination from "@/components/Pagination";
 
 const GREEN = "#14532d";
 
@@ -47,6 +48,10 @@ export default function BatchFeedScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const PAGE_SIZE = 20;
+
   const today = new Date().toISOString().split("T")[0];
   const [date, setDate] = useState(today);
   const [feedType, setFeedType] = useState("");
@@ -70,14 +75,17 @@ export default function BatchFeedScreen() {
 
   const loadRecords = useCallback(async () => {
     setLoadingRecords(true);
-    const result = await listFeedRecords(batchId);
+    const result = await listFeedRecords(batchId, page, PAGE_SIZE);
     if (result.success) {
       setFeedRecords(result.records);
+      const total = result.pagination?.total ?? 0;
+      const limit = result.pagination?.limit ?? PAGE_SIZE;
+      setTotalPages(Math.max(1, Math.ceil(total / limit)));
     } else {
       setError(result.message);
     }
     setLoadingRecords(false);
-  }, [batchId]);
+  }, [batchId, page]);
 
   useFocusEffect(
     useCallback(() => {
@@ -131,7 +139,7 @@ export default function BatchFeedScreen() {
       setUnitPrice("");
       setNote("");
       setShowAddForm(false);
-      Alert.alert("Succès", "Enregistrement d'alimentation ajouté.");
+      Alert.alert("Succès", "Enregistrement d’alimentation ajouté.");
     } else {
       Alert.alert("Erreur", result.message);
     }
@@ -140,7 +148,7 @@ export default function BatchFeedScreen() {
   async function handleDelete(record: FatteningFeedRecord) {
     Alert.alert(
       "Supprimer",
-      `Êtes-vous sûr de vouloir supprimer cet enregistrement d'alimentation ?`,
+      `Êtes-vous sûr de vouloir supprimer cet enregistrement d’alimentation ?`,
       [
         { text: "Annuler", style: "cancel" },
         {
@@ -219,7 +227,7 @@ export default function BatchFeedScreen() {
           </View>
           <View style={styles.summaryBox}>
             <Text style={styles.summaryLabel}>Coût total</Text>
-            <Text style={styles.summaryValue}>{getTotalFeedCost().toFixed(2)} €</Text>
+            <Text style={styles.summaryValue}>{getTotalFeedCost().toFixed(2)} DH</Text>
           </View>
           <View style={styles.summaryBox}>
             <Text style={styles.summaryLabel}>Enregistrements</Text>
@@ -247,7 +255,7 @@ export default function BatchFeedScreen() {
               onChangeText={setDate}
             />
 
-            <Text style={styles.label}>Type d'aliment *</Text>
+            <Text style={styles.label}>Type d’aliment *</Text>
             <View style={styles.feedTypeRow}>
               {FEED_TYPES.map((type) => {
                 const selected = feedType === type;
@@ -293,7 +301,7 @@ export default function BatchFeedScreen() {
                 />
               </View>
               <View style={[styles.fieldGroup, styles.rowItem]}>
-                <Text style={styles.label}>Prix unitaire (€/kg) *</Text>
+                <Text style={styles.label}>Prix unitaire (DH/kg) *</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="ex: 3.50"
@@ -344,7 +352,7 @@ export default function BatchFeedScreen() {
             </View>
           ) : feedRecords.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>Aucun enregistrement d'alimentation.</Text>
+              <Text style={styles.emptyText}>Aucun enregistrement d’alimentation.</Text>
             </View>
           ) : (
             <FlatList
@@ -362,7 +370,7 @@ export default function BatchFeedScreen() {
                   <View style={styles.recordAmounts}>
                     <Text style={styles.recordQuantity}>{Number(item.quantityKg).toFixed(2)} kg</Text>
                     <Text style={styles.recordCost}>
-                      {(Number(item.quantityKg) * Number(item.unitPrice)).toFixed(2)} €
+                      {(Number(item.quantityKg) * Number(item.unitPrice)).toFixed(2)} DH
                     </Text>
                   </View>
                   <Pressable
@@ -376,6 +384,13 @@ export default function BatchFeedScreen() {
             />
           )}
         </View>
+
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPrev={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+        />
       </ScrollView>
     </SafeAreaView>
   );

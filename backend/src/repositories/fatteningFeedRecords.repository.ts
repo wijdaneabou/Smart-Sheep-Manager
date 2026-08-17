@@ -33,12 +33,23 @@ export async function deleteFeedRecord(id: number) {
   await db.delete(fatteningFeedRecords).where(eq(fatteningFeedRecords.id, id));
 }
 
-export async function listFeedRecordsByBatch(batchId: number) {
-  return db
+export async function listFeedRecordsByBatch(batchId: number, limit = 20, offset = 0) {
+  const whereClause = eq(fatteningFeedRecords.fatteningBatchId, batchId);
+
+  const rows = await db
     .select()
     .from(fatteningFeedRecords)
-    .where(eq(fatteningFeedRecords.fatteningBatchId, batchId))
-    .orderBy(desc(fatteningFeedRecords.date));
+    .where(whereClause)
+    .orderBy(desc(fatteningFeedRecords.date))
+    .limit(limit)
+    .offset(offset);
+
+  const [{ total }] = await db
+    .select({ total: sql<number>`COUNT(*)` })
+    .from(fatteningFeedRecords)
+    .where(whereClause);
+
+  return { rows, total, limit, offset };
 }
 
 export async function getBatchFeedSummary(batchId: number) {

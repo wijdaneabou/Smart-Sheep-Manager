@@ -34,7 +34,7 @@ function formatFcr(fcr: number | null): string {
 
 function formatCost(cost: number | null): string {
   if (cost === null) return "—";
-  return `${cost.toFixed(2)} €/kg`;
+  return `${cost.toFixed(2)} DH/kg`;
 }
 
 function formatStdDev(std: number | null): string {
@@ -256,7 +256,7 @@ export default function FatteningPerformanceScreen() {
           <KpiBox
             label="Coût/kg gain"
             value={formatCost(item.costPerKgGain)}
-            subValue={item.totalCost > 0 ? `Total: ${item.totalCost.toFixed(0)} €` : undefined}
+            subValue={item.totalCost > 0 ? `Total: ${item.totalCost.toFixed(0)} DH` : undefined}
             isBest={isBestCost}
             color={costColor}
           />

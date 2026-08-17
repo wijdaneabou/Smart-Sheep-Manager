@@ -13,7 +13,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-
 import {
   listBatchCosts,
   createBatchCost,
@@ -23,6 +22,7 @@ import {
   type FatteningBatch,
 } from "../../../../services/fatteningService";
 import { BackButton } from "../../../../components/BackButton";
+import Pagination from "@/components/Pagination";
 
 const GREEN = "#14532d";
 
@@ -55,6 +55,10 @@ export default function BatchCostsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const PAGE_SIZE = 20;
+
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -76,14 +80,17 @@ export default function BatchCostsScreen() {
 
   const loadCosts = useCallback(async () => {
     setLoadingCosts(true);
-    const result = await listBatchCosts(batchId);
+    const result = await listBatchCosts(batchId, page, PAGE_SIZE);
     if (result.success) {
       setCosts(result.costs);
+      const total = result.pagination?.total ?? 0;
+      const limit = result.pagination?.limit ?? PAGE_SIZE;
+      setTotalPages(Math.max(1, Math.ceil(total / limit)));
     } else {
       setError(result.message);
     }
     setLoadingCosts(false);
-  }, [batchId]);
+  }, [batchId, page]);
 
   useFocusEffect(
     useCallback(() => {
@@ -217,7 +224,7 @@ export default function BatchCostsScreen() {
       >
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>Coût total du lot</Text>
-          <Text style={styles.summaryValue}>{getTotalCost().toFixed(2)} €</Text>
+          <Text style={styles.summaryValue}>{getTotalCost().toFixed(2)} DH</Text>
         </View>
 
         {Object.keys(costByCategory).length > 0 && (
@@ -226,7 +233,7 @@ export default function BatchCostsScreen() {
             {COST_CATEGORIES.filter((cat) => costByCategory[cat] !== undefined).map((cat) => (
               <View key={cat} style={styles.categoryRow}>
                 <Text style={styles.categoryLabel}>{CATEGORY_LABELS[cat] || cat}</Text>
-                <Text style={styles.categoryValue}>{costByCategory[cat].toFixed(2)} €</Text>
+                <Text style={styles.categoryValue}>{costByCategory[cat].toFixed(2)} DH</Text>
               </View>
             ))}
           </View>
@@ -286,7 +293,7 @@ export default function BatchCostsScreen() {
               onChangeText={setDescription}
             />
 
-            <Text style={styles.label}>Montant (€) *</Text>
+            <Text style={styles.label}>Montant (DH) *</Text>
             <TextInput
               style={styles.input}
               placeholder="ex: 1500.00"
@@ -345,7 +352,7 @@ export default function BatchCostsScreen() {
                       {new Date(item.date).toLocaleDateString("fr-FR")}
                     </Text>
                   </View>
-                  <Text style={styles.recordAmount}>{Number(item.amount).toFixed(2)} €</Text>
+                  <Text style={styles.recordAmount}>{Number(item.amount).toFixed(2)} DH</Text>
                   <Pressable
                     style={styles.recordDeleteButton}
                     onPress={() => handleDelete(item)}
@@ -357,6 +364,13 @@ export default function BatchCostsScreen() {
             />
           )}
         </View>
+
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPrev={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+        />
       </ScrollView>
     </SafeAreaView>
   );

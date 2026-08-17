@@ -90,11 +90,21 @@ export async function listBatchCostsHandler(c: Context) {
     return c.json({ error: "Vous n'avez pas accès à ce lot." }, 403);
   }
 
-  const result = await batchCostsService.getBatchCosts(parsed.data.batchId);
+  const result = await batchCostsService.getBatchCosts(
+    parsed.data.batchId,
+    parsed.data.limit ?? 20,
+    parsed.data.offset ?? 0
+  );
   if (!result.success) {
     return c.json({ error: result.message }, result.status);
   }
-  return c.json({ data: result.costs }, 200);
+  return c.json(
+    {
+      data: result.costs,
+      pagination: result.pagination,
+    },
+    200
+  );
 }
 
 export async function deleteBatchCostHandler(c: Context) {

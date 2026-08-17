@@ -279,12 +279,16 @@ export async function createBatchWeightRecord(input: {
   }
 }
 
-export async function listBatchWeightRecords(batchId: number) {
+export async function listBatchWeightRecords(batchId: number, page = 1, limit = 20) {
   try {
-    const response = await api.get<{ data: FatteningBatchWeightRecord[] }>(
-      `/fattening-batches/weight-records/batch/${batchId}`
-    );
-    return { success: true as const, records: response.data.data };
+    const offset = (page - 1) * limit;
+    const response = await api.get<{
+      data: FatteningBatchWeightRecord[];
+      pagination: { total: number; limit: number; offset: number };
+    }>(`/fattening-batches/weight-records/batch/${batchId}`, {
+      params: { limit, offset },
+    });
+    return { success: true as const, records: response.data.data, pagination: response.data.pagination };
   } catch (err: any) {
     return { success: false as const, message: extractError(err) };
   }
@@ -409,13 +413,16 @@ export async function createFeedRecord(input: {
   }
 }
 
-export async function listFeedRecords(batchId: number) {
+export async function listFeedRecords(batchId: number, page = 1, limit = 20) {
   try {
-    const response = await api.get<{ data: FatteningFeedRecord[] }>(
-      "/fattening-batches/feed-records",
-      { params: { batchId } }
-    );
-    return { success: true as const, records: response.data.data };
+    const offset = (page - 1) * limit;
+    const response = await api.get<{
+      data: FatteningFeedRecord[];
+      pagination: { total: number; limit: number; offset: number };
+    }>("/fattening-batches/feed-records", {
+      params: { batchId, limit, offset },
+    });
+    return { success: true as const, records: response.data.data, pagination: response.data.pagination };
   } catch (err: any) {
     return { success: false as const, message: extractError(err) };
   }
@@ -448,13 +455,16 @@ export async function createBatchCost(input: {
   }
 }
 
-export async function listBatchCosts(batchId: number) {
+export async function listBatchCosts(batchId: number, page = 1, limit = 20) {
   try {
-    const response = await api.get<{ data: FatteningBatchCostRecord[] }>(
-      "/fattening-batches/costs",
-      { params: { batchId } }
-    );
-    return { success: true as const, costs: response.data.data };
+    const offset = (page - 1) * limit;
+    const response = await api.get<{
+      data: FatteningBatchCostRecord[];
+      pagination: { total: number; limit: number; offset: number };
+    }>("/fattening-batches/costs", {
+      params: { batchId, limit, offset },
+    });
+    return { success: true as const, costs: response.data.data, pagination: response.data.pagination };
   } catch (err: any) {
     return { success: false as const, message: extractError(err) };
   }
@@ -487,13 +497,16 @@ export async function createIndividualWeight(input: {
   }
 }
 
-export async function listIndividualWeights(batchId: number) {
+export async function listIndividualWeights(batchId: number, page = 1, limit = 20) {
   try {
-    const response = await api.get<{ data: FatteningBatchIndividualWeight[] }>(
-      "/fattening-batches/individual-weights",
-      { params: { batchId } }
-    );
-    return { success: true as const, records: response.data.data };
+    const offset = (page - 1) * limit;
+    const response = await api.get<{
+      data: FatteningBatchIndividualWeight[];
+      pagination: { total: number; limit: number; offset: number };
+    }>("/fattening-batches/individual-weights", {
+      params: { batchId, limit, offset },
+    });
+    return { success: true as const, records: response.data.data, pagination: response.data.pagination };
   } catch (err: any) {
     return { success: false as const, message: extractError(err) };
   }

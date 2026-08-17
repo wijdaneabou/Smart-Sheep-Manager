@@ -76,12 +76,25 @@ export type GetBatchCostsResult =
       success: true;
       status: 200;
       costs: NonNullable<Awaited<ReturnType<typeof listBatchCosts>>>;
+      pagination: { total: number; limit: number; offset: number };
     }
   | { success: false; status: 404; message: string };
 
-export async function getBatchCosts(batchId: number): Promise<GetBatchCostsResult> {
-  const costs = await listBatchCosts(batchId);
-  return { success: true, status: 200, costs };
+export async function getBatchCosts(
+  batchId: number,
+  limit = 20,
+  offset = 0
+): Promise<GetBatchCostsResult> {
+  const result = await listBatchCosts(batchId, limit, offset);
+  if (!result) {
+    return { success: false, status: 404, message: "Lot introuvable." };
+  }
+  return {
+    success: true,
+    status: 200,
+    costs: result.rows,
+    pagination: { total: result.total, limit: result.limit, offset: result.offset },
+  };
 }
 
 export type DeleteBatchCostResult =

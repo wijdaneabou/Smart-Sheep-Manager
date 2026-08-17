@@ -18,6 +18,7 @@ import {
   type FatteningStatus,
 } from "../../../services/fatteningService";
 import { BackButton } from "../../../components/BackButton";
+import Pagination from "@/components/Pagination";
 import { usePermissions } from "@/contexts/PermissionsContext";
 
 type FilterStatus = "ALL" | FatteningStatus;
@@ -28,25 +29,34 @@ const STATUS_CONFIG: Record<FatteningStatus, { label: string; color: string; bgC
   CANCELLED: { label: "Annulé", color: "#DC2626", bgColor: "#FEE2E2" },
 };
 
+const PAGE_SIZE = 20;
+
 export default function FatteningScreen() {
   const [batches, setBatches] = useState<FatteningBatch[]>([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterStatus>("ALL");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { hasPermission } = usePermissions();
 
-  async function fetchBatches() {
+  async function fetchBatches(pageNum = 1) {
     setError(null);
     const result = await listFatteningBatches({
       search: search || undefined,
       status: filter === "ALL" ? undefined : filter,
-      limit: 50,
+      page: pageNum,
+      limit: PAGE_SIZE,
     });
     if (result.success) {
       setBatches(result.data);
+      const total = result.pagination?.total ?? 0;
+      const limit = result.pagination?.limit ?? PAGE_SIZE;
+      setTotalPages(Math.max(1, Math.ceil(total / limit)));
+      setPage(pageNum);
     } else {
       setError(result.message);
     }
@@ -55,13 +65,13 @@ export default function FatteningScreen() {
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
-      fetchBatches().finally(() => setLoading(false));
+      fetchBatches(1).finally(() => setLoading(false));
     }, [])
   );
 
   async function onRefresh() {
     setRefreshing(true);
-    await fetchBatches();
+    await fetchBatches(page);
     setRefreshing(false);
   }
 
@@ -69,6 +79,11 @@ export default function FatteningScreen() {
     if (filter === "ALL") return batches;
     return batches.filter((b: FatteningBatch) => b.status === filter);
   }, [batches, filter]);
+
+  function handleFilterChange(newFilter: FilterStatus) {
+    setFilter(newFilter);
+    setPage(1);
+  }
 
   function renderBatchItem({ item }: { item: FatteningBatch }) {
     const statusInfo = STATUS_CONFIG[item.status] || STATUS_CONFIG.ACTIVE;
@@ -157,7 +172,7 @@ export default function FatteningScreen() {
         <View style={styles.headerRow}>
           <BackButton variant="dark" style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.title}>Lots d'engraissement</Text>
+            <Text style={styles.title}>Lots d’engraissement</Text>
             <Text style={styles.subtitle}>
               {filteredBatches.length} lot{filteredBatches.length > 1 ? "s" : ""}
             </Text>
@@ -198,7 +213,7 @@ export default function FatteningScreen() {
               onChangeText={setSearch}
               onSubmitEditing={() => {
                 setLoading(true);
-                fetchBatches().finally(() => setLoading(false));
+                fetchBatches(1).finally(() => setLoading(false));
               }}
             />
           </View>
@@ -208,14 +223,14 @@ export default function FatteningScreen() {
           <FilterPill
             label="Tous"
             active={filter === "ALL"}
-            onPress={() => setFilter("ALL")}
+            onPress={() => handleFilterChange("ALL")}
           />
           {Object.entries(STATUS_CONFIG).map(([key, config]) => (
             <FilterPill
               key={key}
               label={config.label}
               active={filter === key}
-              onPress={() => setFilter(key as FilterStatus)}
+              onPress={() => handleFilterChange(key as FilterStatus)}
             />
           ))}
         </View>
@@ -233,11 +248,18 @@ export default function FatteningScreen() {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
             ListEmptyComponent={
-              <Text style={styles.empty}>Aucun lot d'engraissement trouvé.</Text>
+              <Text style={styles.empty}>Aucun lot d’engraissement trouvé.</Text>
             }
             renderItem={renderBatchItem}
           />
         )}
+
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPrev={() => fetchBatches(page - 1)}
+          onNext={() => fetchBatches(page + 1)}
+        />
 
         {hasPermission("FATTENING", "CREATE") && (
           <Link href={"/fattening/create" as any} asChild>
@@ -344,7 +366,7 @@ const styles = StyleSheet.create({
   filterPillTextActive: { color: GREEN },
   error: { color: "#dc2626", marginBottom: 8, fontSize: 13 },
   empty: { textAlign: "center", color: "#888", marginTop: 24 },
-  listContent: { paddingBottom: 100 },
+  listContent: { paddingBottom: 20 },
   card: {
     backgroundColor: "#fff",
     borderRadius: 18,

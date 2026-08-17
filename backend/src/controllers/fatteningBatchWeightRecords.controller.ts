@@ -43,13 +43,25 @@ export async function listWeightRecordsHandler(c: Context) {
 
   const allowedIds = await getUserExploitationIds(user.id, user.roleName || "");
   const batchId = parsed.data.batchId;
+  const limit = parsed.data.limit ?? 20;
+  const offset = parsed.data.offset ?? 0;
 
-  const result = await fatteningBatchWeightRecordsService.getWeightRecordsByBatch(batchId);
+  const result = await fatteningBatchWeightRecordsService.getWeightRecordsByBatch(
+    batchId,
+    limit,
+    offset
+  );
   if (!result.success) {
     return c.json({ error: result.message }, 404);
   }
 
-  return c.json({ data: result.records }, 200);
+  return c.json(
+    {
+      data: result.records,
+      pagination: result.pagination,
+    },
+    200
+  );
 }
 
 export async function getGmqStatsHandler(c: Context) {

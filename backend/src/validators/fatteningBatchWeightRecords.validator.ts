@@ -9,4 +9,6 @@ export const createWeightRecordSchema = z.object({
 
 export const listWeightRecordsQuerySchema = z.object({
   batchId: z.coerce.number().int().positive(),
+  limit: z.coerce.number().int().positive().max(200).default(20),
+  offset: z.coerce.number().int().nonnegative().default(0),
 });

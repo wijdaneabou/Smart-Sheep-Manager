@@ -24,6 +24,7 @@ import {
 } from "../../../../services/fatteningService";
 
 import { usePermissions } from "@/contexts/PermissionsContext";
+import Pagination from "@/components/Pagination";
 
 const GREEN = "#14532d";
 
@@ -75,6 +76,10 @@ export default function BatchWeighingHistoryScreen() {
 
   const [error, setError] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const PAGE_SIZE = 20;
+
   /**
    * Chargement du lot
    */
@@ -116,10 +121,13 @@ export default function BatchWeighingHistoryScreen() {
     setLoadingRecords(true);
 
     try {
-      const result = await listBatchWeightRecords(batchId);
+      const result = await listBatchWeightRecords(batchId, page, PAGE_SIZE);
 
       if (result.success) {
         setRecords(result.records);
+        const total = result.pagination?.total ?? 0;
+        const limit = result.pagination?.limit ?? PAGE_SIZE;
+        setTotalPages(Math.max(1, Math.ceil(total / limit)));
       } else {
         setError(result.message);
       }
@@ -129,7 +137,7 @@ export default function BatchWeighingHistoryScreen() {
     } finally {
       setLoadingRecords(false);
     }
-  }, [batchId, isValidBatchId]);
+  }, [batchId, isValidBatchId, page]);
 
   /**
    * Chargement des statistiques GMQ
@@ -164,9 +172,18 @@ export default function BatchWeighingHistoryScreen() {
    * Chargement initial
    */
   useEffect(() => {
-    loadBatch();
-    loadRecords();
-    loadGmq();
+    let mounted = true;
+
+    async function load() {
+      if (!mounted) return;
+      await Promise.all([loadBatch(), loadRecords(), loadGmq()]);
+    }
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
   }, [loadBatch, loadRecords, loadGmq]);
 
   /**
@@ -872,6 +889,13 @@ export default function BatchWeighingHistoryScreen() {
             </View>
           )}
         </View>
+
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPrev={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+        />
 
         {/* AJOUTER UNE PESÉE */}
         {hasPermission(

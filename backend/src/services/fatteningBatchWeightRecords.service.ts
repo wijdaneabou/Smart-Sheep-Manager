@@ -79,12 +79,25 @@ export type GetWeightRecordsResult =
       success: true;
       status: 200;
       records: NonNullable<Awaited<ReturnType<typeof listWeightRecordsByBatch>>>;
+      pagination: { total: number; limit: number; offset: number };
     }
   | { success: false; status: 404; message: string };
 
-export async function getWeightRecordsByBatch(batchId: number): Promise<GetWeightRecordsResult> {
-  const records = await listWeightRecordsByBatch(batchId);
-  return { success: true, status: 200, records };
+export async function getWeightRecordsByBatch(
+  batchId: number,
+  limit = 20,
+  offset = 0
+): Promise<GetWeightRecordsResult> {
+  const result = await listWeightRecordsByBatch(batchId, limit, offset);
+  if (!result) {
+    return { success: false, status: 404, message: "Lot introuvable." };
+  }
+  return {
+    success: true,
+    status: 200,
+    records: result.rows,
+    pagination: { total: result.total, limit: result.limit, offset: result.offset },
+  };
 }
 
 export type DeleteWeightRecordResult =

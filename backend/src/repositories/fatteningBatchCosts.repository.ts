@@ -33,12 +33,23 @@ export async function deleteBatchCost(id: number) {
   await db.delete(fatteningBatchCosts).where(eq(fatteningBatchCosts.id, id));
 }
 
-export async function listBatchCosts(batchId: number) {
-  return db
+export async function listBatchCosts(batchId: number, limit = 20, offset = 0) {
+  const whereClause = eq(fatteningBatchCosts.fatteningBatchId, batchId);
+
+  const rows = await db
     .select()
     .from(fatteningBatchCosts)
-    .where(eq(fatteningBatchCosts.fatteningBatchId, batchId))
-    .orderBy(desc(fatteningBatchCosts.date));
+    .where(whereClause)
+    .orderBy(desc(fatteningBatchCosts.date))
+    .limit(limit)
+    .offset(offset);
+
+  const [{ total }] = await db
+    .select({ total: sql<number>`COUNT(*)` })
+    .from(fatteningBatchCosts)
+    .where(whereClause);
+
+  return { rows, total, limit, offset };
 }
 
 export async function getBatchCostSummary(batchId: number) {

@@ -91,12 +91,25 @@ export type GetFeedRecordsResult =
       success: true;
       status: 200;
       records: NonNullable<Awaited<ReturnType<typeof listFeedRecordsByBatch>>>;
+      pagination: { total: number; limit: number; offset: number };
     }
   | { success: false; status: 404; message: string };
 
-export async function getFeedRecordsByBatch(batchId: number): Promise<GetFeedRecordsResult> {
-  const records = await listFeedRecordsByBatch(batchId);
-  return { success: true, status: 200, records };
+export async function getFeedRecordsByBatch(
+  batchId: number,
+  limit = 20,
+  offset = 0
+): Promise<GetFeedRecordsResult> {
+  const result = await listFeedRecordsByBatch(batchId, limit, offset);
+  if (!result) {
+    return { success: false, status: 404, message: "Lot introuvable." };
+  }
+  return {
+    success: true,
+    status: 200,
+    records: result.rows,
+    pagination: { total: result.total, limit: result.limit, offset: result.offset },
+  };
 }
 
 export type DeleteFeedRecordResult =

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -22,7 +22,9 @@ import {
   type FatteningBatchIndividualWeight,
   type FatteningBatch,
 } from "../../../../services/fatteningService";
+import { getAnimalById } from "../../../../services/animalsService";
 import { BackButton } from "../../../../components/BackButton";
+import Pagination from "@/components/Pagination";
 
 const GREEN = "#14532d";
 
@@ -38,12 +40,21 @@ export default function BatchIndividualWeightsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const PAGE_SIZE = 20;
+
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [animalId, setAnimalId] = useState("");
   const [weight, setWeight] = useState("");
   const [note, setNote] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // RFID cache: animalId -> rfid
+  const [animalRfids, setAnimalRfids] = useState<Record<number, string>>({});
+  const [rfidLookupFailed, setRfidLookupFailed] = useState<Set<number>>(new Set());
+  const fetchedAnimalIdsRef = useRef<Set<number>>(new Set());
 
   const loadBatch = useCallback(async () => {
     if (!id) return;
@@ -57,16 +68,56 @@ export default function BatchIndividualWeightsScreen() {
     setLoading(false);
   }, [id]);
 
+  const loadAnimalRfids = useCallback(async (records: FatteningBatchIndividualWeight[]) => {
+    const idsToFetch = Array.from(
+      new Set(
+        records
+          .map((r) => r.animalId)
+          .filter((aid): aid is number => aid !== null && !fetchedAnimalIdsRef.current.has(aid))
+      )
+    );
+
+    if (idsToFetch.length === 0) return;
+
+    const results = await Promise.all(idsToFetch.map((aid) => getAnimalById(aid)));
+
+    const updates: Record<number, string> = {};
+    const failed: number[] = [];
+
+    results.forEach((result, idx) => {
+      const aid = idsToFetch[idx];
+      if (result.success) {
+        updates[aid] = result.animal.rfid;
+        fetchedAnimalIdsRef.current.add(aid); // marqué "traité" seulement en cas de succès
+      } else {
+        failed.push(aid);
+        console.warn(`RFID introuvable pour l'animal #${aid}:`, result.message);
+      }
+    });
+
+    if (Object.keys(updates).length > 0) {
+      setAnimalRfids((prev) => ({ ...prev, ...updates }));
+    }
+    if (failed.length > 0) {
+      setRfidLookupFailed((prev) => new Set([...prev, ...failed]));
+    }
+  }, []);
+
   const loadWeights = useCallback(async () => {
+    if (!id || Number.isNaN(batchId)) return;
     setLoadingWeights(true);
-    const result = await listIndividualWeights(batchId);
+    const result = await listIndividualWeights(batchId, page, PAGE_SIZE);
     if (result.success) {
       setWeights(result.records);
+      loadAnimalRfids(result.records);
+      const total = result.pagination?.total ?? 0;
+      const limit = result.pagination?.limit ?? PAGE_SIZE;
+      setTotalPages(Math.max(1, Math.ceil(total / limit)));
     } else {
       setError(result.message);
     }
     setLoadingWeights(false);
-  }, [batchId]);
+  }, [id, batchId, page, loadAnimalRfids]);
 
   useFocusEffect(
     useCallback(() => {
@@ -108,6 +159,9 @@ export default function BatchIndividualWeightsScreen() {
 
     if (result.success) {
       setWeights((prev) => [result.record as any, ...prev]);
+      if (result.record.animalId) {
+        loadAnimalRfids([result.record]);
+      }
       setAnimalId("");
       setWeight("");
       setNote("");
@@ -201,7 +255,7 @@ export default function BatchIndividualWeightsScreen() {
       >
         {stats && (
           <View style={styles.statsCard}>
-            <Text style={styles.statsTitle}>Statistiques d'homogénéité</Text>
+            <Text style={styles.statsTitle}>Statistiques d’homogénéité</Text>
             <View style={styles.statsGrid}>
               <StatBox label="Écart-type (σ)" value={`${stats.stdDev.toFixed(2)} kg`} />
               <StatBox label="Moyenne" value={`${stats.mean.toFixed(2)} kg`} />
@@ -302,7 +356,13 @@ export default function BatchIndividualWeightsScreen() {
                     <Text style={styles.recordWeight}>{Number(item.weight).toFixed(2)} kg</Text>
                     <Text style={styles.recordDate}>
                       {new Date(item.date).toLocaleDateString("fr-FR")}
-                      {item.animalId ? ` — Animal #${item.animalId}` : ""}
+                      {item.animalId
+                        ? animalRfids[item.animalId]
+                          ? ` — RFID: ${animalRfids[item.animalId]}`
+                          : rfidLookupFailed.has(item.animalId)
+                            ? " — RFID indisponible"
+                            : " — RFID: …"
+                        : ""}
                     </Text>
                   </View>
                   <Pressable
@@ -316,6 +376,13 @@ export default function BatchIndividualWeightsScreen() {
             />
           )}
         </View>
+
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPrev={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+        />
       </ScrollView>
     </SafeAreaView>
   );

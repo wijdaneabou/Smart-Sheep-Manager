@@ -40,12 +40,23 @@ export async function deleteWeightRecord(id: number) {
     .where(eq(fatteningBatchWeightRecords.id, id));
 }
 
-export async function listWeightRecordsByBatch(batchId: number) {
-  return db
+export async function listWeightRecordsByBatch(batchId: number, limit = 20, offset = 0) {
+  const whereClause = eq(fatteningBatchWeightRecords.fatteningBatchId, batchId);
+
+  const rows = await db
     .select()
     .from(fatteningBatchWeightRecords)
-    .where(eq(fatteningBatchWeightRecords.fatteningBatchId, batchId))
-    .orderBy(desc(fatteningBatchWeightRecords.date));
+    .where(whereClause)
+    .orderBy(desc(fatteningBatchWeightRecords.date))
+    .limit(limit)
+    .offset(offset);
+
+  const [{ total }] = await db
+    .select({ total: sql<number>`COUNT(*)` })
+    .from(fatteningBatchWeightRecords)
+    .where(whereClause);
+
+  return { rows, total, limit, offset };
 }
 
 export async function getLatestWeightRecordByBatch(batchId: number) {

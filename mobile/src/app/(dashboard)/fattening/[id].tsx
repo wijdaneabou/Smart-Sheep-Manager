@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -31,6 +31,7 @@ import {
   type FatteningFeedRecord,
   type FatteningBatchCostRecord,
 } from "../../../services/fatteningService";
+import { getAnimalById } from "../../../services/animalsService";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import SubTabBar from "@/components/SubTabBar";
 
@@ -72,6 +73,11 @@ export default function FatteningBatchDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // RFID cache: animalId -> rfid
+  const [animalRfids, setAnimalRfids] = useState<Record<number, string>>({});
+  const [rfidLookupFailed, setRfidLookupFailed] = useState<Set<number>>(new Set());
+  const fetchedAnimalIdsRef = useRef<Set<number>>(new Set());
+
   const loadBatch = useCallback(async () => {
     if (!id) return;
     setLoading(true);
@@ -111,13 +117,49 @@ export default function FatteningBatchDetailScreen() {
     }
   }, [id]);
 
+  const loadAnimalRfids = useCallback(async (weights: FatteningBatchIndividualWeight[]) => {
+    const idsToFetch = Array.from(
+      new Set(
+        weights
+          .map((w) => w.animalId)
+          .filter((aid): aid is number => aid !== null && !fetchedAnimalIdsRef.current.has(aid))
+      )
+    );
+
+    if (idsToFetch.length === 0) return;
+
+    const results = await Promise.all(idsToFetch.map((aid) => getAnimalById(aid)));
+
+    const updates: Record<number, string> = {};
+    const failed: number[] = [];
+
+    results.forEach((result, idx) => {
+      const aid = idsToFetch[idx];
+      if (result.success) {
+        updates[aid] = result.animal.rfid;
+        fetchedAnimalIdsRef.current.add(aid);
+      } else {
+        failed.push(aid);
+        console.warn(`RFID introuvable pour l'animal #${aid}:`, result.message);
+      }
+    });
+
+    if (Object.keys(updates).length > 0) {
+      setAnimalRfids((prev) => ({ ...prev, ...updates }));
+    }
+    if (failed.length > 0) {
+      setRfidLookupFailed((prev) => new Set([...prev, ...failed]));
+    }
+  }, []);
+
   const loadIndividualWeights = useCallback(async () => {
     if (!id) return;
     const result = await listIndividualWeights(Number(id));
     if (result.success) {
       setIndividualWeights(result.records);
+      loadAnimalRfids(result.records);
     }
-  }, [id]);
+  }, [id, loadAnimalRfids]);
 
   const loadFeedRecords = useCallback(async () => {
     if (!id) return;
@@ -460,7 +502,13 @@ export default function FatteningBatchDetailScreen() {
                         <Text style={styles.gmqHistoryDate}>{new Date(w.date).toLocaleDateString("fr-FR")}</Text>
                         <Text style={styles.gmqHistoryWeight}>{Number(w.weight).toFixed(2)} kg</Text>
                         <Text style={styles.gmqHistoryGmq}>
-                          {w.animalId ? `#${w.animalId}` : "—"}
+                          {w.animalId
+                            ? animalRfids[w.animalId]
+                              ? animalRfids[w.animalId]
+                              : rfidLookupFailed.has(w.animalId)
+                                ? "N/A"
+                                : "…"
+                            : "—"}
                         </Text>
                       </View>
                     ))}
@@ -495,7 +543,7 @@ export default function FatteningBatchDetailScreen() {
                       <Text style={styles.miniStatLabel}>Total feed</Text>
                     </View>
                     <View style={styles.miniStatBox}>
-                      <Text style={styles.miniStatValue}>{totalFeedCost.toFixed(2)} €</Text>
+                      <Text style={styles.miniStatValue}>{totalFeedCost.toFixed(2)} DH</Text>
                       <Text style={styles.miniStatLabel}>Coût total</Text>
                     </View>
                   </View>
@@ -505,7 +553,7 @@ export default function FatteningBatchDetailScreen() {
                         <Text style={styles.gmqHistoryDate}>{new Date(r.date).toLocaleDateString("fr-FR")}</Text>
                         <Text style={styles.gmqHistoryWeight}>{r.feedType}</Text>
                         <Text style={styles.gmqHistoryGmq}>
-                          {Number(r.quantityKg).toFixed(1)} kg — {(Number(r.quantityKg) * Number(r.unitPrice)).toFixed(2)} €
+                          {Number(r.quantityKg).toFixed(1)} kg — {(Number(r.quantityKg) * Number(r.unitPrice)).toFixed(2)} DH
                         </Text>
                       </View>
                     ))}
@@ -536,7 +584,7 @@ export default function FatteningBatchDetailScreen() {
                 <View>
                   <View style={styles.miniStatsGrid}>
                     <View style={styles.miniStatBox}>
-                      <Text style={styles.miniStatValue}>{totalCosts.toFixed(2)} €</Text>
+                      <Text style={styles.miniStatValue}>{totalCosts.toFixed(2)} DH</Text>
                       <Text style={styles.miniStatLabel}>Total coûts</Text>
                     </View>
                     <View style={styles.miniStatBox}>
@@ -550,7 +598,7 @@ export default function FatteningBatchDetailScreen() {
                         <Text style={styles.gmqHistoryDate}>{new Date(c.date).toLocaleDateString("fr-FR")}</Text>
                         <Text style={styles.gmqHistoryWeight}>{c.category}</Text>
                         <Text style={styles.gmqHistoryGmq}>
-                          {Number(c.amount).toFixed(2)} €
+                          {Number(c.amount).toFixed(2)} DH
                         </Text>
                       </View>
                     ))}
