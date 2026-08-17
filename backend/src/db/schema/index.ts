@@ -36,3 +36,7 @@ export * from "./iotSensorData.js";
 export * from "./iotAlerts.js";
 export * from "./iotZones.js";
 export * from "./iotShieldStatus.js";
+
+export * from './budgets.js';
+export * from './expenses.js';
+export * from './revenues.js';

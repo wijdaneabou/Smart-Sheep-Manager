@@ -31,14 +31,21 @@ import {
 } from "../../../../services/exploitationservice";
 import { SENSOR_TYPES, SHIELD_STATUSES } from "../../../../constants/iot";
 import { BackButton } from "../../../../components/BackButton";
-
-// Import du Picker
 import { Picker } from "@react-native-picker/picker";
+import { usePermissions } from "../../../../contexts/PermissionsContext";
 
 export default function EditIotShieldScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const shieldId = Number(id);
   const router = useRouter();
+  const { hasPermission } = usePermissions();
+
+  // Silent redirect if no update permission
+  useEffect(() => {
+    if (!hasPermission('IOT', 'SHIELDS:UPDATE')) {
+      router.replace(`/iot/${id}/detail` as any);
+    }
+  }, [hasPermission, router, id]);
 
   const [ssmIotNumber, setSsmIotNumber] = useState("");
   const [sensorType, setSensorType] = useState<SensorType>("LOCALIZATION");
@@ -135,7 +142,6 @@ export default function EditIotShieldScreen() {
     }
   }
 
-  // Fonction pour obtenir le style du statut sélectionné
   const getStatusStyle = (statusId: ShieldStatus) => {
     const statusObj = SHIELD_STATUSES.find((s) => s.id === statusId);
     return statusObj ? statusObj.color : GREEN;
@@ -413,7 +419,6 @@ const styles = StyleSheet.create({
     color: "#1f2937",
   },
 
-  // Styles pour le Picker
   pickerContainer: {
     position: "relative",
     backgroundColor: "#fff",

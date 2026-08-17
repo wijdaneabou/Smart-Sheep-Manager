@@ -1,13 +1,14 @@
-import { useFonts, PlayfairDisplay_700Bold, PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display';
+import { useFonts } from 'expo-font';
 import { Stack } from "expo-router";
 import { SplashScreen } from "expo-router";
 import { useEffect } from "react";
-import { PermissionsProvider } from "@/contexts/PermissionsContext"; 
+import { PermissionsProvider } from "@/contexts/PermissionsContext";
 
 export default function RootLayout() {
   const [fontsLoaded, error] = useFonts({
-    PlayfairDisplay_700Bold,
-    PlayfairDisplay_400Regular,
+    // Load Billabong from assets/fonts
+    'Billabong': require('../../assets/fonts/Billabong.otf'),
+    // (keep other fonts if you have them)
   });
 
   useEffect(() => {
@@ -18,7 +19,7 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <PermissionsProvider> {/* ✅ wrap tout l'application */}
+    <PermissionsProvider>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(dashboard)" />

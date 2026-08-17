@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Tabs, router, usePathname, Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View, TouchableOpacity, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { getTabModules } from "@/constants/modules";
 import ProfileModal from "@/components/ProfileModal";
@@ -27,17 +28,20 @@ function DashboardHeader() {
   const photoUrl = getFileUrl(user?.photo);
 
   return (
-    <View style={styles.header}>
-      <Text style={styles.brandTitle}>Smart Sheep Manager</Text>
-      <TouchableOpacity onPress={() => setModalVisible(true)}>
-        {photoUrl ? (
-          <Image source={{ uri: photoUrl }} style={styles.avatarImage} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarInitials}>{getInitials()}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
+    <View style={styles.headerContainer}>
+      <View style={styles.header}>
+        <Text style={styles.brandTitle}>Smart Sheep Manager</Text>
+        <TouchableOpacity onPress={() => setModalVisible(true)}>
+          {photoUrl ? (
+            <Image source={{ uri: photoUrl }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarInitials}>{getInitials()}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+      <View style={styles.headerSeparator} />
       <ProfileModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -48,7 +52,7 @@ function DashboardHeader() {
   );
 }
 
-// ----- Bottom navigation bar (unchanged) -----
+// ----- Bottom navigation bar (wrapped with SafeAreaView) -----
 function DashboardBottomBar() {
   const pathname = usePathname();
   const { permissions, isAdmin } = usePermissions();
@@ -87,26 +91,28 @@ function DashboardBottomBar() {
   }, [pathname, tabModules, moreModules]);
 
   return (
-    <View style={styles.bottomBar}>
-      <View style={styles.navRow}>
-        {navItems.map((item) => (
-          <Pressable
-            key={item.key}
-            onPress={() => router.navigate(item.href as Href)}
-            style={({ pressed }) => [
-              styles.navItem,
-              pressed && styles.navItemPressed,
-            ]}
-          >
-            <Ionicons
-              name={item.icon as any}
-              size={28}
-              color={item.active ? "#0F2A1D" : "#5C8A72"}
-            />
-          </Pressable>
-        ))}
+    <SafeAreaView edges={['bottom']} style={styles.safeBottom}>
+      <View style={styles.bottomBar}>
+        <View style={styles.navRow}>
+          {navItems.map((item) => (
+            <Pressable
+              key={item.key}
+              onPress={() => router.navigate(item.href as Href)}
+              style={({ pressed }) => [
+                styles.navItem,
+                pressed && styles.navItemPressed,
+              ]}
+            >
+              <Ionicons
+                name={item.icon as any}
+                size={28}
+                color={item.active ? "#0F2A1D" : "#5C8A72"}
+              />
+            </Pressable>
+          ))}
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -153,21 +159,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-  header: {
+  headerContainer: {
     backgroundColor: "#FFFFFF",
-    paddingTop: 54,
+    paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: 8,
+  },
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingBottom: 8,
+  },
+  headerSeparator: {
+    height: 1,
+    backgroundColor: "#E5E7EB",
+    marginTop: 4,
+    marginBottom: 4,
   },
   brandTitle: {
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: "400", // Billabong is a script font, use regular weight
     color: "#0F2A1D",
-    letterSpacing: -0.5,
-    fontFamily: "DancingScript_700Bold",
+    letterSpacing: 0,
+    fontFamily: "Billabong", // matches the key in useFonts
   },
   avatarImage: {
     width: 40,
@@ -194,11 +208,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
+  safeBottom: {
+    backgroundColor: "#FFFFFF",
+  },
   bottomBar: {
     backgroundColor: "#FFFFFF",
-    paddingTop: 6,
+    paddingTop: 4,
     paddingHorizontal: 12,
-    paddingBottom: 20,
+    paddingBottom: 4,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
   },

@@ -6,28 +6,35 @@ import {
   compareAnimalsHandler,
 } from "../controllers/iotAnalytics.controller.js";
 import { isAuthenticated } from "../middlewares/auth.middleware.js";
-import { requireRole } from "../middlewares/rbac.middleware.js";
+import { requirePermission } from "../middlewares/permissions.middleware.js";
 
 const iotAnalyticsRoutes = new Hono();
 
 iotAnalyticsRoutes.use("*", isAuthenticated);
 
-const roles = ["ADMIN", "MANAGER", "ELEVEUR", "VETERINAIRE"] as const;
-
 // GET /api/iot-analytics/compare?exploitationId=1&days=7
-// (déclaré AVANT /:shieldId/* pour que "compare" ne soit pas capturé comme un id)
-iotAnalyticsRoutes.get("/compare", requireRole(...roles), compareAnimalsHandler);
+iotAnalyticsRoutes.get(
+  "/compare",
+  requirePermission('IOT', 'ANALYTICS:READ'),
+  compareAnimalsHandler
+);
 
 iotAnalyticsRoutes.get(
   "/:shieldId/temperature-trend",
-  requireRole(...roles),
+  requirePermission('IOT', 'ANALYTICS:READ'),
   getTemperatureTrendHandler
 );
+
 iotAnalyticsRoutes.get(
   "/:shieldId/grazing-time",
-  requireRole(...roles),
+  requirePermission('IOT', 'ANALYTICS:READ'),
   getGrazingTimeHandler
 );
-iotAnalyticsRoutes.get("/:shieldId/distance", requireRole(...roles), getDistanceHandler);
+
+iotAnalyticsRoutes.get(
+  "/:shieldId/distance",
+  requirePermission('IOT', 'ANALYTICS:READ'),
+  getDistanceHandler
+);
 
 export default iotAnalyticsRoutes;

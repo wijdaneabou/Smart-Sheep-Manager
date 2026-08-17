@@ -20,6 +20,7 @@ import {
 import { getSensorTypeInfo, getShieldStatusInfo } from "../../../constants/iot";
 import { BackButton } from "../../../components/BackButton";
 import { useAuth } from "../../../hooks/useAuth";
+import { usePermissions } from "../../../contexts/PermissionsContext";
 import * as iotAlertsService from "../../../services/iotAlertsService";
 
 const POLL_INTERVAL = 5000;
@@ -122,6 +123,15 @@ function timeAgoLabel(dateStr: string | null): string {
 export default function IoTLiveScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { hasPermission } = usePermissions();
+
+  // Silent redirect if no sensor read permission
+  useEffect(() => {
+    if (!hasPermission('IOT', 'SENSOR:READ')) {
+      router.replace("/iot");
+    }
+  }, [hasPermission, router]);
+
   const [readings, setReadings] = useState<LatestSensorData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

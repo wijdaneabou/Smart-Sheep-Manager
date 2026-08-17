@@ -26,13 +26,22 @@ import {
   listAnimals,
   type Animal,
 } from "../../../services/animalsService";
-import { getExploitations } from "../../../services/exploitationservice"; // we'll create this
+import { getExploitations } from "../../../services/exploitationservice";
 import { SENSOR_TYPES, SHIELD_STATUSES } from "../../../constants/iot";
 import { useAuth } from "../../../hooks/useAuth";
+import { usePermissions } from "../../../contexts/PermissionsContext";
 
 export default function CreateIotShieldScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { hasPermission } = usePermissions();
+
+  // Silent redirect if no create permission
+  useEffect(() => {
+    if (!hasPermission('IOT', 'SHIELDS:CREATE')) {
+      router.replace("/iot");
+    }
+  }, [hasPermission, router]);
 
   // --- Identité ---
   const [ssmIotNumber, setSsmIotNumber] = useState("SSM-IOT-000001");
@@ -86,7 +95,7 @@ export default function CreateIotShieldScreen() {
     const result = await listAnimals({
       page: 1,
       limit: 100,
-      exploitationId, // ✅ filter by exploitation
+      exploitationId,
     });
     setLoadingAnimals(false);
     if (result.success) {
@@ -132,7 +141,7 @@ export default function CreateIotShieldScreen() {
       battery: battery ? Number(battery) : undefined,
       animalId: selectedAnimalId,
       status,
-      exploitationId: selectedExploitationId!, // ✅ pass selected
+      exploitationId: selectedExploitationId!,
     });
 
     setLoading(false);

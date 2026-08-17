@@ -10,7 +10,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link, useFocusEffect } from "expo-router";
+import { Link, useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   listIotShields,
@@ -28,6 +28,16 @@ type StatusFilterType = "TOUT" | ShieldStatus;
 const SEARCH_DEBOUNCE_MS = 400;
 
 export default function IoTShieldScreen() {
+  const router = useRouter();
+  const { hasPermission } = usePermissions();
+
+  // Silent redirect if no read permission
+  useEffect(() => {
+    if (!hasPermission('IOT', 'SHIELDS:READ')) {
+      router.replace("/(dashboard)");
+    }
+  }, [hasPermission, router]);
+
   const [shields, setShields] = useState<IotShield[]>([]);
   const [search, setSearch] = useState("");
   const [sensorFilter, setSensorFilter] = useState<FilterType>("TOUT");
@@ -35,8 +45,6 @@ export default function IoTShieldScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const { hasPermission } = usePermissions();
 
   const filtersRef = useRef({ search, sensorFilter, statusFilter });
   filtersRef.current = { search, sensorFilter, statusFilter };
@@ -99,6 +107,8 @@ export default function IoTShieldScreen() {
   const activeCount = shields.filter((s) => s.status === "ACTIVE").length;
   const inactiveCount = shields.filter((s) => s.status === "INACTIVE").length;
 
+  const canCreate = hasPermission('IOT', 'SHIELDS:CREATE');
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.container}>
@@ -115,14 +125,14 @@ export default function IoTShieldScreen() {
 
         <Link href={"/iot/live" as any} asChild>
           <Pressable style={styles.liveButton}>
-            <Text style={styles.liveButtonIcon}>📡</Text>
+            <Ionicons name="radio" size={18} color="#059669" />
             <Text style={styles.liveButtonText}>Suivi en temps réel</Text>
           </Pressable>
         </Link>
 
         <View style={styles.searchRow}>
           <View style={styles.searchInputWrap}>
-            <Text style={styles.searchIcon}>🔍</Text>
+            <Ionicons name="search" size={16} color="#999" style={{ marginRight: 8 }} />
             <TextInput
               style={styles.searchInput}
               placeholder="Rechercher par numéro SSM-IOT ou animal..."
@@ -237,12 +247,12 @@ export default function IoTShieldScreen() {
                       </View>
 
                       <View style={styles.infoRow}>
-                        <Text style={styles.infoIcon}>📡</Text>
+                        <Ionicons name="hardware-chip" size={12} color="#666" style={{ width: 20 }} />
                         <Text style={styles.infoValue}>{sensorInfo.label}</Text>
                       </View>
 
                       <View style={styles.infoRow}>
-                        <Text style={styles.infoIcon}>🔋</Text>
+                        <Ionicons name="battery-full" size={12} color={batteryColor} style={{ width: 20 }} />
                         <Text style={[styles.infoValue, { color: batteryColor }]}>
                           {item.battery}%
                         </Text>
@@ -250,14 +260,14 @@ export default function IoTShieldScreen() {
 
                       {item.animal ? (
                         <View style={styles.infoRow}>
-                          <Text style={styles.infoIcon}>🐑</Text>
+                          <Ionicons name="paw" size={12} color="#666" style={{ width: 20 }} />
                           <Text style={styles.infoValue}>
                             {item.animal.name} ({item.animal.rfid})
                           </Text>
                         </View>
                       ) : (
                         <View style={styles.infoRow}>
-                          <Text style={styles.infoIcon}>🐑</Text>
+                          <Ionicons name="paw" size={12} color="#666" style={{ width: 20 }} />
                           <Text style={[styles.infoValue, { color: "#999" }]}>
                             Aucun animal associé
                           </Text>
@@ -265,7 +275,7 @@ export default function IoTShieldScreen() {
                       )}
                     </View>
 
-                    <Text style={styles.chevron}>›</Text>
+                    <Ionicons name="chevron-forward" size={20} color="#ccc" />
                   </Pressable>
                 </Link>
               );
@@ -273,10 +283,10 @@ export default function IoTShieldScreen() {
           />
         )}
 
-        {hasPermission('IOT', 'SHIELDS:CREATE') && (
+        {canCreate && (
           <Link href={"/iot/create" as any} asChild>
             <Pressable style={styles.fab}>
-              <Text style={styles.fabIcon}>+</Text>
+              <Ionicons name="add" size={28} color="#fff" />
             </Pressable>
           </Link>
         )}
@@ -341,7 +351,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 14,
   },
-  searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.6 },
   searchInput: { flex: 1, paddingVertical: 13, fontSize: 14 },
 
   filterRow: { flexDirection: "row", gap: 8, marginBottom: 10, flexWrap: "wrap" },
@@ -402,10 +411,7 @@ const styles = StyleSheet.create({
   statusBadgeText: { fontSize: 11, fontWeight: "700" },
 
   infoRow: { flexDirection: "row", alignItems: "center", minHeight: 18 },
-  infoIcon: { fontSize: 12, width: 20, color: "#666" },
   infoValue: { fontSize: 13, fontWeight: "600", color: "#333" },
-
-  chevron: { fontSize: 24, color: "#ccc", marginLeft: 6 },
 
   fab: {
     position: "absolute",
@@ -440,8 +446,5 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  liveButtonIcon: { fontSize: 20 },
   liveButtonText: { fontSize: 15, fontWeight: "700", color: "#059669" },
-
-  fabIcon: { fontSize: 28, color: "#fff", fontWeight: "300", marginTop: -2 },
 });

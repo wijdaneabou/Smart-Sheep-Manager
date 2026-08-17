@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   getTemperatureTrend,
@@ -23,19 +23,25 @@ import {
 } from "../../../services/iotAnalyticsService";
 import { BackButton } from "../../../components/BackButton";
 import { useAuth } from "../../../hooks/useAuth";
+import { usePermissions } from "../../../contexts/PermissionsContext";
 
 const GREEN = "#14532d";
 const BORDER = "#E7E4DC";
 const TEXT_MUTED = "#8A8A85";
 const DAYS_OPTIONS = [7, 14, 30];
 
-/**
- * Cet écran compare tous les animaux de l'exploitation (onglet "Comparaison"),
- * et affiche l'historique détaillé du premier bouclier sélectionné dans les
- * autres onglets. Adaptez selectedShieldId si vous voulez un sélecteur dédié.
- */
 export default function IotAnalyticsScreen() {
+  const router = useRouter();
   const { user } = useAuth();
+  const { hasPermission } = usePermissions();
+
+  // Silent redirect if no analytics read permission
+  useEffect(() => {
+    if (!hasPermission('IOT', 'ANALYTICS:READ')) {
+      router.replace("/iot");
+    }
+  }, [hasPermission, router]);
+
   const exploitationId = (user as any)?.exploitationId;
 
   const [days, setDays] = useState(7);
@@ -79,7 +85,6 @@ export default function IotAnalyticsScreen() {
     useCallback(() => {
       setLoading(true);
       fetchAll().finally(() => setLoading(false));
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [exploitationId, days, selectedShieldId])
   );
 

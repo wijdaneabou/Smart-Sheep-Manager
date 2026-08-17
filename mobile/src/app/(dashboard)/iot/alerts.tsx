@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   listAlerts,
@@ -41,7 +41,15 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function IotAlertsScreen() {
+  const router = useRouter();
   const { hasPermission } = usePermissions();
+
+  // Silent redirect if no read permission
+  useEffect(() => {
+    if (!hasPermission('IOT', 'ALERTS:READ')) {
+      router.replace("/iot");
+    }
+  }, [hasPermission, router]);
 
   const [alerts, setAlerts] = useState<IotAlert[]>([]);
   const [loading, setLoading] = useState(true);

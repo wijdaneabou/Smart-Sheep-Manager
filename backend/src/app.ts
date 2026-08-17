@@ -26,6 +26,17 @@ import iotAlertsRoutes from "./routes/iotAlerts.routes.js";
 import geocodeRoutes from "./routes/geocode.routes.js";
 import iotZonesRoutes from "./routes/iotZones.routes.js";
 import iotAnalyticsRoutes from "./routes/iotAnalytics.routes.js";
+import budgetRoutes from './routes/budget.routes.js';
+import expenseRoutes from './routes/expense.routes.js';
+import revenueRoutes from './routes/revenue.routes.js';
+import cashflowRoutes from './routes/cashflow.routes.js';
+
+import profitabilityRoutes from './routes/profitability.routes.js';
+import reportRoutes from './routes/report.routes.js';
+import costRoutes from './routes/cost.routes.js';
+
+
+
 
 const app = new Hono();
 
@@ -78,8 +89,18 @@ app.route("/api/geocode", geocodeRoutes);
 app.route("/api/iot-analytics", iotAnalyticsRoutes);
 
 // ============================================
-//
-// ============================================
 app.route("/api", userExploitationsRoutes);
+app.route('/api/budgets', budgetRoutes);
+app.route('/api/expenses', expenseRoutes);
+app.route('/api/revenues', revenueRoutes);
+app.route('/api/cashflow', cashflowRoutes);
+
+app.route('/api/profitability', profitabilityRoutes);
+
+app.route('/api/reports', reportRoutes);
+app.route('/api/cost', costRoutes);
+
+
+
 
 export default app;

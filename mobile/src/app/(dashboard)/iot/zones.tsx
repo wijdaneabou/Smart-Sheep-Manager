@@ -13,7 +13,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -134,8 +134,16 @@ const MAP_HTML = `
 type ViewMode = "list" | "view" | "draw";
 
 export default function IotZonesScreen() {
+  const router = useRouter();
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
+
+  // Silent redirect if no read permission
+  useEffect(() => {
+    if (!hasPermission('IOT', 'ZONES:READ')) {
+      router.replace("/iot");
+    }
+  }, [hasPermission, router]);
 
   const [zones, setZones] = useState<IotZone[]>([]);
   const [loading, setLoading] = useState(true);

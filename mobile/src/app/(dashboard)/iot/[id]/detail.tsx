@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -20,8 +20,9 @@ import {
 } from "../../../../services/iotShieldsService";
 import { getSensorTypeInfo, getShieldStatusInfo } from "../../../../constants/iot";
 import { BackButton } from "../../../../components/BackButton";
+import { usePermissions } from "../../../../contexts/PermissionsContext";
 
-// ── Design tokens ──────────────────────────────────────────────
+// ── Design tokens ──
 const GREEN = "#14532d";
 const GREEN_EMERALD = "#059669";
 const BACKGROUND = "#f8fafc";
@@ -30,7 +31,7 @@ const BORDER = "#e5e7eb";
 const TEXT_DARK = "#1f2937";
 const TEXT_MUTED = "#6b7280";
 
-// ── Helpers ────────────────────────────────────────────────────
+// ── Helpers ──
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "—";
   return new Date(dateStr).toLocaleDateString("fr-FR");
@@ -43,17 +44,29 @@ function getBatteryColor(battery: string): string {
   return "#dc2626";
 }
 
-// ── Main component ─────────────────────────────────────────────
+// ── Main component ──
 export default function IotShieldDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const shieldId = Number(id);
   const router = useRouter();
+  const { hasPermission } = usePermissions();
+
+  // Silent redirect if no read permission
+  useEffect(() => {
+    if (!hasPermission('IOT', 'SHIELDS:READ')) {
+      router.replace("/iot");
+    }
+  }, [hasPermission, router]);
 
   const [shield, setShield] = useState<IotShield | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [toggling, setToggling] = useState(false);
+
+  // Permissions for actions
+  const canUpdate = hasPermission('IOT', 'SHIELDS:UPDATE');
+  const canDelete = hasPermission('IOT', 'SHIELDS:DELETE');
 
   async function fetchShield() {
     setError(null);
@@ -111,7 +124,6 @@ export default function IotShieldDetailScreen() {
     if (!shield) return;
 
     if (shield.animalId) {
-      // Dissociate
       const animalName = shield.animal?.name ?? "cet animal";
       Alert.alert(
         "Dissocier l'animal",
@@ -133,7 +145,6 @@ export default function IotShieldDetailScreen() {
         ]
       );
     } else {
-      // Associate — prompt for animal ID
       Alert.prompt(
         "Associer un animal",
         "Entrez l'ID de l'animal à associer :",
@@ -201,7 +212,6 @@ export default function IotShieldDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      {/* ── Header ── */}
       <View style={styles.header}>
         <BackButton variant="dark" style={styles.backButton} />
         <Text style={styles.headerTitle}>Fiche Bouclier IoT</Text>
@@ -278,44 +288,50 @@ export default function IotShieldDetailScreen() {
         <View style={styles.section}>
           <SectionTitle label="Actions rapides" />
           <View style={styles.actionsGrid}>
-            <ActionCard
-              icon="create"
-              iconBg="#EFF6FF"
-              iconColor={GREEN}
-              label="Modifier"
-              onPress={() =>
-                router.push(
-                  {
+            {canUpdate && (
+              <ActionCard
+                icon="create"
+                iconBg="#EFF6FF"
+                iconColor={GREEN}
+                label="Modifier"
+                onPress={() =>
+                  router.push({
                     pathname: "/iot/[id]/edit",
                     params: { id: String(shield.id) },
-                  } as any
-                )
-              }
-            />
-            <ActionCard
-              icon={shield.animalId ? "person-remove" : "person-add"}
-              iconBg="#F5F3FF"
-              iconColor="#7c3aed"
-              label={shield.animalId ? "Dissocier" : "Associer"}
-              onPress={handleAssociateAnimal}
-            />
-            <ActionCard
-              icon={shield.status === "ACTIVE" ? "pause-circle" : "play-circle"}
-              iconBg="#ECFEFF"
-              iconColor={GREEN_EMERALD}
-              label={shield.status === "ACTIVE" ? "Désactiver" : "Activer"}
-              onPress={handleToggleStatus}
-              loading={toggling}
-            />
-            <ActionCard
-              icon="trash"
-              iconBg="#FEE2E2"
-              iconColor="#dc2626"
-              label="Supprimer"
-              onPress={handleDelete}
-              loading={deleting}
-              danger
-            />
+                  } as any)
+                }
+              />
+            )}
+            {canUpdate && (
+              <ActionCard
+                icon={shield.animalId ? "person-remove" : "person-add"}
+                iconBg="#F5F3FF"
+                iconColor="#7c3aed"
+                label={shield.animalId ? "Dissocier" : "Associer"}
+                onPress={handleAssociateAnimal}
+              />
+            )}
+            {canUpdate && (
+              <ActionCard
+                icon={shield.status === "ACTIVE" ? "pause-circle" : "play-circle"}
+                iconBg="#ECFEFF"
+                iconColor={GREEN_EMERALD}
+                label={shield.status === "ACTIVE" ? "Désactiver" : "Activer"}
+                onPress={handleToggleStatus}
+                loading={toggling}
+              />
+            )}
+            {canDelete && (
+              <ActionCard
+                icon="trash"
+                iconBg="#FEE2E2"
+                iconColor="#dc2626"
+                label="Supprimer"
+                onPress={handleDelete}
+                loading={deleting}
+                danger
+              />
+            )}
           </View>
         </View>
 
@@ -381,7 +397,7 @@ export default function IotShieldDetailScreen() {
   );
 }
 
-// ── Sub-components ─────────────────────────────────────────────
+// ── Sub-components ──
 
 function StatCard({
   icon,
@@ -472,10 +488,8 @@ function InfoRow({
   );
 }
 
-// ── Styles ─────────────────────────────────────────────────────
-
+// ── Styles ──
 const styles = StyleSheet.create({
-  // ── Layout ──
   safeArea: { flex: 1, backgroundColor: BACKGROUND },
 
   header: {
@@ -510,7 +524,6 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
 
-  // ── Hero Card ──
   heroCard: {
     backgroundColor: CARD_BG,
     borderRadius: 20,
@@ -565,7 +578,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // ── Quick Stats ──
   statsRow: {
     flexDirection: "row",
     gap: 10,
@@ -595,7 +607,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // ── Section ──
   section: {
     marginBottom: 20,
   },
@@ -617,7 +628,6 @@ const styles = StyleSheet.create({
     color: TEXT_DARK,
   },
 
-  // ── Actions Grid ──
   actionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -661,7 +671,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // ── Info Block ──
   infoBlock: {
     width: "100%",
     backgroundColor: CARD_BG,
