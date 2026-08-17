@@ -23,6 +23,7 @@ import { auditService } from "../services/audit.service.js";
 // 👇 Import nécessaire pour récupérer le nom du rôle ET exploitationId
 import { db } from "../db/connection.js";
 import { roles } from "../db/schema/roles.js";
+import { exploitations } from "../db/schema/exploitations.js";
 import { userExploitations } from "../db/schema/userExploitations.js";
 import { eq } from "drizzle-orm";
 
@@ -143,10 +144,24 @@ export async function getMe(c: Context) {
     where: eq(roles.id, fullUser.roleId),
   });
 
-  // ✅ Récupération de l'exploitationId depuis user_exploitations
+  // ✅ Récupération de l'exploitationId depuis user_exploitations,
+  //    sinon depuis exploitations.ownerId
+  let exploitationId: number | null = null;
+
   const userExploitation = await db.query.userExploitations.findFirst({
     where: eq(userExploitations.userId, fullUser.id),
   });
+
+  if (userExploitation) {
+    exploitationId = userExploitation.exploitationId;
+  } else {
+    const ownedExploitation = await db.query.exploitations.findFirst({
+      where: eq(exploitations.ownerId, fullUser.id),
+    });
+    if (ownedExploitation) {
+      exploitationId = ownedExploitation.id;
+    }
+  }
 
   const { password, ...safeUser } = fullUser;
 
@@ -154,7 +169,7 @@ export async function getMe(c: Context) {
   return c.json({
     ...safeUser,
     roleName: role?.name ?? null,
-    exploitationId: userExploitation?.exploitationId ?? null,
+    exploitationId,
   });
 }
 

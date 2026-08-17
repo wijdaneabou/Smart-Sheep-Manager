@@ -23,19 +23,15 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const { clearPermissions } = usePermissions();
 
-  useEffect(() => {
-    fetchCurrentUser();
-  }, []);
-
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUser = useCallback(async () => {
     try {
       const response = await api.get("/auth/me");
-      if (response.data.success) {
-        setUser(response.data.data);
-        await AsyncStorage.setItem("user", JSON.stringify(response.data.data));
+      const userData = response.data as any;
+      if (userData?.id) {
+        setUser(userData);
+        await AsyncStorage.setItem("user", JSON.stringify(userData));
       }
-    } catch (error) {
-      // Try cached user
+    } catch {
       const cached = await AsyncStorage.getItem("user");
       if (cached) {
         setUser(JSON.parse(cached));
@@ -43,7 +39,12 @@ export function useAuth() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCurrentUser();
+  }, [fetchCurrentUser]);
 
   const logout = useCallback(async () => {
     await removeTokens();
