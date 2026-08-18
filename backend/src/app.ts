@@ -35,6 +35,14 @@ import profitabilityRoutes from './routes/profitability.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import costRoutes from './routes/cost.routes.js';
 
+import fatteningBatchesRoutes from './routes/fatteningBatches.routes.js';
+import fatteningFeedRecordsRoutes from './routes/fatteningFeedRecords.routes.js';
+import fatteningWeightRecordsRoutes from './routes/fatteningBatchWeightRecords.routes.js';
+import fatteningIndividualWeightsRoutes from './routes/fatteningBatchIndividualWeights.routes.js';
+import fatteningCostsRoutes from './routes/fatteningBatchCosts.routes.js';
+import fatteningPerformanceRoutes from './routes/fatteningPerformance.routes.js';
+import fatteningAlertsRoutes from './routes/fatteningAlerts.routes.js';
+
 
 
 
@@ -99,6 +107,14 @@ app.route('/api/profitability', profitabilityRoutes);
 
 app.route('/api/reports', reportRoutes);
 app.route('/api/cost', costRoutes);
+
+app.route('/api/fattening/batches', fatteningBatchesRoutes);
+app.route('/api/fattening/feed-records', fatteningFeedRecordsRoutes);
+app.route('/api/fattening/weight-records', fatteningWeightRecordsRoutes);
+app.route('/api/fattening/individual-weights', fatteningIndividualWeightsRoutes);
+app.route('/api/fattening/costs', fatteningCostsRoutes);
+app.route('/api/fattening/performance', fatteningPerformanceRoutes);
+app.route('/api/fattening/alerts', fatteningAlertsRoutes);
 
 
 

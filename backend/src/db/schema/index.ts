@@ -40,3 +40,10 @@ export * from "./iotShieldStatus.js";
 export * from './budgets.js';
 export * from './expenses.js';
 export * from './revenues.js';
+
+export * from './fatteningAlerts.js';
+export * from './fatteningBatchCosts.js';
+export * from './fatteningBatchIndividualWeights.js';
+export * from './fatteningBatchWeightRecords.js';
+export * from './fatteningBatches.js';
+export * from './fatteningFeedRecords.js';
