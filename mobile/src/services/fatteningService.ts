@@ -163,6 +163,7 @@ function extractError(err: any): string {
   return `Erreur ${err.response.status} : la requête a été refusée.`;
 }
 
+// ---------- FATENING BATCHES ----------
 export async function listFatteningBatches(
   params: { page?: number; limit?: number; search?: string; status?: string; exploitationId?: number } = {}
 ) {
@@ -170,7 +171,7 @@ export async function listFatteningBatches(
     const response = await api.get<{
       data: FatteningBatch[];
       pagination: Pagination;
-    }>("/fattening-batches", { params });
+    }>("/fattening/batches", { params });
     return { success: true as const, ...response.data };
   } catch (err: any) {
     return { success: false as const, message: extractError(err) };
@@ -179,7 +180,7 @@ export async function listFatteningBatches(
 
 export async function getFatteningBatchById(id: number) {
   try {
-    const response = await api.get<{ data: FatteningBatch }>(`/fattening-batches/${id}`);
+    const response = await api.get<{ data: FatteningBatch }>(`/fattening/batches/${id}`);
     return { success: true as const, batch: response.data.data };
   } catch (err: any) {
     return { success: false as const, message: extractError(err) };
@@ -200,7 +201,7 @@ export async function createFatteningBatch(input: {
 }) {
   try {
     const response = await api.post<{ data: FatteningBatch }>(
-      "/fattening-batches",
+      "/fattening/batches",
       input
     );
     return {
@@ -232,7 +233,7 @@ export async function updateFatteningBatch(
 ) {
   try {
     const response = await api.put<{ data: FatteningBatch }>(
-      `/fattening-batches/${id}`,
+      `/fattening/batches/${id}`,
       input
     );
     return {
@@ -249,13 +250,14 @@ export async function updateFatteningBatch(
 
 export async function deleteFatteningBatch(id: number) {
   try {
-    await api.delete(`/fattening-batches/${id}`);
+    await api.delete(`/fattening/batches/${id}`);
     return { success: true as const };
   } catch (err: any) {
     return { success: false as const, message: extractError(err) };
   }
 }
 
+// ---------- BATCH WEIGHT RECORDS ----------
 export async function createBatchWeightRecord(input: {
   fatteningBatchId: number;
   averageWeight: number;
@@ -264,7 +266,7 @@ export async function createBatchWeightRecord(input: {
 }) {
   try {
     const response = await api.post<{ data: FatteningBatchWeightRecord }>(
-      "/fattening-batches/weight-records",
+      "/fattening/weight-records",
       input
     );
     return {
@@ -281,12 +283,11 @@ export async function createBatchWeightRecord(input: {
 
 export async function listBatchWeightRecords(batchId: number, page = 1, limit = 20) {
   try {
-    const offset = (page - 1) * limit;
     const response = await api.get<{
       data: FatteningBatchWeightRecord[];
       pagination: { total: number; limit: number; offset: number };
-    }>(`/fattening-batches/weight-records/batch/${batchId}`, {
-      params: { limit, offset },
+    }>("/fattening/weight-records", {
+      params: { batchId, limit, offset: (page - 1) * limit },
     });
     return { success: true as const, records: response.data.data, pagination: response.data.pagination };
   } catch (err: any) {
@@ -297,7 +298,7 @@ export async function listBatchWeightRecords(batchId: number, page = 1, limit = 
 export async function getBatchGmqStats(batchId: number) {
   try {
     const response = await api.get<{ data: GmqStats }>(
-      `/fattening-batches/weight-records/batch/${batchId}/gmq`
+      `/fattening/weight-records/batch/${batchId}/gmq`
     );
     return { success: true as const, stats: response.data.data };
   } catch (err: any) {
@@ -307,13 +308,141 @@ export async function getBatchGmqStats(batchId: number) {
 
 export async function deleteBatchWeightRecord(id: number) {
   try {
-    await api.delete(`/fattening-batches/weight-records/${id}`);
+    await api.delete(`/fattening/weight-records/${id}`);
     return { success: true as const };
   } catch (err: any) {
     return { success: false as const, message: extractError(err) };
   }
 }
 
+// ---------- INDIVIDUAL WEIGHTS ----------
+export async function createIndividualWeight(input: {
+  fatteningBatchId: number;
+  animalId?: number | null;
+  weight: number;
+  date: string;
+  note?: string | null;
+}) {
+  try {
+    const response = await api.post<{ data: FatteningBatchIndividualWeight }>(
+      "/fattening/individual-weights",
+      input
+    );
+    return { success: true as const, record: response.data.data };
+  } catch (err: any) {
+    return { success: false as const, message: extractError(err) };
+  }
+}
+
+export async function listIndividualWeights(batchId: number, page = 1, limit = 20) {
+  try {
+    const response = await api.get<{
+      data: FatteningBatchIndividualWeight[];
+      pagination: { total: number; limit: number; offset: number };
+    }>("/fattening/individual-weights", {
+      params: { batchId, limit, offset: (page - 1) * limit },
+    });
+    return { success: true as const, records: response.data.data, pagination: response.data.pagination };
+  } catch (err: any) {
+    return { success: false as const, message: extractError(err) };
+  }
+}
+
+export async function deleteIndividualWeight(id: number) {
+  try {
+    await api.delete(`/fattening/individual-weights/${id}`);
+    return { success: true as const };
+  } catch (err: any) {
+    return { success: false as const, message: extractError(err) };
+  }
+}
+
+// ---------- FEED RECORDS ----------
+export async function createFeedRecord(input: {
+  fatteningBatchId: number;
+  date: string;
+  feedType: string;
+  quantityKg: number;
+  unitPrice: number;
+  note?: string | null;
+}) {
+  try {
+    const response = await api.post<{ data: FatteningFeedRecord }>(
+      "/fattening/feed-records",
+      input
+    );
+    return { success: true as const, record: response.data.data };
+  } catch (err: any) {
+    return { success: false as const, message: extractError(err) };
+  }
+}
+
+export async function listFeedRecords(batchId: number, page = 1, limit = 20) {
+  try {
+    const response = await api.get<{
+      data: FatteningFeedRecord[];
+      pagination: { total: number; limit: number; offset: number };
+    }>("/fattening/feed-records", {
+      params: { batchId, limit, offset: (page - 1) * limit },
+    });
+    return { success: true as const, records: response.data.data, pagination: response.data.pagination };
+  } catch (err: any) {
+    return { success: false as const, message: extractError(err) };
+  }
+}
+
+export async function deleteFeedRecord(id: number) {
+  try {
+    await api.delete(`/fattening/feed-records/${id}`);
+    return { success: true as const };
+  } catch (err: any) {
+    return { success: false as const, message: extractError(err) };
+  }
+}
+
+// ---------- COSTS ----------
+export async function createBatchCost(input: {
+  fatteningBatchId: number;
+  category: string;
+  description?: string | null;
+  amount: number;
+  date: string;
+}) {
+  try {
+    const response = await api.post<{ data: FatteningBatchCostRecord }>(
+      "/fattening/costs",
+      input
+    );
+    return { success: true as const, record: response.data.data };
+  } catch (err: any) {
+    return { success: false as const, message: extractError(err) };
+  }
+}
+
+export async function listBatchCosts(batchId: number, page = 1, limit = 20) {
+  try {
+    const response = await api.get<{
+      data: FatteningBatchCostRecord[];
+      pagination: { total: number; limit: number; offset: number };
+    }>("/fattening/costs", {
+      params: { batchId, limit, offset: (page - 1) * limit },
+    });
+    return { success: true as const, costs: response.data.data, pagination: response.data.pagination };
+  } catch (err: any) {
+    return { success: false as const, message: extractError(err) };
+  }
+}
+
+export async function deleteBatchCost(id: number) {
+  try {
+    await api.delete(`/fattening/costs/${id}`);
+    return { success: true as const };
+  } catch (err: any) {
+    return { success: false as const, message: extractError(err) };
+  }
+}
+
+// ---------- ALERTS ----------
 export async function listFatteningAlerts(params: {
   fatteningBatchId?: number;
   exploitationId?: number;
@@ -324,7 +453,7 @@ export async function listFatteningAlerts(params: {
 }) {
   try {
     const response = await api.get<{ data: FatteningAlert[]; total: number }>(
-      "/fattening-batches/alerts",
+      "/fattening/alerts",
       { params }
     );
     return {
@@ -340,7 +469,7 @@ export async function listFatteningAlerts(params: {
 export async function resolveFatteningAlert(id: number) {
   try {
     const response = await api.patch<{ data: FatteningAlert }>(
-      `/fattening-batches/alerts/${id}/resolve`
+      `/fattening/alerts/${id}/resolve`
     );
     return { success: true as const, alert: response.data.data };
   } catch (err: any) {
@@ -351,7 +480,7 @@ export async function resolveFatteningAlert(id: number) {
 export async function evaluateFatteningAlerts(batchId: number) {
   try {
     const response = await api.post<{ data: FatteningAlert[]; total: number }>(
-      `/fattening-batches/alerts/batch/${batchId}/evaluate`
+      `/fattening/alerts/batch/${batchId}/evaluate`
     );
     return {
       success: true as const,
@@ -366,7 +495,7 @@ export async function evaluateFatteningAlerts(batchId: number) {
 export async function getFatteningAlertSummary(exploitationId: number) {
   try {
     const response = await api.get<{ data: Record<string, number> }>(
-      "/fattening-batches/alerts/summary",
+      "/fattening/alerts/summary",
       { params: { exploitationId } }
     );
     return { success: true as const, summary: response.data.data };
@@ -375,6 +504,7 @@ export async function getFatteningAlertSummary(exploitationId: number) {
   }
 }
 
+// ---------- PERFORMANCE ----------
 export async function compareBatchPerformance(params: {
   exploitationId?: number;
   onlyCompleted?: boolean;
@@ -383,139 +513,12 @@ export async function compareBatchPerformance(params: {
     const response = await api.get<{
       data: BatchPerformance[];
       rankings: BatchPerformanceRankings;
-    }>("/fattening-batches/performance", { params });
+    }>("/fattening/performance", { params });
     return {
       success: true as const,
       batches: response.data.data,
       rankings: response.data.rankings,
     };
-  } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
-  }
-}
-
-export async function createFeedRecord(input: {
-  fatteningBatchId: number;
-  date: string;
-  feedType: string;
-  quantityKg: number;
-  unitPrice: number;
-  note?: string | null;
-}) {
-  try {
-    const response = await api.post<{ data: FatteningFeedRecord }>(
-      "/fattening-batches/feed-records",
-      input
-    );
-    return { success: true as const, record: response.data.data };
-  } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
-  }
-}
-
-export async function listFeedRecords(batchId: number, page = 1, limit = 20) {
-  try {
-    const offset = (page - 1) * limit;
-    const response = await api.get<{
-      data: FatteningFeedRecord[];
-      pagination: { total: number; limit: number; offset: number };
-    }>("/fattening-batches/feed-records", {
-      params: { batchId, limit, offset },
-    });
-    return { success: true as const, records: response.data.data, pagination: response.data.pagination };
-  } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
-  }
-}
-
-export async function deleteFeedRecord(id: number) {
-  try {
-    await api.delete(`/fattening-batches/feed-records/${id}`);
-    return { success: true as const };
-  } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
-  }
-}
-
-export async function createBatchCost(input: {
-  fatteningBatchId: number;
-  category: string;
-  description?: string | null;
-  amount: number;
-  date: string;
-}) {
-  try {
-    const response = await api.post<{ data: FatteningBatchCostRecord }>(
-      "/fattening-batches/costs",
-      input
-    );
-    return { success: true as const, record: response.data.data };
-  } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
-  }
-}
-
-export async function listBatchCosts(batchId: number, page = 1, limit = 20) {
-  try {
-    const offset = (page - 1) * limit;
-    const response = await api.get<{
-      data: FatteningBatchCostRecord[];
-      pagination: { total: number; limit: number; offset: number };
-    }>("/fattening-batches/costs", {
-      params: { batchId, limit, offset },
-    });
-    return { success: true as const, costs: response.data.data, pagination: response.data.pagination };
-  } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
-  }
-}
-
-export async function deleteBatchCost(id: number) {
-  try {
-    await api.delete(`/fattening-batches/costs/${id}`);
-    return { success: true as const };
-  } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
-  }
-}
-
-export async function createIndividualWeight(input: {
-  fatteningBatchId: number;
-  animalId?: number | null;
-  weight: number;
-  date: string;
-  note?: string | null;
-}) {
-  try {
-    const response = await api.post<{ data: FatteningBatchIndividualWeight }>(
-      "/fattening-batches/individual-weights",
-      input
-    );
-    return { success: true as const, record: response.data.data };
-  } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
-  }
-}
-
-export async function listIndividualWeights(batchId: number, page = 1, limit = 20) {
-  try {
-    const offset = (page - 1) * limit;
-    const response = await api.get<{
-      data: FatteningBatchIndividualWeight[];
-      pagination: { total: number; limit: number; offset: number };
-    }>("/fattening-batches/individual-weights", {
-      params: { batchId, limit, offset },
-    });
-    return { success: true as const, records: response.data.data, pagination: response.data.pagination };
-  } catch (err: any) {
-    return { success: false as const, message: extractError(err) };
-  }
-}
-
-export async function deleteIndividualWeight(id: number) {
-  try {
-    await api.delete(`/fattening-batches/individual-weights/${id}`);
-    return { success: true as const };
   } catch (err: any) {
     return { success: false as const, message: extractError(err) };
   }
