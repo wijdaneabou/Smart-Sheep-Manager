@@ -79,8 +79,6 @@ export default function CreateUserScreen() {
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
             <Text style={styles.backButtonText}>‹</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Nouvel utilisateur</Text>
-          <View style={{ width: 32 }} />
         </View>
 
         <ScrollView
@@ -187,6 +185,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 12,
     paddingBottom: 12,
+    marginTop: 0,
   },
   backButton: {
     width: 32,
@@ -195,7 +194,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backButtonText: { fontSize: 26, color: "#0F2A1D", fontWeight: "400" },
-  headerTitle: { fontSize: 16, fontWeight: "700" },
   container: { padding: 20, paddingTop: 4, flexGrow: 1 },
   sectionTitle: {
     fontSize: 12,

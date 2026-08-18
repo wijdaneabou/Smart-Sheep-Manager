@@ -149,32 +149,28 @@ export default function EditIotShieldScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Modifier Bouclier IoT</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#059669" />
-        </View>
-      </SafeAreaView>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <BackButton variant="dark" style={styles.backButton} />
+      </View>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#059669" />
+      </View>
+    </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Modifier Bouclier IoT</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.center}>
-          <Ionicons name="alert-circle" size={48} color="#dc2626" />
-          <Text style={styles.error}>{error}</Text>
-        </View>
-      </SafeAreaView>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <BackButton variant="dark" style={styles.backButton} />
+      </View>
+      <View style={styles.center}>
+        <Ionicons name="alert-circle" size={48} color="#dc2626" />
+        <Text style={styles.error}>{error}</Text>
+      </View>
+    </SafeAreaView>
     );
   }
 
@@ -188,7 +184,6 @@ export default function EditIotShieldScreen() {
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
             <Ionicons name="arrow-back" size={22} color="#14532d" />
           </Pressable>
-          <Text style={styles.headerTitle}>Modifier Bouclier IoT</Text>
           <View style={styles.avatar}>
             <Ionicons name="wifi" size={16} color="#fff" />
           </View>
@@ -384,7 +379,6 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: GREEN },
   avatar: {
     width: 32,
     height: 32,
@@ -402,7 +396,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
 
-  sectionTitleRow: { flexDirection: "row", alignItems: "center", marginTop: 18, marginBottom: 12 },
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", marginTop: 4, marginBottom: 12 },
   sectionBar: { width: 4, height: 14, backgroundColor: GREEN, borderRadius: 2, marginRight: 8 },
   sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1f2937" },
 
@@ -453,7 +447,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  actionsRow: { flexDirection: "row", gap: 10, marginTop: 10 },
+  actionsRow: { flexDirection: "row", gap: 10, marginTop: 4 },
   cancelButton: {
     flex: 1,
     borderWidth: 1.5,

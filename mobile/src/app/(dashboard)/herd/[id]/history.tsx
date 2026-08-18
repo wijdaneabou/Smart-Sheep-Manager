@@ -70,7 +70,6 @@ export default function AnimalHistoryScreen() {
         <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
           <Text style={styles.backButtonText}>‹</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Historique</Text>
         <Pressable
           onPress={handleExport}
           style={[styles.exportButton, exporting && styles.exportButtonDisabled]}
@@ -227,7 +226,6 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   backButtonText: { fontSize: 26, color: "#1a1a1a", fontWeight: "400" },
-  headerTitle: { fontSize: 16, fontWeight: "700", flex: 1, textAlign: "center" },
   exportButton: {
     width: 36,
     height: 36,

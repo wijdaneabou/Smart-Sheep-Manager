@@ -121,7 +121,6 @@ export default function HealthReportScreen() {
           >
             <Ionicons name="arrow-back" size={18} color="#0F172A" />
           </Pressable>
-          <Text style={styles.headerTitle}>Rapport sanitaire</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.centerContainer}>
@@ -148,20 +147,19 @@ export default function HealthReportScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.backBtn, pressed && styles.btnPressed]}
-          hitSlop={12}
-        >
-          <Ionicons name="arrow-back" size={18} color="#0F172A" />
-        </Pressable>
-        <View style={styles.headerTitleBlock}>
-          <Text style={styles.headerTag}>ANALYTIQUE</Text>
-          <Text style={styles.headerTitle}>Rapport sanitaire</Text>
+        <View style={styles.header}>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [styles.backBtn, pressed && styles.btnPressed]}
+            hitSlop={12}
+          >
+            <Ionicons name="arrow-back" size={18} color="#0F172A" />
+          </Pressable>
+          <View style={styles.headerTitleBlock}>
+            <Text style={styles.headerTag}>ANALYTIQUE</Text>
+          </View>
+          <View style={{ width: 40 }} />
         </View>
-        <View style={{ width: 40 }} />
-      </View>
 
       <ScrollView
         contentContainerStyle={styles.container}
@@ -325,7 +323,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 4,
     paddingBottom: 16,
     backgroundColor: COLOR_BG,
   },
@@ -347,12 +345,6 @@ const styles = StyleSheet.create({
     color: COLOR_PRIMARY,
     letterSpacing: 1.2,
     marginBottom: 2,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: COLOR_TEXT_DARK,
-    letterSpacing: -0.4,
   },
   kpiGrid: {
     flexDirection: "row",

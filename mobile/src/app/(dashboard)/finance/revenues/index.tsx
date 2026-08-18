@@ -97,7 +97,6 @@ export default function RevenuesListScreen() {
         <View style={styles.headerRow}>
           <BackButton variant="dark" style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.title}>Revenus</Text>
             <Text style={styles.subtitle}>
               {revenues.length} revenu{revenues.length > 1 ? 's' : ''}
             </Text>
@@ -212,17 +211,16 @@ export default function RevenuesListScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f5f5f5' },
-  container: { flex: 1, paddingHorizontal: 16 },
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 4 },
 
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 0,
     marginBottom: 16,
   },
   backButton: { marginRight: 8 },
   headerTitleContainer: { flex: 1 },
-  title: { fontSize: 22, fontWeight: '800', color: '#111' },
   subtitle: { fontSize: 13, color: '#888', marginTop: 2 },
 
   error: { color: '#dc2626', marginBottom: 8, fontSize: 13 },

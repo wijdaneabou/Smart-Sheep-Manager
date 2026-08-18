@@ -26,7 +26,6 @@ export default function ProfileScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Mon profil</Text>
         </View>
 
         {/* Profile Card */}
@@ -102,15 +101,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
+    paddingTop: 4,
   },
   header: {
-    marginTop: 12,
+    marginTop: 4,
     marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#0F2A1D",
   },
   card: {
     backgroundColor: "#FFFFFF",

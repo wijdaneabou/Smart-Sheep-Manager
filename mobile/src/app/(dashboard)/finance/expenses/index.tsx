@@ -87,7 +87,6 @@ export default function ExpensesListScreen() {
         <View style={styles.headerRow}>
           <BackButton variant="dark" style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.title}>Dépenses</Text>
             <Text style={styles.subtitle}>
               {expenses.length} dépense{expenses.length > 1 ? 's' : ''}
             </Text>
@@ -196,23 +195,22 @@ export default function ExpensesListScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f5f5f5' },
-  container: { flex: 1, paddingHorizontal: 16 },
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 4 },
 
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 0,
     marginBottom: 16,
   },
   backButton: { marginRight: 8 },
   headerTitleContainer: { flex: 1 },
-  title: { fontSize: 22, fontWeight: '800', color: '#111' },
   subtitle: { fontSize: 13, color: '#888', marginTop: 2 },
 
   error: { color: '#dc2626', marginBottom: 8, fontSize: 13 },
   listContent: { paddingBottom: 100 },
-  emptyState: { alignItems: 'center', marginTop: 60 },
-  emptyText: { fontSize: 16, fontWeight: '600', color: '#333', marginTop: 12 },
+  emptyState: { alignItems: 'center', marginTop: 4 },
+  emptyText: { fontSize: 16, fontWeight: '600', color: '#333', marginTop: 4 },
   emptySubtext: { fontSize: 13, color: '#999', textAlign: 'center', marginTop: 4 },
 
   card: {

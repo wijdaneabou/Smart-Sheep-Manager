@@ -192,10 +192,6 @@ export default function CreateExpenseScreen() {
       >
         <View style={styles.header}>
           <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>
-            {expenseId ? 'Modifier la dépense' : 'Nouvelle dépense'}
-          </Text>
-          <View style={{ width: 32 }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
@@ -345,9 +341,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 12,
+    marginTop: 0,
   },
   backButton: { marginRight: 8 },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: GREEN },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   container: { padding: 20, paddingTop: 4, flexGrow: 1 },
 
@@ -394,7 +390,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  actionsRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  actionsRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
   cancelButton: {
     flex: 1,
     borderWidth: 1.5,

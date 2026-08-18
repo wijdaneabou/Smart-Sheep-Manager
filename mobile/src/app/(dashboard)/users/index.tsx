@@ -76,7 +76,6 @@ export default function UsersListScreen() {
       <View style={styles.container}>
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.title}>Utilisateurs</Text>
             <Text style={styles.subtitle}>
               {users.length} compte{users.length > 1 ? "s" : ""}
             </Text>
@@ -189,14 +188,13 @@ export default function UsersListScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#F2FAF5" },
-  container: { flex: 1, paddingHorizontal: 16, paddingBottom: 12 },
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 0,
   },
-  title: { fontSize: 22, fontWeight: "700", marginTop: 8 },
   subtitle: { fontSize: 13, color: "#7EAB91", marginTop: 2, marginBottom: 14 },
   searchInput: {
     backgroundColor: "#fff",
@@ -205,12 +203,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 11,
-    marginTop: 10,
+    marginTop: 4,
     marginBottom: 12,
     fontSize: 14,
   },
   error: { color: "#166534", marginBottom: 8, fontSize: 13 },
-  empty: { textAlign: "center", color: "#7EAB91", marginTop: 24 },
+  empty: { textAlign: "center", color: "#7EAB91", marginTop: 4 },
   listContent: { paddingBottom: 12 },
 
   card: {

@@ -53,35 +53,31 @@ export default function AnimalBcsHistoryScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Text style={styles.backButtonText}>‹</Text>
-          </Pressable>
-          <Text style={styles.headerTitle}>Suivi BCS & État Corporel</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#059669" />
-        </View>
-      </SafeAreaView>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+          <Text style={styles.backButtonText}>‹</Text>
+        </Pressable>
+      </View>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#059669" />
+      </View>
+    </SafeAreaView>
     );
   }
 
   if (error || !data) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Text style={styles.backButtonText}>‹</Text>
-          </Pressable>
-          <Text style={styles.headerTitle}>Suivi BCS</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{error ?? "Impossible de charger les données."}</Text>
-        </View>
-      </SafeAreaView>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+          <Text style={styles.backButtonText}>‹</Text>
+        </Pressable>
+      </View>
+      <View style={styles.center}>
+        <Text style={styles.errorText}>{error ?? "Impossible de charger les données."}</Text>
+      </View>
+    </SafeAreaView>
     );
   }
 
@@ -94,7 +90,6 @@ export default function AnimalBcsHistoryScreen() {
         <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
           <Text style={styles.backButtonText}>‹</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Score d'État Corporel (BCS)</Text>
         {/* 👇 Add BCS button - HERD:UPDATE */}
         {hasPermission('HERD', 'UPDATE') && (
           <Pressable onPress={handleAddBcs} style={styles.addButton} hitSlop={8}>
@@ -241,12 +236,11 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   backButtonText: { fontSize: 28, color: "#111827" },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: "#111827", textAlign: "center", flex: 1 },
   addButton: { width: 36, height: 36, borderRadius: 10, backgroundColor: "#059669", alignItems: "center", justifyContent: "center" },
   addIcon: { fontSize: 18, color: "#FFF" },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   errorText: { color: "#DC2626", fontSize: 14, textAlign: "center" },
-  container: { padding: 16, gap: 16, paddingBottom: 40 },
+  container: { padding: 16, gap: 16, paddingTop: 4, paddingBottom: 40 },
   animalCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -286,7 +280,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    marginTop: 20,
+    marginTop: 4,
   },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyTitle: { fontSize: 16, fontWeight: "700", color: "#111827", marginBottom: 6 },

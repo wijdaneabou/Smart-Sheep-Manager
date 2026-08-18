@@ -180,8 +180,6 @@ export default function AnimalCyclesScreen() {
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.header}>
           <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Suivi Reproduction</Text>
-          <View style={{ width: 32 }} />
         </View>
         <View style={styles.center}>
           <ActivityIndicator size="large" color={GREEN_EMERALD} />
@@ -195,8 +193,6 @@ export default function AnimalCyclesScreen() {
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.header}>
           <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Suivi Reproduction</Text>
-          <View style={{ width: 32 }} />
         </View>
         <View style={styles.center}>
           <Ionicons name="alert-circle" size={48} color="#dc2626" />
@@ -216,8 +212,6 @@ export default function AnimalCyclesScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <BackButton variant="dark" style={styles.backButton} />
-        <Text style={styles.headerTitle}>Suivi Reproduction</Text>
-        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView
@@ -754,12 +748,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
+    marginTop: 0,
   },
   backButton: { marginRight: 0 },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: TEXT_DARK, flex: 1, textAlign: "center" },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 24 },
   error: { color: "#dc2626", fontSize: 14, textAlign: "center" },
-  container: { padding: 16, paddingBottom: 32 },
+  container: { padding: 16, paddingTop: 4, paddingBottom: 32 },
 
   heroCard: {
     backgroundColor: CARD_BG,
@@ -905,7 +899,7 @@ const styles = StyleSheet.create({
   matingActionButton: { padding: 4 },
 
   emptyContainer: { alignItems: "center", paddingVertical: 32, gap: 12 },
-  emptyText: { textAlign: "center", color: TEXT_MUTED, marginTop: 8, fontSize: 14 },
+  emptyText: { textAlign: "center", color: TEXT_MUTED, marginTop: 4, fontSize: 14 },
   emptyButton: { backgroundColor: GREEN, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
   emptyButtonText: { color: "#fff", fontWeight: "600", fontSize: 13 },
 

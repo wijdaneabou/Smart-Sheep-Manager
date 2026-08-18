@@ -55,7 +55,6 @@ export default function MovementsScreen() {
         <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
           <Text style={styles.backButtonText}>‹</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Mouvements du troupeau</Text>
         <Pressable
           onPress={() => router.push("/herd/movements/create" as any)}
           style={styles.addButton}
@@ -169,7 +168,6 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   backButtonText: { fontSize: 26, color: "#1a1a1a", fontWeight: "400" },
-  headerTitle: { fontSize: 16, fontWeight: "700", flex: 1, textAlign: "center" },
   addButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center", backgroundColor: "#059669", borderRadius: 10 },
   addIcon: { fontSize: 18, color: "#fff" },
 

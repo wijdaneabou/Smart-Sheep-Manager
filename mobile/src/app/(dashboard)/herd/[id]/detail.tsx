@@ -123,33 +123,29 @@ export default function AnimalDetailScreen() {
   // ── Loading state ──
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Fiche Animal</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={GREEN_EMERALD} />
-        </View>
-      </SafeAreaView>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <BackButton variant="dark" style={styles.backButton} />
+      </View>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={GREEN_EMERALD} />
+      </View>
+    </SafeAreaView>
     );
   }
 
   // ── Error state ──
   if (error || !animal) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Fiche Animal</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.center}>
-          <Ionicons name="alert-circle" size={48} color="#dc2626" />
-          <Text style={styles.error}>{error ?? "Animal introuvable."}</Text>
-        </View>
-      </SafeAreaView>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <BackButton variant="dark" style={styles.backButton} />
+      </View>
+      <View style={styles.center}>
+        <Ionicons name="alert-circle" size={48} color="#dc2626" />
+        <Text style={styles.error}>{error ?? "Animal introuvable."}</Text>
+      </View>
+    </SafeAreaView>
     );
   }
 
@@ -167,8 +163,6 @@ export default function AnimalDetailScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <BackButton variant="dark" style={styles.backButton} />
-        <Text style={styles.headerTitle}>Fiche Animal</Text>
-        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView
@@ -506,10 +500,9 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   backButton: { marginRight: 0 },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: TEXT_DARK },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 24 },
   error: { color: "#dc2626", fontSize: 14, textAlign: "center" },
-  container: { padding: 16, paddingBottom: 32 },
+  container: { padding: 16, paddingTop: 4, paddingBottom: 32 },
 
   heroCard: {
     backgroundColor: CARD_BG,

@@ -378,13 +378,6 @@ export default function IotZonesScreen() {
           </Pressable>
         )}
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>
-            {isList
-              ? "Zones de pâturage"
-              : viewMode === "draw"
-              ? "Nouvelle zone"
-              : selectedZone?.name ?? "Zone"}
-          </Text>
           {isList && (
             <View style={styles.headerMetaRow}>
               <View style={styles.liveDot} />
@@ -700,7 +693,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    marginTop: 8,
+    marginTop: 4,
     marginBottom: 12,
   },
   backButton: { marginRight: 8 },

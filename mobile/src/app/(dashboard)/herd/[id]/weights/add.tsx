@@ -69,8 +69,6 @@ export default function AddWeightScreen() {
         <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
           <Text style={styles.backButtonText}>‹</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Nouvelle pesée</Text>
-        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
@@ -145,9 +143,8 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   backButtonText: { fontSize: 26, color: "#1a1a1a", fontWeight: "400" },
-  headerTitle: { fontSize: 16, fontWeight: "700", flex: 1, textAlign: "center" },
 
-  container: { padding: 20, paddingTop: 8 },
+  container: { padding: 20, paddingTop: 4 },
 
   label: { fontSize: 13, fontWeight: "600", color: "#333", marginBottom: 4 },
   input: {

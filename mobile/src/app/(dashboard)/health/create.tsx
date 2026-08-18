@@ -145,7 +145,6 @@ export default function CreateHealthRecord() {
       >
         <View style={styles.header}>
           <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Nouveau dossier médical</Text>
           <View style={styles.headerAvatar}>
             <Ionicons name="medical" size={18} color="#fff" />
           </View>
@@ -325,13 +324,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
+    paddingTop: 4,
     paddingBottom: 12,
-    paddingTop: 8,
   },
   backButton: {
     marginRight: 0,
   },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: GREEN },
   headerAvatar: {
     width: 36,
     height: 36,
@@ -341,7 +339,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   container: { padding: 20, paddingTop: 4, flexGrow: 1 },
-  sectionTitleRow: { flexDirection: "row", alignItems: "center", marginTop: 18, marginBottom: 12 },
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", marginTop: 4, marginBottom: 12 },
   sectionBar: { width: 4, height: 14, backgroundColor: GREEN, borderRadius: 2, marginRight: 8 },
   sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1f2937" },
   fieldGroup: { marginBottom: 14 },

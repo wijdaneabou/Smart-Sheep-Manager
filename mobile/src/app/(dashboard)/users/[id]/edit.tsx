@@ -108,8 +108,6 @@ export default function EditUserScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Modifier le profil</Text>
-
         <TextInput
           style={styles.input}
           placeholder="Prenom"
@@ -169,8 +167,7 @@ export default function EditUserScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: "#F2FAF5", flexGrow: 1 },
-  title: { fontSize: 20, fontWeight: "700", marginBottom: 16 },
+  container: { padding: 20, paddingTop: 4, backgroundColor: "#F2FAF5", flexGrow: 1 },
   input: {
     backgroundColor: "#fff",
     borderWidth: 1,

@@ -120,13 +120,11 @@ export default function EditVaccinationScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-          <Ionicons name="arrow-back" size={22} color="#14532d" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Modifier la vaccination</Text>
-        <View style={{ width: 32 }} />
-      </View>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+            <Ionicons name="arrow-back" size={22} color="#14532d" />
+          </Pressable>
+        </View>
 
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.card}>
@@ -222,10 +220,9 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: GREEN },
   container: { padding: 16, paddingTop: 4 },
   card: { backgroundColor: "#fff", borderRadius: 14, padding: 16 },
-  sectionTitle: { fontSize: 13, fontWeight: "600", color: "#444", marginTop: 12, marginBottom: 6 },
+  sectionTitle: { fontSize: 13, fontWeight: "600", color: "#444", marginTop: 4, marginBottom: 6 },
   input: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -260,7 +257,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 13,
   },
-  actionsRow: { flexDirection: "row", gap: 10, marginTop: 16 },
+  actionsRow: { flexDirection: "row", gap: 10, marginTop: 4 },
   cancelButton: {
     flex: 1,
     borderWidth: 1,

@@ -140,7 +140,6 @@ export default function EditMatingScreen() {
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
             <Ionicons name="arrow-back" size={22} color={GREEN} />
           </Pressable>
-          <Text style={styles.headerTitle}>Modifier la saillie</Text>
           <View style={styles.avatar}>
             <Ionicons name="heart" size={16} color="#fff" />
           </View>
@@ -330,9 +329,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
+    marginTop: 0,
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: GREEN },
   avatar: {
     width: 32,
     height: 32,

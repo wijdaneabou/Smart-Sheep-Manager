@@ -154,7 +154,6 @@ export default function PermissionMatrixScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>← Retour</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{roleName || `Rôle ${roleId}`}</Text>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -268,9 +267,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "#DDEFE4",
   },
   backButton: { fontSize: 16, color: "#15803D", fontWeight: "700" },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#0F2A1D" },
   scrollView: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 24 },
+  scrollContent: { padding: 16, paddingTop: 4, paddingBottom: 24 },
   instructions: {
     fontSize: 14,
     color: "#3E7A5B",

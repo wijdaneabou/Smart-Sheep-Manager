@@ -163,7 +163,6 @@ export default function ReportsScreen() {
         <View style={styles.headerRow}>
           <BackButton variant="dark" style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.title}>Rapports financiers</Text>
             <Text style={styles.subtitle}>Compte de résultat</Text>
           </View>
         </View>
@@ -291,18 +290,17 @@ export default function ReportsScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f5f5f5' },
-  container: { flex: 1, paddingHorizontal: 16 },
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 4 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 0,
     marginBottom: 16,
   },
   backButton: { marginRight: 8 },
   headerTitleContainer: { flex: 1 },
-  title: { fontSize: 22, fontWeight: '800', color: '#111' },
   subtitle: { fontSize: 13, color: '#888', marginTop: 2 },
 
   error: { color: '#dc2626', marginBottom: 8, fontSize: 13 },

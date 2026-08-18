@@ -173,7 +173,6 @@ export default function EditAnimalScreen() {
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
             <Ionicons name="arrow-back" size={22} color="#14532d" />
           </Pressable>
-          <Text style={styles.headerTitle}>Modifier la fiche</Text>
           <View style={{ width: 32 }} />
         </View>
 
@@ -220,7 +219,7 @@ export default function EditAnimalScreen() {
             <Pressable
               onPress={pickImage}
               style={{
-                marginTop: 15,
+                marginTop: 4,
                 backgroundColor: "#14532d",
                 paddingHorizontal: 20,
                 paddingVertical: 10,
@@ -450,10 +449,9 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: GREEN },
   container: { padding: 20, paddingTop: 4, flexGrow: 1 },
 
-  sectionTitleRow: { flexDirection: "row", alignItems: "center", marginTop: 18, marginBottom: 12 },
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", marginTop: 4, marginBottom: 12 },
   sectionBar: { width: 4, height: 14, backgroundColor: GREEN, borderRadius: 2, marginRight: 8 },
   sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1f2937" },
 
@@ -505,7 +503,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 10,
+    marginTop: 4,
   },
   buttonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });

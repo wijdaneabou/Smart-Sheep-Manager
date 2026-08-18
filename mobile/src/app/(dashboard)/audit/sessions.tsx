@@ -189,7 +189,6 @@ export default function SessionsScreen() {
       <View style={styles.headerContainer}>
         <View style={styles.headerTopRow}>
           <View>
-            <Text style={styles.header}>Les Sessions</Text>
             <Text style={styles.subtitle}>
               {sessions.length} session{sessions.length > 1 ? "s" : ""}
               {activeCount > 0 && (
@@ -370,7 +369,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     position: "relative",
     paddingHorizontal: 18,
-    paddingTop: 12,
+    paddingTop: 4,
     paddingBottom: 14,
     backgroundColor: "#fff",
     borderBottomLeftRadius: 20,
@@ -388,7 +387,6 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
 
-  header: { fontSize: 22, fontWeight: "700", color: "#14532D" },
   subtitle: { marginTop: 4, color: "#6B7280", fontSize: 13 },
   activeCount: { color: "#16A34A", fontWeight: "700" },
 
@@ -421,7 +419,7 @@ const styles = StyleSheet.create({
     color: "#111827",
   },
 
-  list: { paddingHorizontal: 15, paddingBottom: 24, paddingTop: 16 },
+  list: { paddingHorizontal: 15, paddingBottom: 24, paddingTop: 4 },
 
   emptyState: { alignItems: "center", marginTop: 80 },
   emptyIcon: { fontSize: 44, marginBottom: 10 },

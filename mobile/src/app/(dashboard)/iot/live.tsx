@@ -284,7 +284,6 @@ export default function IoTLiveScreen() {
         <View style={styles.header}>
           <BackButton variant="dark" style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.title}>Suivi en temps réel</Text>
             <View style={styles.headerMetaRow}>
               <View style={styles.liveDot} />
               <Text style={styles.subtitle}>
@@ -694,7 +693,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 4,
     marginBottom: 14,
   },
   backButton: { marginRight: 8 },
@@ -790,14 +789,14 @@ const styles = StyleSheet.create({
   },
   errorText: { color: "#B42318", fontSize: 12.5, flex: 1 },
 
-  loadingWrap: { alignItems: "center", justifyContent: "center", marginTop: 60, gap: 10 },
+  loadingWrap: { alignItems: "center", justifyContent: "center", marginTop: 4, gap: 10 },
   loadingText: { fontSize: 13, color: TEXT_MUTED },
 
   listContent: { paddingBottom: 24 },
 
   emptyState: {
     alignItems: "center",
-    marginTop: 60,
+    marginTop: 4,
     paddingHorizontal: 32,
   },
   emptyIconWrap: {

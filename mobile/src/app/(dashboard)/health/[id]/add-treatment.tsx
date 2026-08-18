@@ -83,13 +83,11 @@ export default function AddTreatment() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
-          <Text style={styles.back}>‹</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>Ajouter un traitement</Text>
-        <View style={{ width: 32 }} />
-      </View>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()}>
+            <Text style={styles.back}>‹</Text>
+          </Pressable>
+        </View>
       <ScrollView style={styles.container}>
         <Text style={styles.label}>Médicament *</Text>
         <TextInput
@@ -194,9 +192,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   back: { fontSize: 28, color: "#1a1a1a" },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: "#14532d" },
-  container: { padding: 16 },
-  label: { fontWeight: "600", marginTop: 12, marginBottom: 4 },
+  container: { padding: 16, paddingTop: 4 },
+  label: { fontWeight: "600", marginTop: 4, marginBottom: 4 },
   input: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -221,7 +218,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 16,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 4,
   },
   submitText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });

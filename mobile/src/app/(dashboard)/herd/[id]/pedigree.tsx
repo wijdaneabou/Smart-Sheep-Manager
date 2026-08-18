@@ -75,37 +75,33 @@ export default function PedigreeScreen() {
   // ── Loading state ──
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Arbre généalogique</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={GREEN_EMERALD} />
-        </View>
-      </SafeAreaView>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+          <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
+        </Pressable>
+      </View>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={GREEN_EMERALD} />
+      </View>
+    </SafeAreaView>
     );
   }
 
   // ── Error state ──
   if (error || !data) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Arbre généalogique</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.center}>
-          <Ionicons name="alert-circle" size={48} color="#dc2626" />
-          <Text style={styles.error}>{error ?? "Aucune donnée."}</Text>
-        </View>
-      </SafeAreaView>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+          <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
+        </Pressable>
+      </View>
+      <View style={styles.center}>
+        <Ionicons name="alert-circle" size={48} color="#dc2626" />
+        <Text style={styles.error}>{error ?? "Aucune donnée."}</Text>
+      </View>
+    </SafeAreaView>
     );
   }
 
@@ -121,8 +117,6 @@ export default function PedigreeScreen() {
         <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={TEXT_DARK} />
         </Pressable>
-        <Text style={styles.headerTitle}>Arbre généalogique</Text>
-        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView
@@ -574,11 +568,6 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: "center",
     justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: TEXT_DARK,
   },
   center: {
     flex: 1,

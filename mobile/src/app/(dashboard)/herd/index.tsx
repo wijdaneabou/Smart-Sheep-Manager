@@ -70,7 +70,6 @@ export default function HerdScreen() {
         <View style={styles.headerRow}>
           <BackButton variant="dark" style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.title}>Mon Troupeau</Text>
             <Text style={styles.subtitle}>
               {filteredAnimals.length} animal
               {filteredAnimals.length > 1 ? "s" : ""}
@@ -259,13 +258,13 @@ const GREEN = "#0F7A3C";
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
-  container: { flex: 1, paddingHorizontal: 16 },
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 4 },
 
   // --- Header ---
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 4,
     marginBottom: 8,
   },
   backButton: {

@@ -176,33 +176,29 @@ export default function IotShieldDetailScreen() {
   // ── Loading state ──
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Fiche Bouclier IoT</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={GREEN_EMERALD} />
-        </View>
-      </SafeAreaView>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <BackButton variant="dark" style={styles.backButton} />
+      </View>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={GREEN_EMERALD} />
+      </View>
+    </SafeAreaView>
     );
   }
 
   // ── Error state ──
   if (error || !shield) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Fiche Bouclier IoT</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.center}>
-          <Ionicons name="alert-circle" size={48} color="#dc2626" />
-          <Text style={styles.error}>{error ?? "Bouclier introuvable."}</Text>
-        </View>
-      </SafeAreaView>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <BackButton variant="dark" style={styles.backButton} />
+      </View>
+      <View style={styles.center}>
+        <Ionicons name="alert-circle" size={48} color="#dc2626" />
+        <Text style={styles.error}>{error ?? "Bouclier introuvable."}</Text>
+      </View>
+    </SafeAreaView>
     );
   }
 
@@ -214,8 +210,6 @@ export default function IotShieldDetailScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.header}>
         <BackButton variant="dark" style={styles.backButton} />
-        <Text style={styles.headerTitle}>Fiche Bouclier IoT</Text>
-        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView
@@ -502,11 +496,6 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 0,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: TEXT_DARK,
-  },
   center: {
     flex: 1,
     alignItems: "center",
@@ -521,6 +510,7 @@ const styles = StyleSheet.create({
   },
   container: {
     padding: 16,
+    paddingTop: 4,
     paddingBottom: 32,
   },
 

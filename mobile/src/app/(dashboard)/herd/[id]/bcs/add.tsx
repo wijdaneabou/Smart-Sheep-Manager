@@ -96,8 +96,6 @@ export default function AddBcsRecordScreen() {
         <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
           <Text style={styles.backButtonText}>‹</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Nouvelle évaluation BCS</Text>
-        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
@@ -233,8 +231,7 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   backButtonText: { fontSize: 28, color: "#111827" },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: "#111827", textAlign: "center", flex: 1 },
-  container: { padding: 16, gap: 16, paddingBottom: 40 },
+  container: { padding: 16, gap: 16, paddingTop: 4, paddingBottom: 40 },
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
@@ -289,7 +286,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#374151",
     marginBottom: 6,
-    marginTop: 10,
   },
   input: {
     backgroundColor: "#F9FAFB",

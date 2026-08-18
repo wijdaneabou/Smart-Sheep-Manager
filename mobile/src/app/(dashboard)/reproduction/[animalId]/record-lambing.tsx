@@ -117,7 +117,6 @@ export default function RecordLambingScreen() {
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
             <Ionicons name="arrow-back" size={22} color={GREEN} />
           </Pressable>
-          <Text style={styles.headerTitle}>Enregistrer mise bas</Text>
           <View style={styles.avatar}>
             <Ionicons name="heart" size={16} color="#fff" />
           </View>
@@ -300,9 +299,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
+    marginTop: 0,
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: GREEN },
   avatar: {
     width: 32,
     height: 32,
@@ -312,7 +311,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   container: { padding: 20, paddingTop: 4, flexGrow: 1 },
-  sectionTitleRow: { flexDirection: "row", alignItems: "center", marginTop: 18, marginBottom: 12 },
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", marginTop: 4, marginBottom: 12 },
   sectionBar: { width: 4, height: 14, backgroundColor: GREEN, borderRadius: 2, marginRight: 8 },
   sectionTitle: { fontSize: 14, fontWeight: "700", color: TEXT_DARK },
   fieldGroup: { marginBottom: 14 },
@@ -367,7 +366,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   addButtonText: { color: GREEN, fontWeight: "600", marginLeft: 8 },
-  actionsRow: { flexDirection: "row", gap: 10, marginTop: 10 },
+  actionsRow: { flexDirection: "row", gap: 10, marginTop: 4 },
   cancelButton: {
     flex: 1,
     borderWidth: 1.5,

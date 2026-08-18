@@ -39,8 +39,6 @@ export default function LoginHistoryScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Historique des connexions</Text>
-
       {error && <Text style={styles.error}>{error}</Text>}
 
       <FlatList
@@ -79,8 +77,7 @@ export default function LoginHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F2FAF5", padding: 16 },
-  title: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
+  container: { flex: 1, backgroundColor: "#F2FAF5", padding: 16, paddingTop: 4 },
   error: { color: "#166534", marginBottom: 8, fontSize: 13 },
   empty: { textAlign: "center", color: "#7EAB91", marginTop: 24 },
   row: {

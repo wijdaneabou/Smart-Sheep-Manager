@@ -107,7 +107,6 @@ export default function HealthRecordsList() {
         <View style={styles.headerRow}>
           <BackButton variant="dark" style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.title}>Dossiers médicaux</Text>
             <Text style={styles.subtitle}>
               {filteredRecords.length} dossier{filteredRecords.length > 1 ? "s" : ""}
             </Text>
@@ -308,12 +307,12 @@ const GREEN = "#0F7A3C";
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
-  container: { flex: 1, paddingHorizontal: 16 },
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 4 },
 
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 12,
+    marginTop: 4,
     marginBottom: 8,
   },
   backButton: { marginRight: 8 },

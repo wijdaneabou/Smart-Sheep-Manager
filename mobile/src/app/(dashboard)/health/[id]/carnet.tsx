@@ -266,7 +266,6 @@ export default function CarnetScreen() {
           </Pressable>
           <View style={styles.headerTextWrap}>
             <Text style={styles.headerEyebrow}>Carnet sanitaire numérique</Text>
-            <Text style={styles.headerTitle}>Historique médical complet</Text>
           </View>
         </View>
       </View>
@@ -350,7 +349,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: PAGE_BG },
   headerShell: {
     marginHorizontal: 16,
-    marginTop: 10,
+    marginTop: 4,
     borderRadius: 22,
     backgroundColor: GREEN,
     paddingHorizontal: 16,
@@ -372,7 +371,6 @@ const styles = StyleSheet.create({
   },
   headerTextWrap: { flex: 1 },
   headerEyebrow: { fontSize: 11, letterSpacing: 0.8, textTransform: "uppercase", color: "#d7f5e6", opacity: 0.95 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#fff", marginTop: 2 },
 
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   error: { color: "#dc2626" },
@@ -448,7 +446,7 @@ const styles = StyleSheet.create({
 
   timelineWrap: { marginTop: 4 },
   timelineItem: { flexDirection: "row", alignItems: "flex-start", marginBottom: 12 },
-  timelineRail: { width: 28, alignItems: "center", paddingTop: 12 },
+  timelineRail: { width: 28, alignItems: "center", paddingTop: 4 },
   timelineDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 3, borderColor: PAGE_BG, zIndex: 2 },
   timelineLine: { width: 2, flex: 1, backgroundColor: "#d8dfda", marginTop: 4, borderRadius: 2 },
 
@@ -467,7 +465,7 @@ const styles = StyleSheet.create({
   },
   eventTopBar: {
     paddingHorizontal: 14,
-    paddingTop: 14,
+    paddingTop: 4,
     paddingBottom: 10,
     flexDirection: "row",
     alignItems: "center",

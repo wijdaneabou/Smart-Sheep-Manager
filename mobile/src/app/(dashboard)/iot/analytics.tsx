@@ -102,7 +102,6 @@ export default function IotAnalyticsScreen() {
       <View style={styles.header}>
         <BackButton variant="dark" style={styles.backButton} />
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Historique & Analytics</Text>
           <Text style={styles.subtitle}>Tendances sur {days} jours</Text>
         </View>
       </View>
@@ -271,7 +270,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    marginTop: 8,
+    marginTop: 4,
     marginBottom: 10,
   },
   backButton: { marginRight: 8 },
@@ -297,7 +296,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginTop: 18,
+    marginTop: 4,
     marginBottom: 10,
   },
   sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1A1A18" },

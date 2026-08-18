@@ -99,7 +99,6 @@ export default function IotAlertsScreen() {
         <View style={styles.header}>
           <BackButton variant="dark" style={styles.backButton} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Alertes</Text>
             <Text style={styles.subtitle}>
               {alerts.length} alerte{alerts.length !== 1 ? "s" : ""} active
               {alerts.length !== 1 ? "s" : ""}
@@ -189,9 +188,9 @@ export default function IotAlertsScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FAF8F4" },
-  container: { flex: 1, paddingHorizontal: 16 },
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 4 },
 
-  header: { flexDirection: "row", alignItems: "center", marginTop: 8, marginBottom: 16 },
+  header: { flexDirection: "row", alignItems: "center", marginTop: 4, marginBottom: 16 },
   backButton: { marginRight: 8 },
   title: { fontSize: 20, fontWeight: "700", color: "#1A1A18" },
   subtitle: { fontSize: 12.5, color: TEXT_MUTED, marginTop: 2 },

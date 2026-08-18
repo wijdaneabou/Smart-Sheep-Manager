@@ -55,35 +55,43 @@ export default function GrowthCurveScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Text style={styles.backButtonText}>‹</Text>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+          <Text style={styles.backButtonText}>‹</Text>
+        </Pressable>
+        {/* 👇 Add Weight button - HERD:UPDATE */}
+        {hasPermission('HERD', 'UPDATE') && (
+          <Pressable onPress={handleAddWeight} style={styles.addButton}>
+            <Text style={styles.addIcon}>➕</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Courbe de croissance</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#059669" />
-        </View>
-      </SafeAreaView>
+        )}
+      </View>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#059669" />
+      </View>
+    </SafeAreaView>
     );
   }
 
   if (error || !data) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Text style={styles.backButtonText}>‹</Text>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+          <Text style={styles.backButtonText}>‹</Text>
+        </Pressable>
+        {/* 👇 Add Weight button - HERD:UPDATE */}
+        {hasPermission('HERD', 'UPDATE') && (
+          <Pressable onPress={handleAddWeight} style={styles.addButton}>
+            <Text style={styles.addIcon}>➕</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Courbe de croissance</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.center}>
-          <Text style={styles.error}>{error ?? "Aucune donnée."}</Text>
-        </View>
-      </SafeAreaView>
+        )}
+      </View>
+      <View style={styles.center}>
+        <Text style={styles.error}>{error ?? "Aucune donnée."}</Text>
+      </View>
+    </SafeAreaView>
     );
   }
 
@@ -92,20 +100,19 @@ export default function GrowthCurveScreen() {
 
   if (points.length === 0) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Text style={styles.backButtonText}>‹</Text>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+          <Text style={styles.backButtonText}>‹</Text>
+        </Pressable>
+        {/* 👇 Add Weight button - HERD:UPDATE */}
+        {hasPermission('HERD', 'UPDATE') && (
+          <Pressable onPress={handleAddWeight} style={styles.addButton}>
+            <Text style={styles.addIcon}>➕</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Courbe de croissance</Text>
-          {/* 👇 Add Weight button - HERD:UPDATE */}
-          {hasPermission('HERD', 'UPDATE') && (
-            <Pressable onPress={handleAddWeight} style={styles.addButton}>
-              <Text style={styles.addIcon}>➕</Text>
-            </Pressable>
-          )}
-        </View>
-        <View style={styles.center}>
+        )}
+      </View>
+      <View style={styles.center}>
           <Text style={styles.emptyIcon}>📊</Text>
           <Text style={styles.emptyTitle}>Aucune mesure</Text>
           <Text style={styles.empty}>
@@ -131,7 +138,6 @@ export default function GrowthCurveScreen() {
         <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
           <Text style={styles.backButtonText}>‹</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Courbe de croissance</Text>
         {/* 👇 Add Weight button - HERD:UPDATE */}
         {hasPermission('HERD', 'UPDATE') && (
           <Pressable onPress={handleAddWeight} style={styles.addButton}>
@@ -293,7 +299,6 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   backButtonText: { fontSize: 26, color: "#1a1a1a", fontWeight: "400" },
-  headerTitle: { fontSize: 16, fontWeight: "700", flex: 1, textAlign: "center" },
   addButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center", backgroundColor: "#059669", borderRadius: 10 },
   addIcon: { fontSize: 18, color: "#fff" },
 
@@ -303,7 +308,7 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 16, fontWeight: "700", color: "#333", marginBottom: 4 },
   empty: { fontSize: 13, color: "#888", textAlign: "center" },
 
-  container: { padding: 16 },
+  container: { padding: 16, paddingTop: 4 },
 
   animalInfo: {
     flexDirection: "row",

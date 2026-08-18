@@ -66,8 +66,6 @@ export default function PerformanceScreen() {
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.header}>
           <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Performance</Text>
-          <View style={{ width: 32 }} />
         </View>
         <View style={styles.center}>
           <ActivityIndicator size="large" color={GREEN_EMERALD} />
@@ -81,8 +79,6 @@ export default function PerformanceScreen() {
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.header}>
           <BackButton variant="dark" style={styles.backButton} />
-          <Text style={styles.headerTitle}>Performance</Text>
-          <View style={{ width: 32 }} />
         </View>
         <View style={styles.center}>
           <Text style={styles.error}>Aucune donnée disponible.</Text>
@@ -95,8 +91,6 @@ export default function PerformanceScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.header}>
         <BackButton variant="dark" style={styles.backButton} />
-        <Text style={styles.headerTitle}>Performance</Text>
-        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView
@@ -202,15 +196,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
+    marginTop: 0,
   },
   backButton: { marginRight: 0 },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: TEXT_DARK,
-    flex: 1,
-    textAlign: "center",
-  },
   center: {
     flex: 1,
     alignItems: "center",
@@ -219,7 +207,7 @@ const styles = StyleSheet.create({
   },
   error: { color: "#dc2626", fontSize: 14, textAlign: "center" },
 
-  container: { padding: 16, paddingBottom: 32 },
+  container: { padding: 16, paddingTop: 4, paddingBottom: 32 },
 
   animalName: {
     fontSize: 22,
