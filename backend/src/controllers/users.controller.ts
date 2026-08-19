@@ -255,3 +255,22 @@ export async function uploadUserPhotoHandler(c: Context) {
     return c.json({ error: message }, 400);
   }
 }
+
+export async function getUserAdminDetailsHandler(c: Context) {
+  const id = Number(c.req.param("id"));
+  if (isNaN(id)) return c.json({ error: "Identifiant invalide." }, 400);
+
+  const result = await usersService.getUserAdminDetails(id);
+  if (!result.success) return c.json({ error: result.message }, result.status);
+  return c.json(
+    {
+      data: {
+        user: result.user,
+        exploitations: result.exploitations,
+        totalExploitations: result.totalExploitations,
+        totalAnimals: result.totalAnimals,
+      },
+    },
+    result.status
+  );
+}
