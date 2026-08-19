@@ -17,6 +17,7 @@
     "seed:animal-movements": "tsx src/db/seeds/animal-movements.ts",
     "seed:pedigree": "tsx src/db/seeds/animal-pedigree.ts",
     "seed:reproduction": "tsx src/db/seeds/seedReproductionCycles.ts",
+    "seed:finance": "tsx src/db/seeds/finance.ts",
     "seed:all": "tsx src/db/seeds/seedAll.ts"
   },
   "dependencies": {

@@ -13,7 +13,7 @@ import { findExploitationById } from "../repositories/exploitations.repository.j
 import { getUserExploitationIdsWithAdmin } from "../utils/userHelpers.js";
 import { db } from "../db/connection.js";
 import { iotSensorData } from "../db/schema/iotSensorData.js";
-import { eq, and, desc, asc, ne } from "drizzle-orm";
+import { eq, and, desc, asc, ne, gte } from "drizzle-orm";
 
 // ── Alert thresholds ──────────────────────────────────────────────
 export const ALERT_THRESHOLDS = {
@@ -195,41 +195,27 @@ export async function evaluateSensorDataForAlerts(sensorDataId: number) {
 
   // 3. Inactivity > 2h
   if (sensorData.activity === "REST" && animal) {
-    const lastActive = await db.query.iotSensorData.findFirst({
+    const inactivityThreshold = new Date(
+      new Date(sensorData.measuredAt).getTime() - ALERT_THRESHOLDS.INACTIVITY_MINUTES * 60 * 1000
+    );
+
+    const recentActive = await db.query.iotSensorData.findFirst({
       where: and(
         eq(iotSensorData.shieldId, shield.id),
-        ne(iotSensorData.activity, "REST")
+        ne(iotSensorData.activity, "REST"),
+        gte(iotSensorData.measuredAt, inactivityThreshold)
       ),
       orderBy: desc(iotSensorData.measuredAt),
     });
-    const firstRest = await db.query.iotSensorData.findFirst({
-      where: and(
-        eq(iotSensorData.shieldId, shield.id),
-        eq(iotSensorData.activity, "REST")
-      ),
-      orderBy: asc(iotSensorData.measuredAt),
-    });
 
-    let isInactive = false;
-    let restMinutes = 0;
-    if (lastActive) {
-      const ms = new Date(sensorData.measuredAt).getTime() - new Date(lastActive.measuredAt).getTime();
-      restMinutes = ms / (1000 * 60);
-      if (restMinutes >= ALERT_THRESHOLDS.INACTIVITY_MINUTES) isInactive = true;
-    } else if (firstRest) {
-      const ms = Date.now() - new Date(firstRest.measuredAt).getTime();
-      restMinutes = ms / (1000 * 60);
-      if (restMinutes >= ALERT_THRESHOLDS.INACTIVITY_MINUTES) isInactive = true;
-    }
-
-    if (isInactive) {
+    if (!recentActive) {
       const already = await hasUnresolvedAlert(shield.id, "INACTIVITY");
       if (!already) {
         alertsToCreate.push({
           type: "INACTIVITY",
           severity: "WARNING",
           message: `Immobilité prolongée : ${animal.name} inactif depuis > ${ALERT_THRESHOLDS.INACTIVITY_MINUTES / 60}h.`,
-          value: `${Math.round(restMinutes)} min`,
+          value: `> ${ALERT_THRESHOLDS.INACTIVITY_MINUTES} min`,
           threshold: `${ALERT_THRESHOLDS.INACTIVITY_MINUTES} min`,
         });
       }

@@ -160,6 +160,23 @@ export default function IotAlertsScreen() {
 
                   <Text style={styles.cardMessage}>{item.message}</Text>
 
+                  {(item.value || item.threshold) && (
+                    <View style={styles.cardThresholdRow}>
+                      {item.value && (
+                        <View style={styles.cardThresholdItem}>
+                          <Text style={styles.cardThresholdLabel}>Valeur</Text>
+                          <Text style={styles.cardThresholdValue}>{item.value}</Text>
+                        </View>
+                      )}
+                      {item.threshold && (
+                        <View style={styles.cardThresholdItem}>
+                          <Text style={styles.cardThresholdLabel}>Seuil</Text>
+                          <Text style={styles.cardThresholdValue}>{item.threshold}</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
                   {canResolve && (
                     <Pressable
                       style={styles.resolveButton}
@@ -221,6 +238,21 @@ const styles = StyleSheet.create({
   severityText: { fontSize: 11, fontWeight: "700" },
 
   cardMessage: { fontSize: 13, color: "#3D3D3A", lineHeight: 18, marginBottom: 12 },
+
+  cardThresholdRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 12,
+  },
+  cardThresholdItem: {
+    flex: 1,
+    backgroundColor: "#FAF8F4",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  cardThresholdLabel: { fontSize: 10, fontWeight: "700", color: TEXT_MUTED, textTransform: "uppercase", marginBottom: 2 },
+  cardThresholdValue: { fontSize: 13, fontWeight: "700", color: "#1A1A18" },
 
   resolveButton: {
     flexDirection: "row",

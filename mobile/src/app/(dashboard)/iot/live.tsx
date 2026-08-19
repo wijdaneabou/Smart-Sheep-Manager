@@ -257,7 +257,9 @@ export default function IoTLiveScreen() {
     if (updated) setSelectedReading(updated);
   }, [readings]);
 
-  const alertCount = readings.filter((r) => {
+  const alertCount = readings.reduce((sum, r) => sum + (r.unresolvedAlertCount || 0), 0);
+
+  const tempAlertCount = readings.filter((r) => {
     if (r.shield.sensorType !== "TEMPERATURE") return false;
     const t = r.temperature ? parseFloat(r.temperature) : null;
     return t !== null && t > 40.5;
@@ -415,6 +417,8 @@ export default function IoTLiveScreen() {
               const showBattery = metricsConfig.battery;
 
               const isAlert = showTemperature && tempNum !== null && tempNum > 40.5;
+              const isLowBattery = showBattery && parseFloat(item.shield.battery) < 15;
+              const unresolvedAlerts = item.unresolvedAlertCount || 0;
 
               const visibleMetricsCount =
                 (showTemperature ? 1 : 0) + (showActivity ? 1 : 0) + (showBattery ? 1 : 0);
@@ -423,7 +427,11 @@ export default function IoTLiveScreen() {
 
               return (
                 <Pressable
-                  style={[styles.sensorCard, isAlert && styles.sensorCardAlert]}
+                  style={[
+                    styles.sensorCard,
+                    isAlert && styles.sensorCardAlert,
+                    isLowBattery && styles.sensorCardLowBattery,
+                  ]}
                   onPress={() => setSelectedReading(item)}
                 >
                   <View style={styles.cardTopRow}>
@@ -436,9 +444,17 @@ export default function IoTLiveScreen() {
                         <Text style={styles.sensorTypeLabel}>{sensorInfo.label}</Text>
                       </View>
                     </View>
-                    <View style={styles.statusPill}>
-                      <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
-                      <Text style={styles.statusPillText}>{statusInfo.label}</Text>
+                    <View style={styles.cardTopRight}>
+                      {unresolvedAlerts > 0 && (
+                        <View style={styles.cardAlertBadge}>
+                          <Ionicons name="warning-outline" size={12} color="#B42318" />
+                          <Text style={styles.cardAlertBadgeText}>{unresolvedAlerts}</Text>
+                        </View>
+                      )}
+                      <View style={styles.statusPill}>
+                        <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
+                        <Text style={styles.statusPillText}>{statusInfo.label}</Text>
+                      </View>
                     </View>
                   </View>
 
@@ -446,6 +462,13 @@ export default function IoTLiveScreen() {
                     <View style={styles.alertBanner}>
                       <Ionicons name="warning-outline" size={13} color="#B42318" />
                       <Text style={styles.alertBannerText}>Température au-dessus du seuil</Text>
+                    </View>
+                  )}
+
+                  {isLowBattery && (
+                    <View style={styles.lowBatteryBanner}>
+                      <Ionicons name="battery-dead-outline" size={13} color="#B7791F" />
+                      <Text style={styles.lowBatteryBannerText}>Batterie faible</Text>
                     </View>
                   )}
 
@@ -822,6 +845,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sensorCardAlert: { borderColor: "#FECDCA" },
+  sensorCardLowBattery: { borderColor: "#FEF3E2" },
 
   cardTopRow: {
     flexDirection: "row",
@@ -830,6 +854,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardIdentity: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
+  cardTopRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  cardAlertBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "#FEF3F2",
+    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  cardAlertBadgeText: { fontSize: 11, fontWeight: "700", color: "#B42318" },
   cardIconWrap: {
     width: 36,
     height: 36,
@@ -864,6 +899,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   alertBannerText: { fontSize: 11.5, color: "#B42318", fontWeight: "600" },
+
+  lowBatteryBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#FFFAEB",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    marginBottom: 12,
+  },
+  lowBatteryBannerText: { fontSize: 11.5, color: "#B7791F", fontWeight: "600" },
 
   metricsGrid: {
     flexDirection: "row",

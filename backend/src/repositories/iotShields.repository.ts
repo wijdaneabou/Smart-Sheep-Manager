@@ -56,19 +56,12 @@ export async function findIotShieldByApiKey(apiKey: string) {
 }
 
 export async function createIotShield(data: CreateIotShieldData) {
-  try {
-    console.log("INSERT =", data);
+  const [result] = await db
+    .insert(iotShields)
+    .values(data)
+    .$returningId();
 
-    const [result] = await db
-      .insert(iotShields)
-      .values(data)
-      .$returningId();
-
-    return findIotShieldById(result.id);
-  } catch (error) {
-    console.error("DB ERROR =", error);
-    throw error;
-  }
+  return findIotShieldById(result.id);
 }
 
 export async function updateIotShield(id: number, data: UpdateIotShieldData) {

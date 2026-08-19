@@ -28,6 +28,7 @@ export type LatestSensorData = {
   longitude: string | null;
   measuredAt: string;
   createdAt: string;
+  unresolvedAlertCount: number;
   shield: {
     id: number;
     ssmIotNumber: string;

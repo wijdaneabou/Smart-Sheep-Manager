@@ -5,6 +5,7 @@ import {
   text,
   mysqlEnum,
   timestamp,
+  index,
   type AnyMySqlColumn,
 } from "drizzle-orm/mysql-core";
 import { iotShields } from "./iotShields.js";
@@ -54,3 +55,7 @@ export const iotAlertsRelations = relations(iotAlerts, ({ one }) => ({
     references: [exploitations.id],
   }),
 }));
+
+export const iotAlertsIndexes = {
+  shieldTypeResolvedIdx: index("idx_alerts_shield_type_resolved").on(iotAlerts.shieldId, iotAlerts.type, iotAlerts.resolved),
+};

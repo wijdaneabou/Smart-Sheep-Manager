@@ -83,9 +83,6 @@ export async function createIotShield(
   },
   user: any
 ): Promise<CreateIotShieldResult> {
-  console.log("[createIotShield] Received user:", user);
-  console.log("[createIotShield] Input:", input);
-
   const existing = await findIotShieldBySsmIotNumber(input.ssmIotNumber);
   if (existing) {
     return {
@@ -95,12 +92,19 @@ export async function createIotShield(
     };
   }
 
+  if (!/^SSM-IOT-\d+$/.test(input.ssmIotNumber)) {
+    return {
+      success: false,
+      status: 400,
+      message: "Le format doit être SSM-IOT-XXXXXX.",
+    };
+  }
+
   // ── Determine exploitationId ──
 
   let exploitationId: number | null = null;
 
   if (user.roleName?.toLowerCase() === 'admin') {
-    console.log("[createIotShield] User is admin, requiring exploitationId.");
     if (!input.exploitationId) {
       return {
         success: false,
@@ -110,10 +114,7 @@ export async function createIotShield(
     }
     exploitationId = input.exploitationId;
   } else {
-    // Non-admin: get user's exploitations
-    console.log("[createIotShield] Getting exploitations for non-admin user.");
     const userExploitationIds = await getUserExploitationIdsWithAdmin(user);
-    console.log("[createIotShield] userExploitationIds:", userExploitationIds);
 
     if (!userExploitationIds || userExploitationIds.length === 0) {
       return {
@@ -125,7 +126,6 @@ export async function createIotShield(
 
     if (userExploitationIds.length === 1) {
       exploitationId = userExploitationIds[0];
-      console.log("[createIotShield] Single exploitation, auto-assigning:", exploitationId);
     } else {
       if (!input.exploitationId) {
         return {
@@ -142,7 +142,6 @@ export async function createIotShield(
         };
       }
       exploitationId = input.exploitationId;
-      console.log("[createIotShield] Multiple exploitations, user chose:", exploitationId);
     }
   }
 
