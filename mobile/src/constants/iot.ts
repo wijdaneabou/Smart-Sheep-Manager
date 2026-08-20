@@ -1,10 +1,7 @@
 export const SENSOR_TYPES = [
-  { id: "LOCALIZATION" as const, label: "Localisation GPS", icon: "📍" },
+  { id: "GPS" as const, label: "Localisation GPS", icon: "📍" },
   { id: "TEMPERATURE" as const, label: "Température", icon: "🌡️" },
   { id: "ACTIVITY" as const, label: "Activité", icon: "🏃" },
-  { id: "FEEDING" as const, label: "Alimentation", icon: "🌾" },
-  { id: "WATER_INTAKE" as const, label: "Consommation d'eau", icon: "💧" },
-  { id: "HEART_RATE" as const, label: "Fréquence cardiaque", icon: "❤️" },
 ];
 
 export function getSensorTypeInfo(sensorType: string) {
@@ -15,6 +12,11 @@ export function getSensorTypeInfo(sensorType: string) {
       icon: "📡",
     }
   );
+}
+
+export function formatSensorsList(sensors: Array<{ sensorType: string }>): string {
+  if (sensors.length === 0) return "Aucun capteur";
+  return sensors.map(s => getSensorTypeInfo(s.sensorType).label).join(" • ");
 }
 
 export const SHIELD_STATUSES = [

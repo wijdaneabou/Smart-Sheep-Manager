@@ -36,24 +36,21 @@ export default function CreateIotShieldScreen() {
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
 
-  // Silent redirect if no create permission
   useEffect(() => {
     if (!hasPermission('IOT', 'SHIELDS:CREATE')) {
       router.replace("/iot");
     }
   }, [hasPermission, router]);
 
-  // --- Identité ---
   const [ssmIotNumber, setSsmIotNumber] = useState("SSM-IOT-000001");
-  const [sensorType, setSensorType] = useState<SensorType>("LOCALIZATION");
+  const [selectedSensors, setSelectedSensors] = useState<SensorType[]>(["GPS", "TEMPERATURE", "ACTIVITY"]);
 
-  // --- Configuration ---
   const [battery, setBattery] = useState("100");
   const [status, setStatus] = useState<ShieldStatus>("ACTIVE");
 
-  // --- Association ---
   const [exploitations, setExploitations] = useState<{ id: number; name: string }[]>([]);
   const [selectedExploitationId, setSelectedExploitationId] = useState<number | null>(null);
+  const [loadingExploitations, setLoadingExploitations] = useState(true);
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [selectedAnimalId, setSelectedAnimalId] = useState<number | null>(null);
 
@@ -61,19 +58,18 @@ export default function CreateIotShieldScreen() {
   const [loadingAnimals, setLoadingAnimals] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // --- Clé API du bouclier créé ---
   const [createdShield, setCreatedShield] = useState<{
     ssmIotNumber: string;
     apiKey: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // ── Load exploitations on mount ──
   useEffect(() => {
     loadExploitations();
   }, []);
 
   async function loadExploitations() {
+    setLoadingExploitations(true);
     try {
       const data = await getExploitations();
       setExploitations(data);
@@ -81,11 +77,12 @@ export default function CreateIotShieldScreen() {
         setSelectedExploitationId(data[0].id);
         loadAnimals(data[0].id);
       } else if (data.length > 1) {
-        // Let user choose; don't auto-select
         setSelectedExploitationId(null);
       }
     } catch (error) {
       Alert.alert("Erreur", "Impossible de charger les exploitations.");
+    } finally {
+      setLoadingExploitations(false);
     }
   }
 
@@ -105,43 +102,64 @@ export default function CreateIotShieldScreen() {
     }
   }
 
-  // ── When exploitation selection changes, reload animals ──
   function handleExploitationChange(expId: number) {
     setSelectedExploitationId(expId);
     setSelectedAnimalId(null);
     loadAnimals(expId);
   }
 
-  function validate(): string | null {
+  function toggleSensor(sensor: SensorType) {
+    setSelectedSensors(prev =>
+      prev.includes(sensor)
+        ? prev.filter(s => s !== sensor)
+        : [...prev, sensor]
+    );
+  }
+
+  // FIX : valeur de secours — si une seule exploitation existe, on l'utilise
+  // toujours, même si selectedExploitationId n'a pas encore été mis à jour en state.
+  function resolveExploitationId(): number | null {
+    if (selectedExploitationId) return selectedExploitationId;
+    if (exploitations.length === 1) return exploitations[0].id;
+    return null;
+  }
+
+  function validate(finalExploitationId: number | null): string | null {
     if (!/^SSM-IOT-\d+$/.test(ssmIotNumber.trim()))
       return "Le numéro SSM-IOT doit être au format SSM-IOT-XXXXXX.";
     if (battery && Number.isNaN(Number(battery)))
       return "La batterie doit être un nombre.";
     if (Number(battery) < 0 || Number(battery) > 100)
       return "La batterie doit être entre 0 et 100.";
-    if (!selectedExploitationId) {
+    if (selectedSensors.length === 0)
+      return "Veuillez sélectionner au moins un capteur.";
+    if (!finalExploitationId) {
       return "Veuillez sélectionner une exploitation.";
     }
     return null;
   }
 
   async function handleSubmit() {
-    const validationError = validate();
+    const finalExploitationId = resolveExploitationId();
+
+    const validationError = validate(finalExploitationId);
     if (validationError) {
       setError(validationError);
       return;
     }
+
+    console.log("exploitationId envoyé :", finalExploitationId);
 
     setLoading(true);
     setError(null);
 
     const result = await createIotShield({
       ssmIotNumber: ssmIotNumber.trim(),
-      sensorType,
+      sensors: selectedSensors,
       battery: battery ? Number(battery) : undefined,
       animalId: selectedAnimalId,
       status,
-      exploitationId: selectedExploitationId!,
+      exploitationId: finalExploitationId!,
     });
 
     setLoading(false);
@@ -207,25 +225,26 @@ export default function CreateIotShieldScreen() {
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Type de capteur</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={sensorType}
-                onValueChange={(itemValue) => setSensorType(itemValue)}
-                style={styles.picker}
-                dropdownIconColor="#14532d"
-              >
-                {SENSOR_TYPES.map((type) => (
-                  <Picker.Item
+            <Text style={styles.label}>Capteurs intégrés</Text>
+            <View style={styles.sensorGrid}>
+              {SENSOR_TYPES.map((type) => {
+                const isSelected = selectedSensors.includes(type.id);
+                return (
+                  <Pressable
                     key={type.id}
-                    label={`${type.icon} ${type.label}`}
-                    value={type.id}
-                  />
-                ))}
-              </Picker>
-              <View style={styles.pickerIcon}>
-                <Ionicons name="chevron-down" size={20} color="#14532d" />
-              </View>
+                    style={[styles.sensorChip, isSelected && styles.sensorChipActive]}
+                    onPress={() => toggleSensor(type.id)}
+                  >
+                    <Text style={styles.sensorChipIcon}>{type.icon}</Text>
+                    <Text style={[styles.sensorChipLabel, isSelected && styles.sensorChipLabelActive]}>
+                      {type.label}
+                    </Text>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={18} color="#14532d" style={styles.sensorChipCheck} />
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
@@ -275,19 +294,23 @@ export default function CreateIotShieldScreen() {
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Choisir une exploitation</Text>
-            {exploitations.length === 0 ? (
+            {loadingExploitations ? (
               <Text style={{ color: "#666" }}>Chargement des exploitations...</Text>
+            ) : exploitations.length === 0 ? (
+              <Text style={{ color: "#dc2626" }}>Aucune exploitation disponible. Créez-en une d'abord.</Text>
             ) : exploitations.length === 1 ? (
               <Text style={styles.fixedValue}>{exploitations[0].name}</Text>
             ) : (
               <View style={styles.pickerContainer}>
                 <Picker
+                  mode="dropdown"
                   selectedValue={selectedExploitationId}
                   onValueChange={(itemValue) => {
                     if (itemValue) handleExploitationChange(itemValue);
                   }}
                   style={styles.picker}
                   dropdownIconColor="#14532d"
+                  enabled
                 >
                   <Picker.Item label="Sélectionnez une exploitation" value={null} />
                   {exploitations.map((exp) => (
@@ -307,7 +330,7 @@ export default function CreateIotShieldScreen() {
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Animal</Text>
 
-            {!selectedExploitationId ? (
+            {!resolveExploitationId() ? (
               <Text style={{ color: "#999" }}>Veuillez d'abord sélectionner une exploitation.</Text>
             ) : loadingAnimals ? (
               <ActivityIndicator size="small" color={GREEN} />
@@ -316,10 +339,12 @@ export default function CreateIotShieldScreen() {
             ) : (
               <View style={styles.pickerContainer}>
                 <Picker
+                  mode="dropdown"
                   selectedValue={selectedAnimalId}
                   onValueChange={(itemValue) => setSelectedAnimalId(itemValue)}
                   style={styles.picker}
                   dropdownIconColor="#14532d"
+                  enabled
                 >
                   <Picker.Item label="Aucun animal" value={null} />
                   {animals.map((animal) => (
@@ -442,7 +467,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1f2937" },
 
   fieldGroup: { marginBottom: 14 },
-  label: { fontSize: 13, fontWeight: "600", color: "#444", marginBottom: 6 },
+  label: { fontSize: 13, fontWeight: "600", color: "#444", marginBottom: 8 },
   input: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -485,6 +510,27 @@ const styles = StyleSheet.create({
 
   row: { flexDirection: "row", gap: 12 },
   rowItem: { flex: 1 },
+
+  sensorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  sensorChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: BORDER,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  sensorChipActive: {
+    borderColor: "#14532d",
+    backgroundColor: "#F0FDF4",
+  },
+  sensorChipIcon: { fontSize: 18 },
+  sensorChipLabel: { fontSize: 13, fontWeight: "600", color: "#444" },
+  sensorChipLabelActive: { color: "#14532d", fontWeight: "700" },
+  sensorChipCheck: { marginLeft: 4 },
 
   error: {
     color: "#dc2626",

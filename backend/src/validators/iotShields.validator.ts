@@ -1,12 +1,9 @@
 import { z } from "zod";
 
 export const SENSOR_TYPES = [
-  "LOCALIZATION",
   "TEMPERATURE",
   "ACTIVITY",
-  "FEEDING",
-  "WATER_INTAKE",
-  "HEART_RATE",
+  "GPS",
 ] as const;
 
 export const SHIELD_STATUSES = ["ACTIVE", "INACTIVE"] as const;
@@ -18,7 +15,7 @@ export const createIotShieldSchema = z.object({
     .max(50, "Le numéro SSM-IOT est trop long.")
     .regex(/^SSM-IOT-\d+$/, "Le format doit être SSM-IOT-XXXXXX."),
 
-  sensorType: z.enum(SENSOR_TYPES),
+  sensors: z.array(z.enum(SENSOR_TYPES)).min(1, "Veuillez sélectionner au moins un capteur."),
 
   battery: z.coerce
     .number()
@@ -44,7 +41,7 @@ export const updateIotShieldSchema = z.object({
     .regex(/^SSM-IOT-\d+$/, "Le format doit être SSM-IOT-XXXXXX.")
     .optional(),
 
-  sensorType: z.enum(SENSOR_TYPES).optional(),
+  sensors: z.array(z.enum(SENSOR_TYPES)).optional(),
 
   battery: z.coerce
     .number()
@@ -71,8 +68,6 @@ export const listIotShieldsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(50),
 
   search: z.string().optional(),
-
-  sensorType: z.enum(SENSOR_TYPES).optional(),
 
   status: z.enum(SHIELD_STATUSES).optional(),
 });

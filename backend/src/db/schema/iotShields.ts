@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/mysql-core";
 import { exploitations } from "./exploitations.js";
 import { animals } from "./animals.js";
+import { iotShieldSensors } from "./iotShieldSensors.js";
 import { relations } from "drizzle-orm";
 
 export const iotShields = mysqlTable("iot_shields", {
@@ -21,16 +22,6 @@ export const iotShields = mysqlTable("iot_shields", {
 
   // Clé API du bouclier, utilisée par le capteur physique pour s'authentifier
   apiKey: varchar("api_key", { length: 64 }).notNull().unique(),
-
-  // Type de capteur
-  sensorType: mysqlEnum("sensor_type", [
-    "LOCALIZATION",
-    "TEMPERATURE",
-    "ACTIVITY",
-    "FEEDING",
-    "WATER_INTAKE",
-    "HEART_RATE",
-  ]).notNull(),
 
   // Niveau de batterie (pourcentage 0-100)
   battery: decimal("battery", { precision: 5, scale: 2 }).notNull().default("100"),
@@ -54,7 +45,7 @@ export const iotShields = mysqlTable("iot_shields", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const iotShieldsRelations = relations(iotShields, ({ one }) => ({
+export const iotShieldsRelations = relations(iotShields, ({ one, many }) => ({
   animal: one(animals, {
     fields: [iotShields.animalId],
     references: [animals.id],
@@ -63,4 +54,5 @@ export const iotShieldsRelations = relations(iotShields, ({ one }) => ({
     fields: [iotShields.exploitationId],
     references: [exploitations.id],
   }),
+  sensors: many(iotShieldSensors),
 }));

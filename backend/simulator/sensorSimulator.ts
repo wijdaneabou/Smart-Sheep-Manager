@@ -1,44 +1,31 @@
 import fetch from "node-fetch";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "../src/db/connection.js";
 import { iotShields } from "../src/db/schema/iotShields.js";
+import { iotShieldSensors } from "../src/db/schema/iotShieldSensors.js";
 
 const API_URL = "http://localhost:3000/api/sensor-data";
-const SEND_INTERVAL_MS = 3 * 60 * 1000; // fréquence d'envoi des mesures (3 min)
-const REFRESH_INTERVAL_MS = 30_000; // fréquence de re-scan des boucliers en base
+const SEND_INTERVAL_MS = 3 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 30_000;
 
 const ACTIVITIES = ["REST", "MOVEMENT", "GRAZING"] as const;
 
-// Types de capteurs pris en charge par la table iot_sensor_data actuelle.
-// FEEDING, WATER_INTAKE, HEART_RATE n'ont pas encore de colonnes dédiées —
-// ces boucliers sont détectés mais aucune lecture n'est générée pour eux
-// tant que le schéma n'est pas étendu.
-const SUPPORTED_SENSOR_TYPES = ["LOCALIZATION", "TEMPERATURE", "ACTIVITY"] as const;
-
-// ── Batterie simulée ────────────────────────────────────────────
-const BATTERY_DRAIN_PER_TICK = 0.15; // % perdu à chaque envoi
-const BATTERY_MIN = 2; // ne descend jamais en dessous (évite les valeurs négatives)
-const BATTERY_RECHARGE_PROBABILITY = 0.002; // ~0.2% de chance par tick de "recharger" (remplacement de pile simulé)
+const BATTERY_DRAIN_PER_TICK = 0.15;
+const BATTERY_MIN = 2;
+const BATTERY_RECHARGE_PROBABILITY = 0.002;
 
 type SimulatedShield = {
   id: number;
   ssmIotNumber: string;
   apiKey: string;
   battery: number;
-  sensorType: string;
+  sensors: string[];
 };
 
 let activeShields: SimulatedShield[] = [];
 const batteryLevels = new Map<number, number>();
-// Pour ne logguer qu'une fois par bouclier non supporté, pas à chaque tick.
 const warnedUnsupportedShields = new Set<number>();
 
-/**
- * Interroge la base pour récupérer tous les boucliers ACTIFS avec leur clé
- * API, leur batterie actuelle et leur type de capteur. Appelée au démarrage
- * puis toutes les REFRESH_INTERVAL_MS — un bouclier créé/activé après le
- * lancement du simulateur est donc détecté automatiquement.
- */
 async function refreshShields() {
   try {
     const rows = await db
@@ -47,30 +34,39 @@ async function refreshShields() {
         ssmIotNumber: iotShields.ssmIotNumber,
         apiKey: iotShields.apiKey,
         battery: iotShields.battery,
-        sensorType: iotShields.sensorType,
+        sensors: iotShieldSensors.sensorType,
       })
       .from(iotShields)
-      .where(eq(iotShields.status, "ACTIVE"));
+      .innerJoin(iotShieldSensors, eq(iotShields.id, iotShieldSensors.shieldId))
+      .where(and(eq(iotShields.status, "ACTIVE"), eq(iotShieldSensors.status, "ACTIVE")));
+
+    const shieldMap = new Map<number, SimulatedShield>();
+
+    for (const row of rows) {
+      if (!shieldMap.has(row.id)) {
+        shieldMap.set(row.id, {
+          id: row.id,
+          ssmIotNumber: row.ssmIotNumber,
+          apiKey: row.apiKey,
+          battery: row.battery !== null ? parseFloat(row.battery) : 100,
+          sensors: [],
+        });
+      }
+      shieldMap.get(row.id)!.sensors.push(row.sensors);
+    }
 
     const previousCount = activeShields.length;
+    activeShields = Array.from(shieldMap.values());
 
-    activeShields = rows.map((row) => {
-      const battery = row.battery !== null ? parseFloat(row.battery) : 100;
-      if (!batteryLevels.has(row.id)) {
-        batteryLevels.set(row.id, battery);
+    for (const shield of activeShields) {
+      if (!batteryLevels.has(shield.id)) {
+        batteryLevels.set(shield.id, shield.battery);
       }
-      return {
-        id: row.id,
-        ssmIotNumber: row.ssmIotNumber,
-        apiKey: row.apiKey,
-        battery,
-        sensorType: row.sensorType,
-      };
-    });
+    }
 
-    if (rows.length !== previousCount) {
+    if (activeShields.length !== previousCount) {
       console.log(
-        `[simulateur] ${rows.length} bouclier(s) actif(s) détecté(s) en base.`
+        `[simulateur] ${activeShields.length} bouclier(s) actif(s) détecté(s) en base.`
       );
     }
   } catch (error) {
@@ -82,60 +78,42 @@ function randomBetween(min: number, max: number) {
   return +(Math.random() * (max - min) + min).toFixed(2);
 }
 
-// randomBetween arrondit à 2 décimales — trop grossier pour le petit
-// décalage GPS (±0.0005), qui serait systématiquement écrasé à 0.00.
-// On utilise donc 6 décimales pour les coordonnées.
 function randomGpsOffset(min: number, max: number) {
   return +(Math.random() * (max - min) + min).toFixed(6);
 }
 
-/**
- * Génère une lecture adaptée au type réel du capteur — un bouclier
- * "Localisation GPS" ne renvoie pas de température, un bouclier
- * "Température" ne renvoie pas de position, etc. C'est plus réaliste
- * qu'un capteur qui mesurerait tout en même temps.
- */
-function generateReading(sensorType: string): Record<string, unknown> | null {
+function generateReading(sensors: string[]): Record<string, unknown> | null {
   const isAnomaly = Math.random() < 0.1;
   const measuredAt = new Date().toISOString();
+  const payload: Record<string, unknown> = { measuredAt };
 
-  switch (sensorType) {
-    case "LOCALIZATION":
-      // Le GPS/accéléromètre permet aussi de déduire l'activité (repos,
-      // déplacement, pâturage), donc on l'inclut ici. Pas de température.
-      return {
-        activity: ACTIVITIES[Math.floor(Math.random() * ACTIVITIES.length)],
-        latitude: 33.5731 + randomGpsOffset(-0.0005, 0.0005),
-        longitude: -7.5898 + randomGpsOffset(-0.0005, 0.0005),
-        measuredAt,
-      };
-
-    case "TEMPERATURE":
-      return {
-        temperature: isAnomaly ? randomBetween(40.6, 41.0) : randomBetween(37.5, 39.5),
-        measuredAt,
-      };
-
-    case "ACTIVITY":
-      return {
-        activity: ACTIVITIES[Math.floor(Math.random() * ACTIVITIES.length)],
-        measuredAt,
-      };
-
-    default:
-      // FEEDING, WATER_INTAKE, HEART_RATE : pas encore de colonnes dédiées
-      // dans iot_sensor_data. Rien à envoyer pour l'instant.
-      return null;
+  if (sensors.includes("TEMPERATURE")) {
+    payload.temperature = isAnomaly ? randomBetween(40.6, 41.0) : randomBetween(37.5, 39.5);
   }
+
+  if (sensors.includes("ACTIVITY")) {
+    payload.activity = ACTIVITIES[Math.floor(Math.random() * ACTIVITIES.length)];
+  }
+
+  if (sensors.includes("GPS")) {
+    payload.latitude = 33.5731 + randomGpsOffset(-0.0005, 0.0005);
+    payload.longitude = -7.5898 + randomGpsOffset(-0.0005, 0.0005);
+  }
+
+  if (Object.keys(payload).length <= 1) {
+    return null;
+  }
+
+  return payload;
 }
 
 async function sendReading(shield: SimulatedShield) {
-  const payload = generateReading(shield.sensorType);
+  const payload = generateReading(shield.sensors);
 
   if (!payload) {
     if (!warnedUnsupportedShields.has(shield.id)) {
       console.log(
-        `[simulateur] ${shield.ssmIotNumber} : type "${shield.sensorType}" pas encore supporté par le simulateur, ignoré.`
+        `[simulateur] ${shield.ssmIotNumber} : aucun capteur supporté, ignoré.`
       );
       warnedUnsupportedShields.add(shield.id);
     }
@@ -161,7 +139,7 @@ async function sendReading(shield: SimulatedShield) {
         .map(([key, value]) => `${key}=${value}`)
         .join(", ");
       console.log(
-        `OK [${shield.ssmIotNumber}] (${shield.sensorType}) -> ${summary}, batterie ${currentBattery.toFixed(1)}%`
+        `OK [${shield.ssmIotNumber}] (${shield.sensors.join("+")}) -> ${summary}, batterie ${currentBattery.toFixed(1)}%`
       );
     }
   } catch (error) {
@@ -169,11 +147,6 @@ async function sendReading(shield: SimulatedShield) {
   }
 }
 
-/**
- * Fait décroître la batterie de chaque bouclier actif et écrit la nouvelle
- * valeur en base. Indépendant du type de capteur — tout bouclier a une
- * batterie, quel que soit ce qu'il mesure.
- */
 async function drainBatteries() {
   for (const shield of activeShields) {
     let level = batteryLevels.get(shield.id) ?? shield.battery;

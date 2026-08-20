@@ -53,7 +53,6 @@ export async function findLatestByExploitation(exploitationIds: number[] | null)
       shield: {
         id: iotShields.id,
         ssmIotNumber: iotShields.ssmIotNumber,
-        sensorType: iotShields.sensorType,
         battery: iotShields.battery,
         status: iotShields.status,
         animalId: iotShields.animalId,

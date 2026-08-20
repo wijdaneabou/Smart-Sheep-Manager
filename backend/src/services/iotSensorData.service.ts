@@ -7,6 +7,7 @@ import {
   findSensorDataById,
 } from "../repositories/iotSensorData.repository.js";
 import { findIotShieldById } from "../repositories/iotShields.repository.js";
+import { listShieldSensors } from "../repositories/iotShields.repository.js";
 import { upsertShieldStatus, findLatestByExploitation } from "../repositories/iotShieldStatus.repository.js";
 import { evaluateSensorDataForAlerts } from "./iotAlerts.service.js";
 import { getUserExploitationIdsWithAdmin } from "../utils/userHelpers.js";
@@ -30,7 +31,6 @@ function serializeSensorData(row: SensorRow) {
       ? {
           id: row.shield.id,
           ssmIotNumber: row.shield.ssmIotNumber,
-          sensorType: row.shield.sensorType,
           battery: row.shield.battery,
           status: row.shield.status,
         }
@@ -165,7 +165,7 @@ export type LatestAllShieldData = {
   shield: {
     id: number;
     ssmIotNumber: string;
-    sensorType: string;
+    sensors: Array<{ id: number; sensorType: string; status: string }>;
     battery: string;
     status: string;
     animalId: number | null;
@@ -209,10 +209,8 @@ export async function getLatestAllByExploitation(
     alertCountByShield = new Map(alertRows.map((r) => [r.shieldId, Number(r.count)]));
   }
 
-  return {
-    success: true,
-    status: 200,
-    data: rows.map((row) => ({
+  const shieldsWithSensors = await Promise.all(
+    rows.map(async (row) => ({
       id: row.shieldId,
       shieldId: row.shieldId,
       temperature: row.temperature,
@@ -225,12 +223,18 @@ export async function getLatestAllByExploitation(
       shield: {
         id: row.shield.id,
         ssmIotNumber: row.shield.ssmIotNumber,
-        sensorType: row.shield.sensorType,
+        sensors: await listShieldSensors(row.shield.id),
         battery: row.shield.battery,
         status: row.shield.status,
         animalId: row.shield.animalId,
       },
-    })),
+    }))
+  );
+
+  return {
+    success: true,
+    status: 200,
+    data: shieldsWithSensors,
   };
 }
 

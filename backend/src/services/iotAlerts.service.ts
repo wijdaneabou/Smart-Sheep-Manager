@@ -48,7 +48,7 @@ export interface SerializedAlert {
   shield?: {
     id: number;
     ssmIotNumber: string;
-    sensorType: string;
+    sensors: Array<{ id: number; sensorType: string; status: string }>;
     battery: string;
     status: string;
     animalId: number | null;
@@ -87,7 +87,7 @@ function serializeAlert(row: any): SerializedAlert {
     shield: row.shield ? {
       id: row.shield.id,
       ssmIotNumber: row.shield.ssmIotNumber,
-      sensorType: row.shield.sensorType,
+      sensors: row.shield.sensors ?? [],
       battery: row.shield.battery,
       status: row.shield.status,
       animalId: row.shield.animalId,

@@ -1,12 +1,15 @@
 import api from "./api";
 
-export type SensorType =
-  | "LOCALIZATION"
-  | "TEMPERATURE"
-  | "ACTIVITY"
-  | "FEEDING"
-  | "WATER_INTAKE"
-  | "HEART_RATE";
+export type SensorType = "TEMPERATURE" | "ACTIVITY" | "GPS";
+
+export type ShieldSensor = {
+  id: number;
+  shieldId: number;
+  sensorType: SensorType;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type ShieldStatus = "ACTIVE" | "INACTIVE";
 
@@ -27,7 +30,7 @@ export type IotShield = {
   id: number;
   ssmIotNumber: string;
   apiKey: string;
-  sensorType: SensorType;
+  sensors: ShieldSensor[];
   battery: string;
   animalId: number | null;
   animal: ShieldAnimal | null;
@@ -51,15 +54,10 @@ function extractError(err: any): string {
   return err?.response?.data?.message ?? "Impossible de contacter le serveur.";
 }
 
-/**
- * ✅ Updated: exploitationId removed from list params.
- * Backend now filters based on authenticated user's exploitations.
- */
 export async function listIotShields(params: {
   page?: number;
   limit?: number;
   search?: string;
-  sensorType?: SensorType;
   status?: ShieldStatus;
 } = {}) {
   try {
@@ -82,16 +80,13 @@ export async function getIotShieldById(id: number) {
   }
 }
 
-/**
- * ✅ Updated: exploitationId is optional; backend will validate or use user's first exploitation.
- */
 export async function createIotShield(input: {
   ssmIotNumber: string;
-  sensorType: SensorType;
+  sensors: SensorType[];
   battery?: number;
   animalId?: number | null;
   status?: ShieldStatus;
-  exploitationId?: number | null; // optional, backend will validate
+  exploitationId?: number | null;
 }) {
   try {
     const response = await api.post<{ data: IotShield }>("/iot-shields", input);
@@ -116,7 +111,7 @@ export async function updateIotShield(
   id: number,
   input: Partial<{
     ssmIotNumber: string;
-    sensorType: SensorType;
+    sensors: SensorType[];
     battery: number | null;
     animalId: number | null;
     status: ShieldStatus;

@@ -8,6 +8,9 @@ import {
   associateAnimalToShield as associateAnimalInDb,
   updateBattery as updateBatteryInDb,
   toggleStatus as toggleStatusInDb,
+  listShieldSensors,
+  createShieldSensor,
+  deleteShieldSensorsByShieldId,
 } from "../repositories/iotShields.repository.js";
 import { findAnimalById } from "../repositories/animals.repository.js";
 import { generateApiKey } from "../utils/generateApiKey.js";
@@ -15,12 +18,12 @@ import { getUserExploitationIdsWithAdmin } from "../utils/userHelpers.js";
 
 type ShieldRow = NonNullable<Awaited<ReturnType<typeof findIotShieldById>>>;
 
-function serializeShield(shield: ShieldRow) {
+function serializeShield(shield: ShieldRow, sensors: Array<{ id: number; sensorType: string; status: string }> = []) {
   return {
     id: shield.id,
     ssmIotNumber: shield.ssmIotNumber,
     apiKey: shield.apiKey,
-    sensorType: shield.sensorType,
+    sensors,
     battery: shield.battery,
     animalId: shield.animalId,
     animal: shield.animal
@@ -58,7 +61,6 @@ async function shieldBelongsToUser(shieldId: number, user: any): Promise<boolean
   return userExploitationIds.includes(shield.exploitationId!);
 }
 
-// ✅ Check if an animal belongs to a specific exploitation
 async function animalBelongsToExploitation(animalId: number, exploitationId: number): Promise<boolean> {
   const animal = await findAnimalById(animalId);
   if (!animal) return false;
@@ -75,7 +77,7 @@ export type CreateIotShieldResult =
 export async function createIotShield(
   input: {
     ssmIotNumber: string;
-    sensorType: string;
+    sensors: string[];
     battery?: number;
     animalId?: number | null;
     status?: "ACTIVE" | "INACTIVE";
@@ -97,6 +99,24 @@ export async function createIotShield(
       success: false,
       status: 400,
       message: "Le format doit être SSM-IOT-XXXXXX.",
+    };
+  }
+
+  if (!input.sensors || input.sensors.length === 0) {
+    return {
+      success: false,
+      status: 400,
+      message: "Veuillez sélectionner au moins un capteur.",
+    };
+  }
+
+  const validSensors = ["TEMPERATURE", "ACTIVITY", "GPS"];
+  const invalidSensors = input.sensors.filter(s => !validSensors.includes(s));
+  if (invalidSensors.length > 0) {
+    return {
+      success: false,
+      status: 400,
+      message: `Types de capteurs invalides : ${invalidSensors.join(", ")}.`,
     };
   }
 
@@ -172,7 +192,6 @@ export async function createIotShield(
   const shield = await createIotShieldInDb({
     ssmIotNumber: input.ssmIotNumber,
     apiKey,
-    sensorType: input.sensorType as any,
     battery: input.battery !== undefined ? String(input.battery) : undefined,
     animalId: input.animalId ?? undefined,
     status: input.status ?? "ACTIVE",
@@ -183,7 +202,15 @@ export async function createIotShield(
     return { success: false, status: 400, message: "Erreur lors de la création." };
   }
 
-  return { success: true, status: 201, shield: serializeShield(shield) };
+  // ── Create sensors ──
+
+  for (const sensorType of input.sensors) {
+    await createShieldSensor(shield.id, sensorType);
+  }
+
+  const sensors = await listShieldSensors(shield.id);
+
+  return { success: true, status: 201, shield: serializeShield(shield, sensors) };
 }
 
 // ── UPDATE ──
@@ -198,7 +225,7 @@ export async function updateIotShield(
   id: number,
   input: {
     ssmIotNumber?: string;
-    sensorType?: string;
+    sensors?: string[];
     battery?: number | null;
     animalId?: number | null;
     status?: "ACTIVE" | "INACTIVE";
@@ -250,7 +277,6 @@ export async function updateIotShield(
 
   const updated = await updateIotShieldInDb(id, {
     ssmIotNumber: input.ssmIotNumber,
-    sensorType: input.sensorType as any,
     battery:
       input.battery !== undefined
         ? input.battery === null
@@ -266,7 +292,29 @@ export async function updateIotShield(
     return { success: false, status: 404, message: "Bouclier IoT introuvable." };
   }
 
-  return { success: true, status: 200, shield: serializeShield(updated) };
+  // ── Update sensors if provided ──
+
+  let sensors = await listShieldSensors(id);
+
+  if (input.sensors !== undefined) {
+    const validSensors = ["TEMPERATURE", "ACTIVITY", "GPS"];
+    const invalidSensors = input.sensors.filter(s => !validSensors.includes(s));
+    if (invalidSensors.length > 0) {
+      return {
+        success: false,
+        status: 400,
+        message: `Types de capteurs invalides : ${invalidSensors.join(", ")}.`,
+      };
+    }
+
+    await deleteShieldSensorsByShieldId(id);
+    for (const sensorType of input.sensors) {
+      await createShieldSensor(id, sensorType);
+    }
+    sensors = await listShieldSensors(id);
+  }
+
+  return { success: true, status: 200, shield: serializeShield(updated, sensors) };
 }
 
 // ── GET BY ID ──
@@ -284,7 +332,9 @@ export async function getIotShieldById(id: number, user: any): Promise<GetIotShi
   if (!(await shieldBelongsToUser(id, user))) {
     return { success: false, status: 403, message: "Accès interdit à ce bouclier." };
   }
-  return { success: true, status: 200, shield: serializeShield(shield) };
+
+  const sensors = await listShieldSensors(id);
+  return { success: true, status: 200, shield: serializeShield(shield, sensors) };
 }
 
 // ── DELETE ──
@@ -339,29 +389,37 @@ export async function listIotShields(
     ...params,
   });
 
+  // Fetch sensors for all shields in parallel
+  const shieldsWithSensors = await Promise.all(
+    rows.map(async (row) => {
+      const sensors = await listShieldSensors(row.id);
+      return {
+        id: row.id,
+        ssmIotNumber: row.ssmIotNumber,
+        sensors,
+        battery: row.battery,
+        animalId: row.animalId,
+        status: row.status,
+        exploitationId: row.exploitationId,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        animal: row.animal?.id
+          ? {
+              id: row.animal.id,
+              rfid: row.animal.rfid,
+              name: row.animal.name,
+              breed: row.animal.breed,
+              sex: row.animal.sex,
+            }
+          : null,
+      };
+    })
+  );
+
   return {
     success: true as const,
     status: 200 as const,
-    shields: rows.map((row) => ({
-      id: row.id,
-      ssmIotNumber: row.ssmIotNumber,
-      sensorType: row.sensorType,
-      battery: row.battery,
-      animalId: row.animalId,
-      status: row.status,
-      exploitationId: row.exploitationId,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-      animal: row.animal?.id
-        ? {
-            id: row.animal.id,
-            rfid: row.animal.rfid,
-            name: row.animal.name,
-            breed: row.animal.breed,
-            sex: row.animal.sex,
-          }
-        : null,
-    })),
+    shields: shieldsWithSensors,
     pagination: {
       total,
       page: params.page,
@@ -401,7 +459,8 @@ export async function associateAnimal(
     return { success: false, status: 404, message: "Bouclier IoT introuvable." };
   }
 
-  return { success: true, status: 200, shield: serializeShield(updated) };
+  const sensors = await listShieldSensors(shieldId);
+  return { success: true, status: 200, shield: serializeShield(updated, sensors) };
 }
 
 // ── UPDATE BATTERY ──
@@ -432,7 +491,8 @@ export async function updateBatteryLevel(
     return { success: false, status: 404, message: "Bouclier IoT introuvable." };
   }
 
-  return { success: true, status: 200, shield: serializeShield(updated) };
+  const sensors = await listShieldSensors(shieldId);
+  return { success: true, status: 200, shield: serializeShield(updated, sensors) };
 }
 
 // ── TOGGLE STATUS ──
@@ -454,5 +514,8 @@ export async function toggleShieldStatus(
     return { success: false, status: 404, message: "Bouclier IoT introuvable." };
   }
 
-  return { success: true, status: 200, shield: serializeShield(updated) };
+  const sensors = await listShieldSensors(shieldId);
+  return { success: true, status: 200, shield: serializeShield(updated, sensors) };
 }
+
+export { listShieldSensors, createShieldSensor, deleteShieldSensor, deleteShieldSensorsByShieldId } from "../repositories/iotShields.repository.js";

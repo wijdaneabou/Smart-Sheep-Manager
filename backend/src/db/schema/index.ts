@@ -32,6 +32,7 @@ export * from './matingServices.js';
 export * from "./userExploitations.js";
 
 export * from "./iotShields.js";
+export * from "./iotShieldSensors.js";
 export * from "./iotSensorData.js";
 export * from "./iotAlerts.js";
 export * from "./iotZones.js";
