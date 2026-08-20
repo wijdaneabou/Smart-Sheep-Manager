@@ -27,3 +27,9 @@ export * from './treatments.js';
 export * from './vaccinations.js';
 export * from './veterinaryInterventions.js';
 
+export * from './feedItems.js';
+export * from './feedStocks.js';
+export * from './feedRations.js';
+export * from './feedRationItems.js';
+export * from './feedDistributions.js';
+

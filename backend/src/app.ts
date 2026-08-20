@@ -22,6 +22,8 @@ import animalHistoryRoutes from "./routes/animalHistory.routes.js";
 import animalMovementsRoutes from "./routes/animalMovements.routes.js";
 import animalWeightsRoutes from "./routes/animalWeights.routes.js";
 import animalBcsRoutes from "./routes/animalBcs.routes.js";
+import feedingRoutes from "./routes/feeding.routes.js";
+import feedingStockMgmtRoutes from "./routes/feedingStockMgmt.routes.js";
 
 const app = new Hono();
 
@@ -66,6 +68,8 @@ app.route("/api/movements", animalMovementsRoutes);
 
 app.route('/api/animals', animalsRoutes); 
 app.route('/api/health', healthRoutes);
+app.route('/api/feeding', feedingRoutes);
+app.route('/api/feeding-stock', feedingStockMgmtRoutes);
 
 
 
