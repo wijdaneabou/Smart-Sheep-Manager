@@ -11,13 +11,16 @@ import {
   Image,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons'; // 👈 Use Feather for the quill icon
+import { useRouter } from 'expo-router';
 import { useInfinitePosts } from '../../hooks/usePosts';
 import { PostCard } from '../../components/PostCard';
 import { CreatePostModal } from '../../components/CreatePostModal';
 import { usePermissions } from '../../contexts/PermissionsContext';
 
+
 export default function DashboardScreen() {
   const { user } = usePermissions();
+  const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const {
     data,
@@ -31,6 +34,10 @@ export default function DashboardScreen() {
 
   const isAdmin = user?.roleId === 1;
   const allPosts = data?.pages.flatMap((page) => page.posts) || [];
+
+  const handleAIAssistantPress = () => {
+    router.push('/ai-assistant');
+  };
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
@@ -126,6 +133,20 @@ export default function DashboardScreen() {
       />
 
       <CreatePostModal visible={modalVisible} onClose={() => setModalVisible(false)} />
+
+      {/* AI Assistant Chatbot Button - Fixed bottom left */}
+      <TouchableOpacity
+        style={styles.aiAssistantButton}
+        onPress={handleAIAssistantPress}
+        activeOpacity={0.8}
+      >
+        <View style={styles.aiAssistantButtonInner}>
+          <Image
+            source={require('../../../assets/images/sheep-chatbot.png')}
+            style={styles.aiAssistantIcon}
+          />
+        </View>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -236,5 +257,33 @@ const styles = StyleSheet.create({
     color: '#657786',
     textAlign: 'center',
     paddingHorizontal: 40,
+  },
+  aiAssistantButton: {
+    position: 'absolute',
+    bottom: 100, // Above the bottom tab bar
+    left: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#1B7A4B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  aiAssistantButtonInner: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aiAssistantIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
 });

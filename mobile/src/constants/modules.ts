@@ -2,7 +2,6 @@
 
 export type ModuleKey =
   | "users"
-  | "permissions"
   | "exploitations"
   | "herd"
   | "iot"
@@ -15,12 +14,10 @@ export type ModuleKey =
   | "commercial"
   | "bi"
   | "communication"
-  | "reporting"
-  | "ai-assistant";
+  | "reporting";
 
 export type ModuleId =
   | "USERS"
-  | "ADMIN"
   | "EXPLOITATIONS"
   | "HERD"
   | "IOT"
@@ -33,8 +30,7 @@ export type ModuleId =
   | "COMMERCIAL"
   | "BI_DASHBOARD"
   | "COMMUNICATION"
-  | "REPORTING"
-  | "AI_ASSISTANT";
+  | "REPORTING";
 
 export interface SSMModule {
   key: ModuleKey;
@@ -237,20 +233,6 @@ export const MODULES: SSMModule[] = [
     tabLabel: "IA",
   },
   {
-    key: "ai-assistant",
-    module: "AI_ASSISTANT",
-    icon: "✨",
-    ionicon: "sparkles-outline",
-    title: "Assistant IA",
-    subtitle: "Réponses rapides et assistance",
-    color: "#1B7A4B",
-    bgColor: "#E6F8ED",
-    route: "/ai-assistant",
-    available: true,
-    priority: 2,
-    tabLabel: "Coach",
-  },
-  {
     key: "users",
     module: "USERS",
     icon: "👥",
@@ -263,21 +245,6 @@ export const MODULES: SSMModule[] = [
     available: true,
     priority: 15,
     tabLabel: "Users",
-  },
-  {
-    key: "permissions",
-    module: "ADMIN",
-    icon: "🔐",
-    ionicon: "shield-checkmark-outline",
-    title: "Permissions & Rôles",
-    subtitle: "Gérer les droits par module",
-    color: "#166534",
-    bgColor: "#E6F8ED",
-    route: "/permissions",
-    available: true,
-    adminOnly: true,
-    priority: 16,
-    tabLabel: "Admin",
   },
 ];
 
