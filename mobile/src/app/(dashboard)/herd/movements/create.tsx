@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   createMovement,
   type MovementType,
@@ -23,8 +23,13 @@ import {
 
 export default function CreateMovementScreen() {
   const router = useRouter();
+  const { animalId: animalIdParam } = useLocalSearchParams<{
+    animalId?: string;
+  }>();
 
-  const [animalId, setAnimalId] = useState("");
+  const lockedAnimalId = animalIdParam ? String(animalIdParam) : null;
+
+  const [animalId, setAnimalId] = useState(lockedAnimalId ?? "");
   const [type, setType] = useState<MovementType>("ENTRY");
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
@@ -91,14 +96,25 @@ export default function CreateMovementScreen() {
         </View>
 
         {/* Animal ID */}
-        <Text style={styles.label}>ID de l'animal *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="ex: 1"
-          value={animalId}
-          onChangeText={setAnimalId}
-          keyboardType="numeric"
-        />
+        {lockedAnimalId ? (
+          <>
+            <Text style={styles.label}>Animal *</Text>
+            <View style={[styles.input, styles.lockedInput]}>
+              <Text style={styles.lockedText}>#{lockedAnimalId}</Text>
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.label}>ID de l'animal *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="ex: 1"
+              value={animalId}
+              onChangeText={setAnimalId}
+              keyboardType="numeric"
+            />
+          </>
+        )}
 
         {/* Date */}
         <Text style={styles.label}>Date *</Text>
@@ -206,6 +222,13 @@ const styles = StyleSheet.create({
     borderColor: "#e0e0e0",
     marginBottom: 16,
   },
+  lockedInput: {
+    backgroundColor: "#ECFEFF",
+    borderColor: "#0891B2",
+    marginBottom: 16,
+    justifyContent: "center",
+  },
+  lockedText: { fontSize: 14, fontWeight: "700", color: "#0e7490" },
   textArea: {
     height: 80,
     textAlignVertical: "top",

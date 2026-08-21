@@ -14,7 +14,7 @@ export function getSensorTypeInfo(sensorType: string) {
   );
 }
 
-export function formatSensorsList(sensors: Array<{ sensorType: string }>): string {
+export function formatSensorsList(sensors: { sensorType: string }[]): string {
   if (sensors.length === 0) return "Aucun capteur";
   return sensors.map(s => getSensorTypeInfo(s.sensorType).label).join(" • ");
 }

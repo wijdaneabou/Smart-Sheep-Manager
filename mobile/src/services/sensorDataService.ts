@@ -12,7 +12,7 @@ export type SensorData = {
   shield: {
     id: number;
     ssmIotNumber: string;
-    sensors: Array<{ id: number; sensorType: string; status: string }>;
+    sensors: { id: number; sensorType: string; status: string }[];
     battery: string;
     status: string;
     animalId: number | null;
@@ -32,7 +32,7 @@ export type LatestSensorData = {
   shield: {
     id: number;
     ssmIotNumber: string;
-    sensors: Array<{ id: number; sensorType: string; status: string }>;
+    sensors: { id: number; sensorType: string; status: string }[];
     battery: string;
     status: string;
     animalId: number | null;

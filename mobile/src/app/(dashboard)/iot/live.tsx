@@ -106,7 +106,7 @@ function timeAgoLabel(dateStr: string | null): string {
   return `Il y a ${diffH} h`;
 }
 
-function shieldHasSensor(sensors: Array<{ sensorType: string }>, type: string): boolean {
+function shieldHasSensor(sensors: { sensorType: string }[], type: string): boolean {
   return sensors.some(s => s.sensorType === type);
 }
 
@@ -409,6 +409,9 @@ export default function IoTLiveScreen() {
               const isAlert = showTemperature && tempNum !== null && tempNum > 40.5;
               const isLowBattery = showBattery && parseFloat(item.shield.battery) < 15;
               const unresolvedAlerts = item.unresolvedAlertCount || 0;
+              const hasOutOfZone = item.shield.sensors.some(s => s.sensorType === "GPS") &&
+                item.unresolvedAlertCount > 0 &&
+                item.latitude && item.longitude;
 
               const visibleMetricsCount =
                 (showTemperature ? 1 : 0) + (showActivity ? 1 : 0) + (showBattery ? 1 : 0);
@@ -461,6 +464,13 @@ export default function IoTLiveScreen() {
                     <View style={styles.lowBatteryBanner}>
                       <Ionicons name="battery-dead-outline" size={13} color="#B7791F" />
                       <Text style={styles.lowBatteryBannerText}>Batterie faible</Text>
+                    </View>
+                  )}
+
+                  {hasOutOfZone && (
+                    <View style={styles.outOfZoneBanner}>
+                      <Ionicons name="map-outline" size={13} color="#B42318" />
+                      <Text style={styles.outOfZoneBannerText}>Animal hors zone de pâturage</Text>
                     </View>
                   )}
 
@@ -912,6 +922,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   lowBatteryBannerText: { fontSize: 11.5, color: "#B7791F", fontWeight: "600" },
+
+  outOfZoneBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#FEF3F2",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    marginBottom: 12,
+  },
+  outOfZoneBannerText: { fontSize: 11.5, color: "#B42318", fontWeight: "600" },
 
   metricsGrid: {
     flexDirection: "row",

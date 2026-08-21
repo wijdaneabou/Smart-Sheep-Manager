@@ -18,7 +18,7 @@ export interface BcsRadarChartProps {
   accentColor?: string;
 }
 
-const CRITERIA_CONFIG: Array<{ key: keyof BcsRadarValues; label: string; shortLabel: string }> = [
+const CRITERIA_CONFIG: { key: keyof BcsRadarValues; label: string; shortLabel: string }[] = [
   { key: "spinousProcesses", label: "Épine dorsale", shortLabel: "Épine" },
   { key: "transverseProcesses", label: "Processus transverses", shortLabel: "Transverses" },
   { key: "eyeMuscle", label: "Muscle de la longe", shortLabel: "Longe" },

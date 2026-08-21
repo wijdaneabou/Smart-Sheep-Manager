@@ -2,6 +2,7 @@ import {
   getDailyStats,
   getOrderedReadingsWithPosition,
   getAnimalShieldsForExploitation,
+  getAllAnimalShields,
 } from "../repositories/iotAnalytics.repository.js";
 import { findIotShieldById } from "../repositories/iotShields.repository.js";
 import { getUserExploitationIdsWithAdmin } from "../utils/userHelpers.js";
@@ -169,16 +170,10 @@ export type AnimalComparison = {
 export async function compareAnimals(user: any, days: number) {
   const exploitationIds = await getUserExploitationIdsWithAdmin(user);
 
-  // ✅ Fix: Type guard ensures exploitationIds is number[]
-  if (!exploitationIds || exploitationIds.length === 0) {
-    return { success: true as const, status: 200 as const, data: [] };
-  }
-
   const results: AnimalComparison[] = [];
 
-  for (const exploitationId of exploitationIds) {
-    const shields = await getAnimalShieldsForExploitation(exploitationId);
-
+  if (exploitationIds === null) {
+    const shields = await getAllAnimalShields();
     for (const s of shields) {
       const dailyStats = await getDailyStats(s.shieldId, sinceDaysAgo(days));
       const readings = await getOrderedReadingsWithPosition(s.shieldId, sinceDaysAgo(days));
@@ -215,6 +210,48 @@ export async function compareAnimals(user: any, days: number) {
         grazingPercent,
         distanceKm: Math.round(distanceKm * 100) / 100,
       });
+    }
+  } else if (exploitationIds.length > 0) {
+    for (const exploitationId of exploitationIds) {
+      const shields = await getAnimalShieldsForExploitation(exploitationId);
+
+      for (const s of shields) {
+        const dailyStats = await getDailyStats(s.shieldId, sinceDaysAgo(days));
+        const readings = await getOrderedReadingsWithPosition(s.shieldId, sinceDaysAgo(days));
+
+        let avgTemp: number | null = null;
+        let grazingPercent: number | null = null;
+        if (dailyStats.length > 0) {
+          const totalGrazing = dailyStats.reduce((sum, r) => sum + Number(r.grazingCount), 0);
+          const totalCount = dailyStats.reduce((sum, r) => sum + Number(r.totalCount), 0);
+          const tempSum = dailyStats.reduce((sum, r) => sum + Number(r.avgTemperature), 0);
+          avgTemp = Math.round((tempSum / dailyStats.length) * 10) / 10;
+          grazingPercent = totalCount > 0 ? Math.round((totalGrazing / totalCount) * 1000) / 10 : 0;
+        }
+
+        let distanceKm = 0;
+        for (let i = 1; i < readings.length; i++) {
+          const prev = readings[i - 1];
+          const curr = readings[i];
+          if (!prev.latitude || !prev.longitude || !curr.latitude || !curr.longitude) continue;
+          distanceKm += haversineDistanceKm(
+            parseFloat(prev.latitude),
+            parseFloat(prev.longitude),
+            parseFloat(curr.latitude),
+            parseFloat(curr.longitude)
+          );
+        }
+
+        results.push({
+          shieldId: s.shieldId,
+          animalId: s.animalId,
+          animalName: s.animalName,
+          animalRfid: s.animalRfid,
+          avgTemperature: avgTemp,
+          grazingPercent,
+          distanceKm: Math.round(distanceKm * 100) / 100,
+        });
+      }
     }
   }
 

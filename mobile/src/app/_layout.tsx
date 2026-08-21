@@ -1,6 +1,6 @@
 import { useFonts } from 'expo-font';
-import { Stack } from "expo-router";
-import { SplashScreen } from "expo-router";
+import { Stack , SplashScreen } from "expo-router";
+
 import { useEffect } from "react";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
 

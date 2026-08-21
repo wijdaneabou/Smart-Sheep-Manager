@@ -64,10 +64,10 @@ api.interceptors.request.use(async (config) => {
 
 // Gestion de la file d'attente lors du rafraîchissement du token
 let isRefreshing = false;
-let failedQueue: Array<{
+let failedQueue: {
   resolve: (token: string) => void;
   reject: (error: any) => void;
-}> = [];
+}[] = [];
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach((prom) => {
