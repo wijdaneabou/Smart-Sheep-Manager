@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons'; // 👈 Use Feather for the quill icon
 import { useInfinitePosts } from '../../hooks/usePosts';
 import { PostCard } from '../../components/PostCard';
 import { CreatePostModal } from '../../components/CreatePostModal';
@@ -50,18 +50,17 @@ export default function DashboardScreen() {
                 </Text>
               </View>
             )}
-            <Ionicons name="create-outline" size={18} color="#0F7A3C" style={styles.penIcon} />
-            <Text style={styles.whatsNewText}>Quoi de neuf ?</Text>
+            <View style={styles.textContainer}>
+              <View style={styles.textRow}>
+                <Feather name="feather" size={22} color="#0F7A3C" style={styles.quillIcon} />
+                <Text style={styles.whatsNewText}>Quoi de neuf ?</Text>
+              </View>
+              {/* Decorative underline */}
+              <View style={styles.underline} />
+            </View>
           </View>
         </TouchableOpacity>
-      ) : (
-        <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeTitle}>Bienvenue sur Smart Sheep Manager</Text>
-          <Text style={styles.welcomeSubtitle}>
-            Restez informé des dernières nouvelles
-          </Text>
-        </View>
-      )}
+      ) : null}
     </View>
   );
 
@@ -144,22 +143,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
   },
-  welcomeContainer: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  welcomeTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#14171A',
-    marginBottom: 4,
-  },
-  welcomeSubtitle: {
-    fontSize: 14,
-    color: '#657786',
-  },
   whatsNewButton: {
     backgroundColor: '#FFFFFF',
     borderRadius: 50,
@@ -189,13 +172,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#657786',
   },
-  penIcon: {
-    marginRight: 6,
+  textContainer: {
+    flex: 1,
+    marginLeft: 4,
+  },
+  textRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quillIcon: {
+    marginRight: 8,
   },
   whatsNewText: {
     fontSize: 16,
     color: '#657786',
     fontWeight: '400',
+  },
+  underline: {
+    height: 2,
+    width: '60%',
+    backgroundColor: '#0F7A3C',
+    marginTop: 2,
+    marginLeft: 30, // align under the text (offset for icon width)
+    borderRadius: 1,
   },
   loaderContainer: {
     paddingVertical: 30,
