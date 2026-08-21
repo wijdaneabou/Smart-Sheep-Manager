@@ -1,12 +1,241 @@
-import { StyleSheet, View } from "react-native";
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  TouchableOpacity,
+  SafeAreaView,
+  ActivityIndicator,
+  Image,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useInfinitePosts } from '../../hooks/usePosts';
+import { PostCard } from '../../components/PostCard';
+import { CreatePostModal } from '../../components/CreatePostModal';
+import { usePermissions } from '../../contexts/PermissionsContext';
 
 export default function DashboardScreen() {
-  return <View style={styles.container} />;
+  const { user } = usePermissions();
+  const [modalVisible, setModalVisible] = useState(false);
+  const {
+    data,
+    isLoading,
+    isRefetching,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfinitePosts(10);
+
+  const isAdmin = user?.roleId === 1;
+  const allPosts = data?.pages.flatMap((page) => page.posts) || [];
+
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      {isAdmin ? (
+        <TouchableOpacity
+          style={styles.whatsNewButton}
+          onPress={() => setModalVisible(true)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.whatsNewContent}>
+            {user?.photo ? (
+              <Image source={{ uri: user.photo }} style={styles.createAvatar} />
+            ) : (
+              <View style={[styles.createAvatar, styles.avatarPlaceholder]}>
+                <Text style={styles.avatarText}>
+                  {user?.firstName?.charAt(0) || 'U'}
+                </Text>
+              </View>
+            )}
+            <Ionicons name="create-outline" size={18} color="#0F7A3C" style={styles.penIcon} />
+            <Text style={styles.whatsNewText}>Quoi de neuf ?</Text>
+          </View>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.welcomeContainer}>
+          <Text style={styles.welcomeTitle}>Bienvenue sur Smart Sheep Manager</Text>
+          <Text style={styles.welcomeSubtitle}>
+            Restez informé des dernières nouvelles
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+
+  const renderFooter = () => {
+    if (isLoading && !allPosts.length) return null;
+    if (!allPosts.length) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyTitle}>Aucun post</Text>
+          <Text style={styles.emptyText}>
+            {isAdmin
+              ? 'Commencez par créer le premier post !'
+              : 'Aucun post disponible pour le moment.'}
+          </Text>
+        </View>
+      );
+    }
+    if (isFetchingNextPage) {
+      return (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#0F7A3C" />
+        </View>
+      );
+    }
+    if (hasNextPage) {
+      return (
+        <TouchableOpacity style={styles.loadMoreButton} onPress={() => fetchNextPage()}>
+          <Text style={styles.loadMoreText}>Charger plus</Text>
+        </TouchableOpacity>
+      );
+    }
+    return <Text style={styles.endText}>Aucun autre post à afficher</Text>;
+  };
+
+  if (isLoading && !allPosts.length) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#0F7A3C" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <FlatList
+        data={allPosts}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => <PostCard post={item} isAdmin={isAdmin} />}
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderFooter}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor="#0F7A3C"
+            colors={['#0F7A3C']}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+      />
+
+      <CreatePostModal visible={modalVisible} onClose={() => setModalVisible(false)} />
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#F5F8FA',
+  },
+  listContent: {
+    paddingBottom: 20,
+  },
+  headerContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  welcomeContainer: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  welcomeTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#14171A',
+    marginBottom: 4,
+  },
+  welcomeSubtitle: {
+    fontSize: 14,
+    color: '#657786',
+  },
+  whatsNewButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 50,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#E1E8ED',
+    marginBottom: 8,
+  },
+  whatsNewContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  createAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 12,
+  },
+  avatarPlaceholder: {
+    backgroundColor: '#E1E8ED',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#657786',
+  },
+  penIcon: {
+    marginRight: 6,
+  },
+  whatsNewText: {
+    fontSize: 16,
+    color: '#657786',
+    fontWeight: '400',
+  },
+  loaderContainer: {
+    paddingVertical: 30,
+    alignItems: 'center',
+  },
+  loadMoreButton: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E1E8ED',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  loadMoreText: {
+    fontSize: 14,
+    color: '#0F7A3C',
+    fontWeight: '500',
+  },
+  endText: {
+    textAlign: 'center',
+    color: '#657786',
+    fontSize: 14,
+    paddingVertical: 20,
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#14171A',
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 15,
+    color: '#657786',
+    textAlign: 'center',
+    paddingHorizontal: 40,
   },
 });

@@ -43,6 +43,8 @@ import fatteningCostsRoutes from './routes/fatteningBatchCosts.routes.js';
 import fatteningPerformanceRoutes from './routes/fatteningPerformance.routes.js';
 import fatteningAlertsRoutes from './routes/fatteningAlerts.routes.js';
 
+import postsRoutes from "./routes/posts.js";
+
 
 
 
@@ -115,6 +117,8 @@ app.route('/api/fattening/individual-weights', fatteningIndividualWeightsRoutes)
 app.route('/api/fattening/costs', fatteningCostsRoutes);
 app.route('/api/fattening/performance', fatteningPerformanceRoutes);
 app.route('/api/fattening/alerts', fatteningAlertsRoutes);
+// Posts routes
+app.route("/api/posts", postsRoutes);
 
 
 

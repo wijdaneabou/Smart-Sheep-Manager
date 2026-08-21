@@ -47,3 +47,5 @@ export * from './fatteningBatchIndividualWeights.js';
 export * from './fatteningBatchWeightRecords.js';
 export * from './fatteningBatches.js';
 export * from './fatteningFeedRecords.js';
+
+export * from './posts.js';

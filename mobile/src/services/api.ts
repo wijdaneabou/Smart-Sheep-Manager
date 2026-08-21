@@ -11,17 +11,20 @@ import {
 
 export { saveToken };
 
-export const API_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://10.236.209.11:3000";
-  
-// Helper to build a full URL for uploaded files (avatars, etc.)
+// 🔥 Read API_URL from .env – NO FALLBACK!
+export const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+if (!API_URL) {
+  console.warn(
+    "⚠️ EXPO_PUBLIC_API_URL is not set in .env. Please set it to your backend URL."
+  );
+}
+
 export const getFileUrl = (path: string | null | undefined): string | null => {
   if (!path) return null;
-  // If the path already starts with http, return it as is
   if (path.startsWith("http://") || path.startsWith("https://")) {
     return path;
   }
-  // Otherwise, prepend the API base URL
   return `${API_URL}${path}`;
 };
 
@@ -33,11 +36,9 @@ const api = axios.create({
   },
 });
 
-// Construit une chaîne lisible décrivant l'appareil (ex: "Android | 16 | samsung | SM-A165F | SSM | 57.0.2")
 function getDeviceInfo(): string {
   const osLabel =
     Platform.OS === "android" ? "Android" : Platform.OS === "ios" ? "iOS" : "Web";
-
   const parts = [
     osLabel,
     Device.osVersion ?? undefined,
@@ -46,23 +47,24 @@ function getDeviceInfo(): string {
     "SSM",
     Platform.Version ? String(Platform.Version) : undefined,
   ];
-
   return parts.filter(Boolean).join(" | ");
 }
 
-// Intercepteur de requête : injecte le token JWT et les métadonnées de l'appareil
 api.interceptors.request.use(async (config) => {
   const token = await getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  config.headers["X-Device-Info"] = getDeviceInfo();
+  // 🔥 If data is FormData, remove Content-Type so axios sets the boundary
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
 
+  config.headers["X-Device-Info"] = getDeviceInfo();
   return config;
 });
 
-// Gestion de la file d'attente lors du rafraîchissement du token
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
@@ -80,7 +82,6 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Intercepteur de réponse : intercepte les erreurs 401 et régénère le token de manière transparente
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -116,7 +117,6 @@ api.interceptors.response.use(
           throw new Error("Aucun refresh token disponible");
         }
 
-        // Régénération du token auprès de l'API backend
         const response = await axios.post(`${API_URL}/api/auth/refresh`, {
           refreshToken: storedRefreshToken,
         });
@@ -126,16 +126,11 @@ api.interceptors.response.use(
           throw new Error("Nouveau token non reçu");
         }
 
-        // Sauvegarde du nouveau token
         await saveAccessToken(newAccessToken);
-
-        // Mise à jour des en-têtes Authorization
         api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
 
         processQueue(null, newAccessToken);
-
-        // Rejouer la requête initiale sans que l'utilisateur n'aperçoive le message d'erreur
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
