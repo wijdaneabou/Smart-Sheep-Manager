@@ -18,6 +18,8 @@
     "seed:pedigree": "tsx src/db/seeds/animal-pedigree.ts",
     "seed:reproduction": "tsx src/db/seeds/seedReproductionCycles.ts",
     "seed:finance": "tsx src/db/seeds/finance.ts",
+    "seed:feeding": "tsx src/db/seeds/feeding.ts",
+    "seed:commercial": "tsx src/db/seeds/commercial.ts",
     "seed:all": "tsx src/db/seeds/seedAll.ts"
   },
   "dependencies": {

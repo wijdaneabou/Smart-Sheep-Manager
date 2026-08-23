@@ -13,6 +13,13 @@ export type ModuleKey =
   | "ai"
   | "finance"
   | "commercial"
+  | "clients"
+  | "loyalty"
+  | "products"
+  | "orders"
+  | "deliveries"
+  | "framework-contracts"
+  | "marketplace"
   | "bi"
   | "communication"
   | "reporting"
@@ -31,6 +38,13 @@ export type ModuleId =
   | "AI"
   | "FINANCE"
   | "COMMERCIAL"
+  | "CLIENTS"
+  | "CRM"
+  | "PRODUCTS"
+  | "ORDERS"
+  | "DELIVERIES"
+  | "FRAMEWORK_CONTRACTS"
+  | "MARKETPLACE"
   | "BI_DASHBOARD"
   | "COMMUNICATION"
   | "REPORTING"
@@ -193,6 +207,104 @@ export const MODULES: SSMModule[] = [
     available: true,
     priority: 10,
     tabLabel: "Ventes",
+  },
+  {
+    key: "clients",
+    module: "CLIENTS",
+    icon: "👥",
+    ionicon: "people-outline",
+    title: "Clients & Prospects",
+    subtitle: "Acheteurs, bouchers, grossistes, coopératives",
+    color: "#15803D",
+    bgColor: "#E6F8ED",
+    route: "/commercial/clients",
+    available: true,
+    priority: 11,
+    tabLabel: "Clients",
+  },
+  {
+    key: "loyalty",
+    module: "CRM",
+    icon: "⭐",
+    ionicon: "star-outline",
+    title: "Fidélisation & CRM",
+    subtitle: "Segments, offres, notifications",
+    color: "#15803D",
+    bgColor: "#E6F8ED",
+    route: "/commercial/loyalty",
+    available: true,
+    priority: 11.5,
+    tabLabel: "CRM",
+  },
+  {
+    key: "products",
+    module: "PRODUCTS",
+    icon: "📦",
+    ionicon: "cube-outline",
+    title: "Catalogue produits",
+    subtitle: "Agnaux, moutons, laine, viande",
+    color: "#15803D",
+    bgColor: "#E6F8ED",
+    route: "/commercial/products",
+    available: true,
+    priority: 12,
+    tabLabel: "Produits",
+  },
+  {
+    key: "orders",
+    module: "ORDERS",
+    icon: "📋",
+    ionicon: "clipboard-outline",
+    title: "Commandes & Devis",
+    subtitle: "Devis, commandes, facturation",
+    color: "#15803D",
+    bgColor: "#E6F8ED",
+    route: "/commercial/orders",
+    available: true,
+    priority: 13,
+    tabLabel: "Orders",
+  },
+  {
+    key: "deliveries",
+    module: "DELIVERIES",
+    icon: "🚚",
+    ionicon: "car-outline",
+    title: "Livraisons & Transport",
+    subtitle: "Suivi, transporteurs, géolocalisation",
+    color: "#15803D",
+    bgColor: "#E6F8ED",
+    route: "/commercial/deliveries",
+    available: true,
+    priority: 14,
+    tabLabel: "Livraisons",
+  },
+  {
+    key: "framework-contracts",
+    module: "FRAMEWORK_CONTRACTS",
+    icon: "📝",
+    ionicon: "document-text-outline",
+    title: "Contrats Cadres",
+    subtitle: "Contrats clients, volumes, renouvellements",
+    color: "#15803D",
+    bgColor: "#E6F8ED",
+    route: "/commercial/framework-contracts",
+    available: true,
+    priority: 15,
+    tabLabel: "Contrats",
+  },
+  {
+    key: "marketplace",
+    module: "MARKETPLACE",
+    icon: "🛍️",
+    ionicon: "storefront-outline",
+    title: "Marketplace",
+    subtitle: "Annonces, négociation, évaluations",
+    color: "#15803D",
+    bgColor: "#E6F8ED",
+    route: "/commercial/marketplace",
+    available: true,
+    priority: 16,
+    tabLabel: "Market",
   },
   {
     key: "bi",

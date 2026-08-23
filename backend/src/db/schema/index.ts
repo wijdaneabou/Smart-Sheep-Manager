@@ -48,3 +48,20 @@ export * from './fatteningBatchIndividualWeights.js';
 export * from './fatteningBatchWeightRecords.js';
 export * from './fatteningBatches.js';
 export * from './fatteningFeedRecords.js';
+
+export * from './feedItems.js';
+export * from './feedStocks.js';
+export * from './feedRations.js';
+export * from './feedRationItems.js';
+export * from './feedDistributions.js';
+export * from './clients.js';
+export * from './clientSegments.js';
+export * from './clientLoyaltyProfiles.js';
+export * from './loyaltyOffers.js';
+export * from './loyaltyNotifications.js';
+export * from './products.js';
+export * from './orders.js';
+export * from './deliveries.js';
+export * from './framework-contracts.js';
+export * from './marketplace.js';
+
