@@ -36,7 +36,13 @@ const api = axios.create({
   },
 });
 
+let cachedDeviceInfo: string | null = null;
+
 function getDeviceInfo(): string {
+  if (cachedDeviceInfo) {
+    return cachedDeviceInfo;
+  }
+
   const osLabel =
     Platform.OS === "android" ? "Android" : Platform.OS === "ios" ? "iOS" : "Web";
   const parts = [
@@ -47,7 +53,8 @@ function getDeviceInfo(): string {
     "SSM",
     Platform.Version ? String(Platform.Version) : undefined,
   ];
-  return parts.filter(Boolean).join(" | ");
+  cachedDeviceInfo = parts.filter(Boolean).join(" | ");
+  return cachedDeviceInfo;
 }
 
 api.interceptors.request.use(async (config) => {

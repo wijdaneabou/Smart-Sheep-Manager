@@ -86,10 +86,8 @@ export default function LoginScreen() {
 
       await saveToken("accessToken", response.data.accessToken);
       await saveToken("refreshToken", response.data.refreshToken);
-
-      await refreshPermissions();
-
       router.replace("/(dashboard)");
+      void refreshPermissions();
     } catch (error: any) {
       console.log("LOGIN ERROR STATUS:", error.response?.status);
       console.log("LOGIN ERROR DATA:", error.response?.data);

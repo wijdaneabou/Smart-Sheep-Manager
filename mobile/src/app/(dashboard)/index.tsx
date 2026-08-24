@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -33,7 +33,7 @@ export default function DashboardScreen() {
   } = useInfinitePosts(10);
 
   const isAdmin = user?.roleId === 1;
-  const allPosts = data?.pages.flatMap((page) => page.posts) || [];
+  const allPosts = useMemo(() => data?.pages.flatMap((page) => page.posts) || [], [data]);
 
   const handleAIAssistantPress = () => {
     router.push('/ai-assistant');
