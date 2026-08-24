@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,12 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons'; // 👈 Use Feather for the quill icon
+import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useInfinitePosts } from '../../hooks/usePosts';
 import { PostCard } from '../../components/PostCard';
 import { CreatePostModal } from '../../components/CreatePostModal';
 import { usePermissions } from '../../contexts/PermissionsContext';
-
 
 export default function DashboardScreen() {
   const { user } = usePermissions();
@@ -33,7 +32,7 @@ export default function DashboardScreen() {
   } = useInfinitePosts(10);
 
   const isAdmin = user?.roleId === 1;
-  const allPosts = useMemo(() => data?.pages.flatMap((page) => page.posts) || [], [data]);
+  const allPosts = data?.pages.flatMap((page) => page.posts) || [];
 
   const handleAIAssistantPress = () => {
     router.push('/ai-assistant');
@@ -62,7 +61,6 @@ export default function DashboardScreen() {
                 <Feather name="feather" size={22} color="#0F7A3C" style={styles.quillIcon} />
                 <Text style={styles.whatsNewText}>Quoi de neuf ?</Text>
               </View>
-              {/* Decorative underline */}
               <View style={styles.underline} />
             </View>
           </View>
@@ -134,7 +132,7 @@ export default function DashboardScreen() {
 
       <CreatePostModal visible={modalVisible} onClose={() => setModalVisible(false)} />
 
-      {/* AI Assistant Chatbot Button - Fixed bottom left */}
+      {/* AI Assistant Chatbot Button - Fixed bottom left with chat bubble shape */}
       <TouchableOpacity
         style={styles.aiAssistantButton}
         onPress={handleAIAssistantPress}
@@ -146,6 +144,7 @@ export default function DashboardScreen() {
             style={styles.aiAssistantIcon}
           />
         </View>
+        <View style={styles.aiAssistantTail} />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -214,7 +213,7 @@ const styles = StyleSheet.create({
     width: '60%',
     backgroundColor: '#0F7A3C',
     marginTop: 2,
-    marginLeft: 30, // align under the text (offset for icon width)
+    marginLeft: 30,
     borderRadius: 1,
   },
   loaderContainer: {
@@ -260,11 +259,11 @@ const styles = StyleSheet.create({
   },
   aiAssistantButton: {
     position: 'absolute',
-    bottom: 100, // Above the bottom tab bar
-    left: 16,
-    width: 56,
+    bottom: 100,
+    right: 16,
+    width: 64,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 18,
     backgroundColor: '#1B7A4B',
     justifyContent: 'center',
     alignItems: 'center',
@@ -275,15 +274,29 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   aiAssistantButtonInner: {
-    width: 48,
+    width: 56,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   aiAssistantIcon: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 12,
+  },
+  aiAssistantTail: {
+    position: 'absolute',
+    bottom: -8,
+    right: 16,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 12,
+    borderRightWidth: 12,
+    borderTopWidth: 16,
+    borderStyle: 'solid',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#1B7A4B',
   },
 });
