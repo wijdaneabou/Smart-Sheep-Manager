@@ -1,14 +1,13 @@
 import { useFonts } from 'expo-font';
 import { Stack , SplashScreen } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { useEffect } from "react";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
 
 export default function RootLayout() {
   const [fontsLoaded, error] = useFonts({
-    // Load Billabong from assets/fonts
     'Billabong': require('../../assets/fonts/Billabong.otf'),
-    // (keep other fonts if you have them)
   });
 
   useEffect(() => {
@@ -19,12 +18,13 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <PermissionsProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(dashboard)" />
-        {/* autres écrans si besoin */}
-      </Stack>
-    </PermissionsProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <PermissionsProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(dashboard)" />
+        </Stack>
+      </PermissionsProvider>
+    </GestureHandlerRootView>
   );
 }

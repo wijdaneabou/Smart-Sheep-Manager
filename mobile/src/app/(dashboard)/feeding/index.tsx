@@ -33,6 +33,12 @@ import ConsumptionModal from "./components/ConsumptionModal";
 import AddFeedItemModal from "./components/AddFeedItemModal";
 import PurchaseModal from "./components/PurchaseModal";
 
+const GREEN = "#14532d";
+const BG = "#faf6f1";
+const BORDER = "#ECECE6";
+const SOFT_GREEN = "#f5f5f0";
+const TEXT_MUTED = "#8a8578";
+
 export default function FeedingScreen() {
   const router = useRouter();
   const [rations, setRations] = useState<FeedRation[]>([]);
@@ -144,7 +150,9 @@ export default function FeedingScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} />
+        }
       >
         <View style={styles.header}>
           <View style={styles.headerText}>
@@ -154,7 +162,7 @@ export default function FeedingScreen() {
             </Text>
           </View>
           <Pressable
-            style={styles.iconButton}
+            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.9 }]}
             onPress={() => setRationModalVisible(true)}
           >
             <Ionicons name="add" size={24} color="#FFFFFF" />
@@ -164,21 +172,21 @@ export default function FeedingScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
-              <Ionicons name="nutrition-outline" size={22} color="#17633A" />
+              <Ionicons name="nutrition-outline" size={20} color={GREEN} />
             </View>
             <Text style={styles.statValue}>{activeRations}</Text>
             <Text style={styles.statLabel}>Rations actives</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
-              <Ionicons name="leaf-outline" size={22} color="#15803D" />
+              <Ionicons name="leaf-outline" size={20} color={GREEN} />
             </View>
             <Text style={styles.statValue}>{feedItems.length}</Text>
             <Text style={styles.statLabel}>Aliments</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
-              <Ionicons name="cash-outline" size={22} color="#047857" />
+              <Ionicons name="cash-outline" size={20} color={GREEN} />
             </View>
             <Text style={styles.statValue}>{averageCost(rations)}</Text>
             <Text style={styles.statLabel}>Cout moyen DH/kg</Text>
@@ -188,11 +196,13 @@ export default function FeedingScreen() {
         <View style={styles.trackingCard}>
           <View style={styles.trackingHeader}>
             <View style={styles.trackingTitleRow}>
-              <Ionicons name="calendar-outline" size={20} color="#17633A" />
+              <View style={styles.trackingIconWrap}>
+                <Ionicons name="calendar-outline" size={14} color={GREEN} />
+              </View>
               <Text style={styles.trackingTitle}>Suivi du jour</Text>
             </View>
             <Pressable
-              style={styles.trackingButton}
+              style={({ pressed }) => [styles.trackingButton, pressed && { opacity: 0.9 }]}
               onPress={() => setConsumptionModalVisible(true)}
             >
               <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" />
@@ -216,7 +226,7 @@ export default function FeedingScreen() {
             </View>
             <View style={styles.trackingDivider} />
             <View style={styles.trackingMetric}>
-              <Text style={[styles.trackingMetricValue, { color: "#B42318" }]}>
+              <Text style={[styles.trackingMetricValue, { color: "#DC2626" }]}>
                 {refusedToday.toFixed(1)} kg
               </Text>
               <Text style={styles.trackingMetricLabel}>Refus</Text>
@@ -224,7 +234,7 @@ export default function FeedingScreen() {
           </View>
 
           <View style={styles.dailySummary}>
-            <Ionicons name="trending-up-outline" size={18} color="#17633A" />
+            <Ionicons name="trending-up-outline" size={18} color={GREEN} />
             <Text style={styles.dailySummaryText}>
               {consumptionPerAnimalToday.toFixed(2)} kg par animal aujourd'hui
             </Text>
@@ -233,11 +243,11 @@ export default function FeedingScreen() {
 
         <View style={styles.actionsRow}>
           <Pressable
-            style={styles.actionCard}
+            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
             onPress={() => setRationModalVisible(true)}
           >
             <View style={styles.actionIcon}>
-              <Ionicons name="restaurant-outline" size={24} color="#FFFFFF" />
+              <Ionicons name="restaurant-outline" size={22} color="#FFFFFF" />
             </View>
             <View style={styles.actionContent}>
               <Text style={styles.actionTitle}>Nouvelle ration</Text>
@@ -245,15 +255,15 @@ export default function FeedingScreen() {
                 Creer une formule alimentaire
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#5C7468" />
+            <Ionicons name="chevron-forward" size={18} color="#c9c4b8" />
           </Pressable>
 
           <Pressable
-            style={styles.actionCard}
+            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
             onPress={() => setItemModalVisible(true)}
           >
-            <View style={[styles.actionIcon, { backgroundColor: "#15803D" }]}>
-              <Ionicons name="cube-outline" size={24} color="#FFFFFF" />
+            <View style={[styles.actionIcon, { backgroundColor: "#D97706" }]}>
+              <Ionicons name="cube-outline" size={22} color="#FFFFFF" />
             </View>
             <View style={styles.actionContent}>
               <Text style={styles.actionTitle}>Nouvel aliment</Text>
@@ -261,15 +271,15 @@ export default function FeedingScreen() {
                 Ajouter au stock
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#5C7468" />
+            <Ionicons name="chevron-forward" size={18} color="#c9c4b8" />
           </Pressable>
 
           <Pressable
-            style={styles.actionCard}
+            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
             onPress={() => router.push("/feeding/stock")}
           >
-            <View style={[styles.actionIcon, { backgroundColor: "#047857" }]}>
-              <Ionicons name="layers-outline" size={24} color="#FFFFFF" />
+            <View style={[styles.actionIcon, { backgroundColor: "#2563EB" }]}>
+              <Ionicons name="layers-outline" size={22} color="#FFFFFF" />
             </View>
             <View style={styles.actionContent}>
               <Text style={styles.actionTitle}>Stock & alertes</Text>
@@ -277,15 +287,15 @@ export default function FeedingScreen() {
                 Voir le stock, les seuils et les peremptions
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#5C7468" />
+            <Ionicons name="chevron-forward" size={18} color="#c9c4b8" />
           </Pressable>
 
           <Pressable
-            style={styles.actionCard}
+            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
             onPress={() => router.push("/feeding/fcr")}
           >
-            <View style={[styles.actionIcon, { backgroundColor: "#0F766E" }]}>
-              <Ionicons name="trending-up-outline" size={24} color="#FFFFFF" />
+            <View style={[styles.actionIcon, { backgroundColor: "#7C3AED" }]}>
+              <Ionicons name="trending-up-outline" size={22} color="#FFFFFF" />
             </View>
             <View style={styles.actionContent}>
               <Text style={styles.actionTitle}>Efficacite alimentaire</Text>
@@ -293,15 +303,15 @@ export default function FeedingScreen() {
                 Suivre le FCR et optimiser les couts
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#5C7468" />
+            <Ionicons name="chevron-forward" size={18} color="#c9c4b8" />
           </Pressable>
 
           <Pressable
-            style={styles.actionCard}
+            style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
             onPress={() => router.push("/feeding/cout-alimentaire")}
           >
-            <View style={[styles.actionIcon, { backgroundColor: "#047857" }]}>
-              <Ionicons name="calculator-outline" size={24} color="#FFFFFF" />
+            <View style={[styles.actionIcon, { backgroundColor: GREEN }]}>
+              <Ionicons name="calculator-outline" size={22} color="#FFFFFF" />
             </View>
             <View style={styles.actionContent}>
               <Text style={styles.actionTitle}>Cout alimentaire</Text>
@@ -309,7 +319,7 @@ export default function FeedingScreen() {
                 Cout par animal et par periode
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#5C7468" />
+            <Ionicons name="chevron-forward" size={18} color="#c9c4b8" />
           </Pressable>
         </View>
 
@@ -322,7 +332,12 @@ export default function FeedingScreen() {
           </View>
         </View>
 
-        {error ? <ErrorMessage message={error} /> : null}
+        {error ? (
+          <View style={styles.errorBox}>
+            <Ionicons name="alert-circle" size={16} color="#dc2626" />
+            <Text style={styles.errorTextInline}>{error}</Text>
+          </View>
+        ) : null}
 
         {rations.length === 0 ? (
           <EmptyState
@@ -338,7 +353,7 @@ export default function FeedingScreen() {
               <View key={ration.id} style={styles.rationCard}>
                 <View style={styles.rationHeader}>
                   <View style={styles.rationIcon}>
-                    <Ionicons name="restaurant" size={22} color="#17633A" />
+                    <Ionicons name="restaurant" size={20} color={GREEN} />
                   </View>
                   <View style={styles.rationInfo}>
                     <Text style={styles.rationName}>{ration.name}</Text>
@@ -349,11 +364,11 @@ export default function FeedingScreen() {
                   </View>
                   <View style={[
                     styles.statusBadge,
-                    { backgroundColor: ration.status === "ACTIVE" ? "#D1FAE5" : "#FEF3C7" }
+                    { backgroundColor: ration.status === "ACTIVE" ? "#DCFCE7" : "#FEF3C7" }
                   ]}>
                     <Text style={[
                       styles.statusText,
-                      { color: ration.status === "ACTIVE" ? "#047857" : "#D97706" }
+                      { color: ration.status === "ACTIVE" ? "#15803D" : "#D97706" }
                     ]}>
                       {ration.status === "ACTIVE" ? "Actif" : ration.status}
                     </Text>
@@ -420,7 +435,7 @@ export default function FeedingScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F5FAF6",
+    backgroundColor: BG,
   },
   content: {
     padding: 16,
@@ -437,24 +452,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    color: "#10281D",
-    fontSize: 26,
-    fontWeight: "900",
-    letterSpacing: -0.5,
+    color: GREEN,
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.3,
   },
   subtitle: {
-    color: "#5C7468",
-    fontSize: 14,
+    color: TEXT_MUTED,
+    fontSize: 13,
     fontWeight: "600",
     marginTop: 4,
   },
   iconButton: {
     width: 44,
     height: 44,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#17633A",
+    backgroundColor: GREEN,
   },
   statsRow: {
     flexDirection: "row",
@@ -462,40 +477,50 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E2EFE7",
+    borderColor: BORDER,
     padding: 12,
     alignItems: "center",
     gap: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
   statIcon: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: 10,
-    backgroundColor: "#E8F5EC",
+    backgroundColor: SOFT_GREEN,
     alignItems: "center",
     justifyContent: "center",
   },
   statValue: {
-    color: "#10281D",
-    fontSize: 20,
-    fontWeight: "900",
+    color: "#111827",
+    fontSize: 18,
+    fontWeight: "800",
   },
   statLabel: {
-    color: "#5C7468",
+    color: "#666",
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "600",
     textAlign: "center",
   },
   trackingCard: {
-    borderRadius: 14,
+    borderRadius: 18,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E2EFE7",
+    borderColor: BORDER,
     padding: 16,
     gap: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
   trackingHeader: {
     flexDirection: "row",
@@ -505,17 +530,25 @@ const styles = StyleSheet.create({
   trackingTitleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+  },
+  trackingIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    backgroundColor: SOFT_GREEN,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
   },
   trackingTitle: {
-    color: "#10281D",
-    fontSize: 16,
-    fontWeight: "900",
+    color: "#1f2937",
+    fontSize: 14,
+    fontWeight: "700",
   },
   trackingButton: {
     minHeight: 36,
-    borderRadius: 8,
-    backgroundColor: "#17633A",
+    borderRadius: 10,
+    backgroundColor: GREEN,
     paddingHorizontal: 14,
     alignItems: "center",
     justifyContent: "center",
@@ -525,13 +558,13 @@ const styles = StyleSheet.create({
   trackingButtonText: {
     color: "#FFFFFF",
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   trackingMetrics: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F5FAF6",
-    borderRadius: 10,
+    backgroundColor: SOFT_GREEN,
+    borderRadius: 12,
     padding: 12,
   },
   trackingMetric: {
@@ -539,20 +572,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   trackingMetricValue: {
-    color: "#10281D",
-    fontSize: 18,
-    fontWeight: "900",
+    color: "#111827",
+    fontSize: 17,
+    fontWeight: "800",
   },
   trackingMetricLabel: {
-    color: "#5C7468",
+    color: "#666",
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "600",
     marginTop: 2,
   },
   trackingDivider: {
     width: 1,
     height: 32,
-    backgroundColor: "#E2EFE7",
+    backgroundColor: BORDER,
   },
   dailySummary: {
     flexDirection: "row",
@@ -561,9 +594,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   dailySummaryText: {
-    color: "#17633A",
-    fontSize: 14,
-    fontWeight: "800",
+    color: GREEN,
+    fontSize: 13,
+    fontWeight: "700",
   },
   actionsRow: {
     gap: 10,
@@ -572,17 +605,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E2EFE7",
+    borderColor: BORDER,
     padding: 14,
   },
+  actionCardPressed: {
+    backgroundColor: SOFT_GREEN,
+  },
   actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: "#17633A",
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: GREEN,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -590,13 +626,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionTitle: {
-    color: "#10281D",
-    fontSize: 15,
-    fontWeight: "900",
+    color: "#1f2937",
+    fontSize: 14,
+    fontWeight: "700",
   },
   actionSubtitle: {
-    color: "#5C7468",
-    fontSize: 13,
+    color: TEXT_MUTED,
+    fontSize: 12,
     fontWeight: "600",
     marginTop: 2,
   },
@@ -606,26 +642,44 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   sectionTitle: {
-    color: "#10281D",
-    fontSize: 18,
-    fontWeight: "900",
+    color: "#1f2937",
+    fontSize: 16,
+    fontWeight: "700",
   },
   sectionSubtitle: {
-    color: "#5C7468",
-    fontSize: 13,
+    color: TEXT_MUTED,
+    fontSize: 12,
     fontWeight: "600",
     marginTop: 2,
+  },
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fee2e2",
+    borderRadius: 8,
+    padding: 10,
+  },
+  errorTextInline: {
+    color: "#dc2626",
+    fontSize: 13,
+    flex: 1,
   },
   rationList: {
     gap: 10,
   },
   rationCard: {
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E2EFE7",
+    borderColor: BORDER,
     padding: 14,
     gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
   rationHeader: {
     flexDirection: "row",
@@ -633,10 +687,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   rationIcon: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: 10,
-    backgroundColor: "#E8F5EC",
+    backgroundColor: SOFT_GREEN,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -644,13 +698,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rationName: {
-    color: "#10281D",
+    color: "#1f2937",
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   rationMeta: {
-    color: "#5C7468",
-    fontSize: 13,
+    color: TEXT_MUTED,
+    fontSize: 12,
     fontWeight: "600",
     marginTop: 2,
   },
@@ -660,14 +714,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: "800",
+    fontSize: 11,
+    fontWeight: "700",
   },
   rationMetrics: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F5FAF6",
-    borderRadius: 10,
+    backgroundColor: SOFT_GREEN,
+    borderRadius: 12,
     padding: 10,
   },
   rationMetric: {
@@ -675,19 +729,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   rationMetricValue: {
-    color: "#10281D",
-    fontSize: 15,
-    fontWeight: "900",
+    color: "#111827",
+    fontSize: 14,
+    fontWeight: "800",
   },
   rationMetricLabel: {
-    color: "#5C7468",
+    color: "#666",
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "600",
     marginTop: 2,
   },
   rationMetricDivider: {
     width: 1,
     height: 28,
-    backgroundColor: "#E2EFE7",
+    backgroundColor: BORDER,
   },
 });

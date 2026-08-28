@@ -151,7 +151,6 @@ export default function DashboardLayout() {
           <Tabs.Screen name="iot" />
           <Tabs.Screen name="permissions" />
           <Tabs.Screen name="profile" />
-          <Tabs.Screen name="reporting" />
           <Tabs.Screen name="reproduction" />
           <Tabs.Screen name="users" />
         </Tabs>

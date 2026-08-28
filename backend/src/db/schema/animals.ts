@@ -11,6 +11,7 @@ import {
 import { exploitations } from "./exploitations.js";
 import { relations } from "drizzle-orm";
 import { animalMovements } from "./animalMovements.js";
+import { batiments } from "./batiments.js";
 
 export const animals = mysqlTable("animals", {
   id: int("id").autoincrement().primaryKey(),
@@ -60,6 +61,13 @@ export const animals = mysqlTable("animals", {
   exploitationId: int("exploitation_id").references(
     (): AnyMySqlColumn => exploitations.id
   ),
+
+  // Bâtiment d'affectation (optionnel)
+  batimentId: int("batiment_id")
+    .references((): AnyMySqlColumn => batiments.id, { onDelete: "set null" }),
+
+  // Lot / bande d'affectation (optionnel)
+  lot: varchar("lot", { length: 100 }),
 
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

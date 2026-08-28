@@ -338,7 +338,7 @@ export const MODULES: SSMModule[] = [
     key: "ai",
     module: "AI",
     icon: "🤖",
-    ionicon: "brain-outline",
+    ionicon: "bulb-outline",
     title: "Intelligence artificielle",
     subtitle: "Aide à la décision et alertes",
     color: "#166534",

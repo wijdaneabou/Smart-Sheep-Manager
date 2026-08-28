@@ -64,4 +64,5 @@ export * from './orders.js';
 export * from './deliveries.js';
 export * from './framework-contracts.js';
 export * from './marketplace.js';
+export * from './userDashboardWidgets.js';
 

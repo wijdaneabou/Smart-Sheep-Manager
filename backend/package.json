@@ -20,13 +20,15 @@
     "seed:finance": "tsx src/db/seeds/finance.ts",
     "seed:feeding": "tsx src/db/seeds/feeding.ts",
     "seed:commercial": "tsx src/db/seeds/commercial.ts",
-    "seed:all": "tsx src/db/seeds/seedAll.ts"
+    "seed:all": "tsx src/db/seeds/seedAll.ts",
+    "seed:bi": "tsx src/db/seeds/bi.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.8",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
+    "exceljs": "^4.4.0",
     "hono": "^4.12.29",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.3",
@@ -35,6 +37,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^9.0.3",
     "pdfkit": "^0.19.1",
+    "pptxgenjs": "^4.0.1",
     "resend": "^6.17.2",
     "zod": "^4.4.3",
     "zod-validation-error": "^5.0.0"
