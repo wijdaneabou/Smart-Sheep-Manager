@@ -3,7 +3,12 @@ import { Stack , SplashScreen } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { useEffect } from "react";
+import { QueryClient } from '@tanstack/query-core';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
+
+// Create a QueryClient instance
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const [fontsLoaded, error] = useFonts({
@@ -18,13 +23,16 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <PermissionsProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(dashboard)" />
-        </Stack>
-      </PermissionsProvider>
-    </GestureHandlerRootView>
+    <QueryClientProvider client={queryClient}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <PermissionsProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(dashboard)" />
+            {/* autres écrans si besoin */}
+          </Stack>
+        </PermissionsProvider>
+      </GestureHandlerRootView>
+    </QueryClientProvider>
   );
 }

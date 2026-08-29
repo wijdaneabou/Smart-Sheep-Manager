@@ -45,6 +45,8 @@ import fatteningAlertsRoutes from './routes/fatteningAlerts.routes.js';
 
 import feedingRoutes from "./routes/feeding.routes.js";
 import feedingStockMgmtRoutes from "./routes/feedingStockMgmt.routes.js";
+import postsRoutes from "./routes/posts.js";
+
 
 import clientsRoutes from "./routes/clients.routes.js";
 import productsRoutes from "./routes/products.routes.js";
@@ -126,6 +128,8 @@ app.route('/api/fattening/individual-weights', fatteningIndividualWeightsRoutes)
 app.route('/api/fattening/costs', fatteningCostsRoutes);
 app.route('/api/fattening/performance', fatteningPerformanceRoutes);
 app.route('/api/fattening/alerts', fatteningAlertsRoutes);
+// Posts routes
+app.route("/api/posts", postsRoutes);
 
 app.route('/api/feeding', feedingRoutes);
 app.route('/api/feeding-stock', feedingStockMgmtRoutes);

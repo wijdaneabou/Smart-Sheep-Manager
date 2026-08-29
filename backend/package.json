@@ -21,7 +21,8 @@
     "seed:feeding": "tsx src/db/seeds/feeding.ts",
     "seed:commercial": "tsx src/db/seeds/commercial.ts",
     "seed:all": "tsx src/db/seeds/seedAll.ts",
-    "seed:bi": "tsx src/db/seeds/bi.ts"
+    "seed:bi": "tsx src/db/seeds/bi.ts",
+    "seed:posts": "tsx src/db/seeds/posts.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.8",

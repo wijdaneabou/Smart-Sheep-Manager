@@ -65,4 +65,5 @@ export * from './deliveries.js';
 export * from './framework-contracts.js';
 export * from './marketplace.js';
 export * from './userDashboardWidgets.js';
+export * from './posts.js';
 
