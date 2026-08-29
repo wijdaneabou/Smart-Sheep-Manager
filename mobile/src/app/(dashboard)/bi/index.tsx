@@ -1,9 +1,21 @@
 /**
  * mobile/src/app/(dashboard)/bi/index.tsx
  * ------------------------------------------------------------------
- * Dashboard BI (Module 12) avec widgets personnalisables.
+ * Dashboard BI (Module 12) – affichage par défaut minimaliste, organisé
+ * comme la maquette :
+ *   - Grille 2x2 : Animaux totaux | Poids moyen
+ *                  Croissance (GMQ) | Taux de mortalité
+ *   - Graphique "Évolution du poids moyen"
+ *   - Les autres widgets sont masqués par défaut (révélables en mode édition)
  * Mode présentation : boutons "Pause/Play" et "Quitter" toujours visibles.
  * ------------------------------------------------------------------
+ *
+ * ⚠️ IMPORTANT : ce fichier introduit un nouveau type de widget
+ * "kpi-summary" (la grille 2x2 combinée). Il faut l'ajouter à l'union
+ * `WidgetType` exportée par "@/components/widgets/DragDropWidgetList"
+ * (et, si le hook `useDashboardWidgets` valide la liste des types
+ * connus côté backend/local storage, l'ajouter aussi là-bas), sinon
+ * TypeScript remontera une erreur sur ce nouveau literal.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -40,7 +52,6 @@ import { useDashboardWidgets, WidgetItem } from "@/hooks/useDashboardWidgets";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import DragDropWidgetList, { WidgetType } from "@/components/widgets/DragDropWidgetList";
 import {
-  KpiHerdWidget,
   GmqTrendWidget,
   BreedDistributionWidget,
   FinancialWidget,
@@ -71,6 +82,14 @@ const COLORS = {
   shadowMedium: "rgba(15, 23, 42, 0.10)",
 };
 
+// --- Widgets visibles par défaut (correspond à l'image) ---
+const DEFAULT_VISIBLE_WIDGETS: WidgetType[] = [
+  "kpi-herd",          // Total animaux
+  "kpi-gmq",           // GMQ + Poids moyen
+  "kpi-mortality",     // Taux de mortalité
+  "chart-gmq-trend",   // Évolution du poids moyen
+];
+
 export default function BiDashboardScreen() {
   const { userRole } = usePermissions();
   const [loading, setLoading] = useState(true);
@@ -96,7 +115,7 @@ export default function BiDashboardScreen() {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
   const {
-    visibleWidgets,
+    visibleWidgets,           // widgets bruts du hook (avec leurs préférences)
     profiles,
     activeProfileId,
     toggleVisibility,
@@ -110,11 +129,58 @@ export default function BiDashboardScreen() {
     saving,
   } = useDashboardWidgets();
 
+  // --- Construction de la liste ordonnée avec visibilité par défaut ---
+  const orderedWidgets = useMemo(() => {
+    const allWidgets = visibleWidgets;
+    const widgetMap = new Map(allWidgets.map((w) => [w.widgetType, w]));
+
+    // Ordre complet : la grille KPI + le graphique en premier (comme la
+    // maquette), puis les widgets secondaires masqués par défaut.
+    const fullOrder: WidgetType[] = [
+      ...DEFAULT_VISIBLE_WIDGETS,
+      "kpi-fcr",
+      "chart-breed-distribution",
+      "chart-financial",
+      "table-races",
+      "table-charges",
+      "alerts",
+      "calendar",
+    ];
+
+    const result: WidgetItem[] = [];
+
+    for (const type of fullOrder) {
+      const widget = widgetMap.get(type);
+      if (widget) {
+        const isVisible = DEFAULT_VISIBLE_WIDGETS.includes(type) ? true : widget.isVisible;
+        const size = widget.size || "full";
+        result.push({ ...widget, isVisible, size });
+      }
+    }
+
+    for (const w of allWidgets) {
+      if (!fullOrder.includes(w.widgetType)) {
+        result.push({ ...w, isVisible: false });
+      }
+    }
+
+    result.sort((a, b) => {
+      const idxA = fullOrder.indexOf(a.widgetType);
+      const idxB = fullOrder.indexOf(b.widgetType);
+      if (idxA === -1) return 1;
+      if (idxB === -1) return -1;
+      return idxA - idxB;
+    });
+
+    return result;
+  }, [visibleWidgets]);
+
   const displayedWidgets = useMemo(
-    () => (editMode ? visibleWidgets : visibleWidgets.filter((w) => w.isVisible)),
-    [visibleWidgets, editMode]
+    () => (editMode ? orderedWidgets : orderedWidgets.filter((w) => w.isVisible)),
+    [orderedWidgets, editMode]
   );
 
+  // --- Rotation automatique en mode présentation ---
   useEffect(() => {
     if (!presentationMode || !autoRotate || displayedWidgets.length < 2) return;
     const timer = setInterval(() => setPresentationIndex((current) => (current + 1) % displayedWidgets.length), 8000);
@@ -127,6 +193,7 @@ export default function BiDashboardScreen() {
     setPresentationIndex(0);
   }, [presentationMode]);
 
+  // --- Chargement des données ---
   const loadData = useCallback(async (filters: BiFilters) => {
     try {
       setError(null);
@@ -158,6 +225,7 @@ export default function BiDashboardScreen() {
     setRefreshing(false);
   }, [appliedFilters, loadData]);
 
+  // --- Filtres ---
   const applyFilters = useCallback(async () => {
     setAppliedFilters(draftFilters);
     setFiltersModalVisible(false);
@@ -176,6 +244,7 @@ export default function BiDashboardScreen() {
   const activeFilterCount = Object.values(appliedFilters).filter((value) => value !== undefined && value !== "").length;
   const canOpenCooperativeView = ["COOPERATIVE", "ADMIN"].includes(userRole.toUpperCase());
 
+  // --- Gestion des widgets ---
   const handleReorder = useCallback(
     (newOrder: WidgetType[]) => {
       reorderWidgets(newOrder);
@@ -197,6 +266,7 @@ export default function BiDashboardScreen() {
     setProfileModalVisible(false);
   }, [newProfileName, createNewProfile]);
 
+  // --- Export ---
   const handleExport = useCallback(async (format: BiExportFormat) => {
     try {
       setExporting(format);
@@ -210,17 +280,12 @@ export default function BiDashboardScreen() {
     }
   }, [appliedFilters, exportScope]);
 
+  // --- Rendu des widgets ---
   const renderWidget = useCallback(
     (item: WidgetItem, index: number) => {
       switch (item.widgetType) {
-        case "kpi-herd":
-          return <KpiHerdWidget dashboard={dashboard} />;
-        case "kpi-gmq":
-          return <KpiGmqWidget dashboard={dashboard} />;
         case "kpi-fcr":
           return <KpiFcrWidget />;
-        case "kpi-mortality":
-          return <KpiMortalityWidget dashboard={dashboard} />;
         case "chart-gmq-trend":
           return (
             <View style={styles.section}>
@@ -262,6 +327,7 @@ export default function BiDashboardScreen() {
     [dashboard, financials, alerts, calendarEvents]
   );
 
+  // --- États de chargement / erreur ---
   if (loading || widgetsLoading) {
     return (
       <View style={styles.centered}>
@@ -335,6 +401,9 @@ export default function BiDashboardScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          </Pressable>
           <Text style={styles.title} numberOfLines={1}>Tableau de bord</Text>
           <Pressable
             onPress={() => setEditMode(!editMode)}
@@ -485,7 +554,7 @@ export default function BiDashboardScreen() {
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <View>
-              <Text style={styles.modalTitle}>Filtres d’analyse</Text>
+              <Text style={styles.modalTitle}>Filtres d'analyse</Text>
               <Text style={styles.filterHint}>Les filtres peuvent être combinés.</Text>
             </View>
             <Pressable onPress={() => setFiltersModalVisible(false)}>
@@ -703,7 +772,7 @@ export default function BiDashboardScreen() {
       <Modal visible={actionsModalVisible} transparent animationType="fade" onRequestClose={() => setActionsModalVisible(false)}>
         <Pressable style={styles.actionsBackdrop} onPress={() => setActionsModalVisible(false)}>
           <View style={styles.actionsSheet}>
-            <Text style={styles.actionsTitle}>Outils d’analyse</Text>
+            <Text style={styles.actionsTitle}>Outils d'analyse</Text>
             <ActionRow
               icon="expand-outline"
               label="Mode présentation"
@@ -733,7 +802,7 @@ export default function BiDashboardScreen() {
             />
             <ActionRow
               icon="notifications-outline"
-              label="Seuils d’alerte"
+              label="Seuils d'alerte"
               description="Configurer vos critères de notification"
               onPress={() => {
                 setActionsModalVisible(false);
@@ -759,6 +828,7 @@ export default function BiDashboardScreen() {
 }
 
 // --- Composants auxiliaires ---
+
 function ExportOption({
   icon,
   title,
@@ -818,55 +888,58 @@ function ActionRow({
   );
 }
 
-function KpiGmqWidget({ dashboard }: { dashboard: DashboardOverview | null }) {
+/**
+ * Grille 2x2 reproduisant exactement la maquette :
+ *   [ Animaux totaux ]   [ Poids moyen ]
+ *   [ Croissance GMQ ]   [ Taux mortalité ]
+ * Cartes blanches, sobres, sans icône ni bordure colorée.
+ */
+function KpiSummaryGrid({ dashboard }: { dashboard: DashboardOverview | null }) {
   const point = dashboard?.gmqTrend?.[dashboard.gmqTrend.length - 1];
+  const total = dashboard?.herd?.totalAnimals ?? 0;
+  const avgWeight = point?.avgWeight;
+  const gmq = point?.gmqGramsPerDay;
+  const mortality = dashboard?.mortalityRate ?? 0;
+
   return (
-    <View style={styles.kpiRow}>
-      <KpiCard
-        label="GMQ dernier mois"
-        value={point?.gmqGramsPerDay != null ? `${point.gmqGramsPerDay} g/j` : "—"}
-        accentColor={COLORS.primary}
-        icon="trending-up-outline"
-        trend={point?.gmqGramsPerDay && point.gmqGramsPerDay > 200 ? "up" : "neutral"}
-      />
-      <KpiCard
-        label="Poids moyen"
-        value={point?.avgWeight != null ? `${point.avgWeight.toFixed(1)} kg` : "—"}
-        accentColor={COLORS.textSecondary}
-        icon="barbell-outline"
-        trend={point?.avgWeight && point.avgWeight > 40 ? "up" : "neutral"}
-      />
+    <View style={styles.kpiGrid}>
+      <View style={styles.kpiGridRow}>
+        <SimpleKpiCard label="Animaux totaux" value={String(total)} unit="tête(s)" />
+        <SimpleKpiCard
+          label="Poids moyen"
+          value={avgWeight != null ? avgWeight.toFixed(1).replace(".", ",") : "—"}
+          unit="kg"
+        />
+      </View>
+      <View style={styles.kpiGridRow}>
+        <SimpleKpiCard
+          label="Croissance (GMQ)"
+          value={gmq != null ? `+${(gmq / 1000).toFixed(2).replace(".", ",")}` : "—"}
+          unit="kg/j"
+        />
+        <SimpleKpiCard label="Taux de mortalité" value={mortality.toFixed(1).replace(".", ",")} unit="%" />
+      </View>
+    </View>
+  );
+}
+
+function SimpleKpiCard({ label, value, unit }: { label: string; value: string; unit: string }) {
+  return (
+    <View style={styles.simpleKpiCard}>
+      <Text style={styles.simpleKpiLabel}>{label}</Text>
+      <View style={styles.simpleKpiValueRow}>
+        <Text style={styles.simpleKpiValue}>{value}</Text>
+        <Text style={styles.simpleKpiUnit}>{unit}</Text>
+      </View>
     </View>
   );
 }
 
 function KpiFcrWidget() {
   return (
-    <View style={styles.kpiRow}>
-      <KpiCard label="FCR" value="1.8" accentColor={COLORS.info} icon="analytics-outline" trend="down" />
-      <KpiCard label="Conso aliment" value="2.4 kg/j" accentColor={COLORS.warning} icon="fish-outline" trend="neutral" />
-    </View>
-  );
-}
-
-function KpiMortalityWidget({ dashboard }: { dashboard: DashboardOverview | null }) {
-  const rate = dashboard?.mortalityRate ?? 0;
-  return (
-    <View style={styles.kpiRow}>
-      <KpiCard
-        label="Mortalité"
-        value={`${rate}%`}
-        accentColor={rate > 5 ? COLORS.danger : COLORS.textSecondary}
-        icon="alert-circle-outline"
-        trend={rate > 5 ? "up" : "down"}
-      />
-      <KpiCard
-        label="Fertilité"
-        value={`${dashboard?.fertilityRate ?? 0}%`}
-        accentColor={COLORS.primary}
-        icon="heart-outline"
-        trend="up"
-      />
+    <View style={styles.kpiGridRow}>
+      <SimpleKpiCard label="FCR" value="1,8" unit="" />
+      <SimpleKpiCard label="Conso aliment" value="2,4" unit="kg/j" />
     </View>
   );
 }
@@ -889,53 +962,6 @@ function RacesTableWidget({ dashboard }: { dashboard: DashboardOverview | null }
       ) : (
         <EmptyState message="Aucune race enregistrée." />
       )}
-    </View>
-  );
-}
-
-function KpiCard({
-  label,
-  value,
-  color,
-  accentColor,
-  icon,
-  trend,
-}: {
-  label: string;
-  value: string;
-  color?: string;
-  accentColor?: string;
-  icon?: string;
-  trend?: "up" | "down" | "neutral";
-}) {
-  const mainColor = accentColor || color || COLORS.textSecondary;
-  const showTrend = trend && trend !== "neutral";
-
-  return (
-    <View style={[styles.kpiCard, { borderLeftColor: mainColor }]}>
-      <View style={styles.kpiHeader}>
-        {icon && (
-          <View style={[styles.kpiIcon, { backgroundColor: mainColor + "14" }]}>
-            <Ionicons name={icon as any} size={18} color={mainColor} />
-          </View>
-        )}
-        {showTrend && (
-          <View
-            style={[
-              styles.trendBadge,
-              { backgroundColor: trend === "up" ? COLORS.primaryLight : COLORS.dangerLight },
-            ]}
-          >
-            <Ionicons
-              name={trend === "up" ? "arrow-up" : "arrow-down"}
-              size={12}
-              color={trend === "up" ? COLORS.primary : COLORS.danger}
-            />
-          </View>
-        )}
-      </View>
-      <Text style={[styles.kpiValue, { color: mainColor }]}>{value}</Text>
-      <Text style={styles.kpiLabel}>{label}</Text>
     </View>
   );
 }
@@ -1006,8 +1032,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: 16, paddingBottom: 48 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: COLORS.background },
+  backButton: { padding: 4, marginRight: 4 },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "800",
     color: COLORS.text,
     flex: 1,
@@ -1087,7 +1114,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
     flexShrink: 0,
-    marginLeft: "auto",
   },
   editButtonActive: { backgroundColor: COLORS.muted, shadowOpacity: 0.1 },
   editButtonText: { color: "#fff", fontSize: 13, fontWeight: "700" },
@@ -1107,26 +1133,32 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
   sectionAccent: { width: 4, height: 20, borderRadius: 2, backgroundColor: COLORS.primary },
   sectionTitle: { fontSize: 17, fontWeight: "800", color: COLORS.text, letterSpacing: -0.2 },
-  kpiRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  kpiCard: {
-    flexGrow: 1,
-    minWidth: "45%",
+
+  // --- Grille KPI 2x2 (façon maquette) ---
+  kpiGrid: { gap: 10 },
+  kpiGridRow: { flexDirection: "row", gap: 10 },
+  simpleKpiCard: {
+    flex: 1,
     backgroundColor: COLORS.card,
     borderRadius: 16,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     shadowColor: COLORS.shadow,
     shadowOpacity: 1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  kpiHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  kpiIcon: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  trendBadge: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  kpiValue: { fontSize: 24, fontWeight: "800", color: COLORS.text, letterSpacing: -0.5 },
-  kpiLabel: { fontSize: 11, color: COLORS.muted, marginTop: 4, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
+  simpleKpiLabel: {
+    fontSize: 12,
+    color: COLORS.muted,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  simpleKpiValueRow: { flexDirection: "row", alignItems: "flex-end", gap: 4 },
+  simpleKpiValue: { fontSize: 26, fontWeight: "800", color: COLORS.text, letterSpacing: -0.5 },
+  simpleKpiUnit: { fontSize: 12, color: COLORS.muted, fontWeight: "600", marginBottom: 3 },
+
   dataRow: {
     backgroundColor: COLORS.card,
     padding: 14,
@@ -1292,11 +1324,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-  // --- Styles du mode présentation (corrigés) ---
+  // --- Styles du mode présentation ---
   presentationContainer: { flex: 1, backgroundColor: "#101814", padding: 16 },
   presentationTop: {
     flexDirection: "row",
-    flexWrap: "wrap",              // ✅ permet le retour à la ligne
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
@@ -1304,10 +1336,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#2A3B30",
   },
-  presentationTitleBlock: { flexShrink: 1 }, // le bloc de titre se rétrécit
+  presentationTitleBlock: { flexShrink: 1 },
   presentationTitle: {
     color: "#fff",
-    fontSize: 20,                  // réduit pour gagner de la place
+    fontSize: 20,
     fontWeight: "800",
     letterSpacing: -0.3,
   },
@@ -1321,7 +1353,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    flexShrink: 0,                // les boutons ne se rétrécissent pas
+    flexShrink: 0,
   },
   presentationIcon: {
     padding: 8,

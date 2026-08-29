@@ -57,7 +57,7 @@ import marketplaceRoutes from "./routes/marketplace.routes.js";
 import crmRoutes from "./routes/crm.routes.js";
 import biRoutes from "./routes/bi.routes.js";
 import widgetsRoutes from "./routes/widgets.routes.js";
-
+import aiRoutes from "./routes/ai.routes.js";
 
 const app = new Hono();
 
@@ -145,5 +145,6 @@ app.route('/api/crm', crmRoutes);
 app.route('/api/bi', biRoutes);
 app.route('/api/dashboard', widgetsRoutes);
 
+app.route("/api/ai", aiRoutes);
 
 export default app;

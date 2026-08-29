@@ -155,11 +155,16 @@ async function bulkInsert(
 
 const BREEDS = ["Sardi", "Timahdite", "D'man", "Beni-Guil"] as const;
 const SHEEP_NAMES = [
-  "Birka", "Atlas", "Luna", "Sahara", "Nour", "Amira", "Zaid", "Yasmine",
-  "Karim", "Salma", "Rayan", "Douha", "Anas", "Malak", "Adam", "Ines",
-  "Yassine", "Hiba", "Othmane", "Chaima", "Bilal", "Rim", "Souhail", "Nada",
-  "Marwan", "Lina", "Hamza", "Sara", "Ayoub", "Meryem", "Idriss", "Kenza",
-  "Younes", "Fatima", "Reda", "Wiam", "Ismail", "Zineb", "Tarik", "Asmae",
+  "Brebis 001", "Brebis 002", "Brebis 003", "Brebis 004", "Brebis 005",
+  "Brebis 006", "Brebis 007", "Brebis 008", "Brebis 009", "Brebis 010",
+  "Bélier 001", "Bélier 002", "Bélier 003", "Bélier 004", "Bélier 005",
+  "Agnelle 001", "Agnelle 002", "Agnelle 003", "Agnelle 004", "Agnelle 005",
+  "Agneau 001", "Agneau 002", "Agneau 003", "Agneau 004", "Agneau 005",
+  "Mouton 001", "Mouton 002", "Mouton 003", "Mouton 004", "Mouton 005",
+  "Biquette 001", "Biquette 002", "Biquette 003", "Biquette 004", "Biquette 005",
+  "Chèvre 001", "Chèvre 002", "Chèvre 003", "Chèvre 004", "Chèvre 005",
+  "Bergère 001", "Bergère 002", "Bergère 003", "Bergère 004", "Bergère 005",
+  "Troupeau A", "Troupeau B", "Troupeau C", "Troupeau D", "Troupeau E",
 ] as const;
 
 const EXPLOITATION_NAMES = [

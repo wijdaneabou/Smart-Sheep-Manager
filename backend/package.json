@@ -25,6 +25,8 @@
     "seed:posts": "tsx src/db/seeds/posts.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.122.0",
+    "@google/generative-ai": "^0.24.1",
     "@hono/node-server": "^2.0.8",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
@@ -37,6 +39,7 @@
     "mysql2": "^3.23.0",
     "node-fetch": "^3.3.2",
     "nodemailer": "^9.0.3",
+    "openai": "^7.8.0",
     "pdfkit": "^0.19.1",
     "pptxgenjs": "^4.0.1",
     "resend": "^6.17.2",
