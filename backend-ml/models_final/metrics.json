@@ -1,0 +1,186 @@
+{
+  "auc_roc": 0.7983254378019323,
+  "thresholds": {
+    "conservative": 0.7700000000000002,
+    "balanced": 0.49000000000000005,
+    "high_recall": 0.45000000000000007,
+    "recommended_for_health": "high_recall"
+  },
+  "profiles": {
+    "conservative": {
+      "threshold": 0.7700000000000002,
+      "accuracy": 0.9218666666666666,
+      "precision": 0.515819209039548,
+      "recall": 0.3804166666666667,
+      "f1": 0.4378896882494005
+    },
+    "balanced": {
+      "threshold": 0.49000000000000005,
+      "accuracy": 0.8074,
+      "precision": 0.2314785373608903,
+      "recall": 0.6066666666666667,
+      "f1": 0.33509781357882623
+    },
+    "high_recall": {
+      "threshold": 0.45000000000000007,
+      "accuracy": 0.7719333333333334,
+      "precision": 0.20776315789473684,
+      "recall": 0.6579166666666667,
+      "f1": 0.3158
+    }
+  },
+  "feature_names": [
+    "breed_D'man",
+    "breed_Sardi",
+    "breed_Timahdite",
+    "sex_MALE",
+    "age_days",
+    "has_bcs",
+    "bcs_last",
+    "bcs_mean_30d",
+    "bcs_count_30d",
+    "bcs_change_30d",
+    "days_since_last_bcs",
+    "has_iot",
+    "temp_mean_30d",
+    "temp_max_30d",
+    "temp_anomalies_30d",
+    "temp_last",
+    "rest_ratio_30d",
+    "movement_ratio_30d",
+    "grazing_ratio_30d",
+    "alert_count_30d",
+    "days_iot_data_30d",
+    "weight_last",
+    "weight_mean_30d",
+    "weight_change_30d",
+    "weight_count_30d",
+    "days_since_last_weight",
+    "vaccine_count",
+    "days_since_last_vaccine",
+    "repro_cycles_count",
+    "has_lambing",
+    "pregnancies_count",
+    "health_records_count_365d",
+    "days_since_last_disease_365d"
+  ],
+  "feature_bounds": {
+    "age_days": [
+      30,
+      1500
+    ],
+    "bcs_last": [
+      1.5,
+      4.5
+    ],
+    "bcs_mean_30d": [
+      1.5,
+      4.5
+    ],
+    "bcs_count_30d": [
+      0,
+      7
+    ],
+    "bcs_change_30d": [
+      -0.6,
+      0.3
+    ],
+    "temp_mean_30d": [
+      37.5,
+      41.0
+    ],
+    "temp_max_30d": [
+      38.0,
+      42.0
+    ],
+    "temp_anomalies_30d": [
+      0,
+      10
+    ],
+    "temp_last": [
+      37.5,
+      41.0
+    ],
+    "rest_ratio_30d": [
+      0.2,
+      0.8
+    ],
+    "movement_ratio_30d": [
+      0.1,
+      0.45
+    ],
+    "grazing_ratio_30d": [
+      0.1,
+      0.45
+    ],
+    "alert_count_30d": [
+      0,
+      10
+    ],
+    "days_iot_data_30d": [
+      0,
+      30
+    ],
+    "weight_last": [
+      10,
+      95
+    ],
+    "weight_mean_30d": [
+      10,
+      95
+    ],
+    "weight_change_30d": [
+      -5.0,
+      3.0
+    ],
+    "weight_count_30d": [
+      0,
+      14
+    ],
+    "vaccine_count": [
+      0,
+      5
+    ],
+    "days_since_last_vaccine": [
+      0,
+      999
+    ],
+    "days_since_last_bcs": [
+      0,
+      999
+    ],
+    "days_since_last_weight": [
+      0,
+      999
+    ],
+    "repro_cycles_count": [
+      0,
+      5
+    ],
+    "has_lambing": [
+      0,
+      1
+    ],
+    "pregnancies_count": [
+      0,
+      3
+    ],
+    "health_records_count_365d": [
+      0,
+      10
+    ],
+    "days_since_last_disease_365d": [
+      0,
+      999
+    ],
+    "has_bcs": [
+      0,
+      1
+    ],
+    "has_iot": [
+      0,
+      1
+    ]
+  },
+  "training_date": "2026-08-28T23:16:15.225422"
+}

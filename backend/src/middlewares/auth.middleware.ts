@@ -1,3 +1,4 @@
+// src/middlewares/auth.middleware.ts
 import type { Context, Next } from "hono";
 import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
@@ -9,7 +10,20 @@ type AccessTokenPayload = {
   roleId: number;
 };
 
+// ✅ List of public routes under /api/predictions that should NOT require authentication
+const PUBLIC_PATHS = [
+  '/api/predictions/available',
+  '/api/predictions/ml-health',
+];
+
 export async function isAuthenticated(c: Context, next: Next) {
+  // ✅ Skip authentication for public routes
+  const path = c.req.path;
+  if (PUBLIC_PATHS.some(publicPath => path === publicPath || path.startsWith(publicPath))) {
+    console.log(`[auth] 🔓 Public route: ${path} - skipping authentication`);
+    return await next();
+  }
+
   const authHeader = c.req.header("Authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
@@ -35,6 +49,7 @@ export async function isAuthenticated(c: Context, next: Next) {
       id: payload.userId,
       roleId: payload.roleId,
       roleName: role?.name ?? null,
+      role: role?.name ?? null,
     };
 
     console.log(`[auth] Setting user:`, user);

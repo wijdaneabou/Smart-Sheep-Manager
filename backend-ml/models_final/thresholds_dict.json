@@ -1,0 +1,6 @@
+{
+  "conservative": 0.7700000000000002,
+  "balanced": 0.49000000000000005,
+  "high_recall": 0.45000000000000007,
+  "recommended_for_health": "high_recall"
+}

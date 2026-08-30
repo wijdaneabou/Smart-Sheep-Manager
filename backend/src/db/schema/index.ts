@@ -47,3 +47,5 @@ export * from './fatteningBatches.js';
 export * from './fatteningFeedRecords.js';
 
 export * from './posts.js';
+
+export * from './predictions.js';
