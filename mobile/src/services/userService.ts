@@ -13,6 +13,7 @@ export type User = {
   exploitationId?: number | null;
   status: UserStatus;
   createdAt: string;
+  roleName?: string | null;
 };
 
 export type LoginHistoryEntry = {
@@ -31,6 +32,22 @@ export type Pagination = {
   totalPages?: number;
 };
 
+export type UserExploitationSummary = {
+  id: number;
+  name: string;
+  type: string;
+  role: string;
+  animalsCount: number;
+  superficie: string | null;
+};
+
+export type UserAdminDetails = {
+  user: User;
+  exploitations: UserExploitationSummary[];
+  totalExploitations: number;
+  totalAnimals: number;
+};
+
 function extractError(err: any): string {
   const apiError = err?.response?.data?.error;
   if (typeof apiError === "string") return apiError;
@@ -42,7 +59,9 @@ export async function listUsers(
     page?: number;
     limit?: number;
     search?: string;
+    roleId?: number;
     status?: UserStatus;
+    exploitationId?: number;
   } = {}
 ) {
   try {
@@ -50,6 +69,15 @@ export async function listUsers(
       "/users",
       { params }
     );
+    return { success: true as const, ...response.data };
+  } catch (err: any) {
+    return { success: false as const, message: extractError(err) };
+  }
+}
+
+export async function getUserAdminDetails(id: number) {
+  try {
+    const response = await api.get<{ data: UserAdminDetails }>(`/users/${id}/admin-details`);
     return { success: true as const, ...response.data };
   } catch (err: any) {
     return { success: false as const, message: extractError(err) };

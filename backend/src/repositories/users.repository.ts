@@ -1,7 +1,8 @@
 import { db } from "../db/connection.js";
 import { users } from "../db/schema/users.js";
 import { loginHistory } from "../db/schema/loginHistory.js";
-import { eq, and, or, like, desc, count } from "drizzle-orm";
+import { userExploitations } from "../db/schema/userExploitations.js";
+import { eq, and, or, like, desc, count, inArray } from "drizzle-orm";
 
 // ─────────────────────────────────────────────
 // Fonctions existantes (US-1.1 - authentification)
@@ -106,6 +107,7 @@ export async function listUsers(params: {
   search?: string;
   roleId?: number;
   status?: UserStatus;
+  exploitationId?: number;
 }) {
   const conditions = [];
 
@@ -121,6 +123,13 @@ export async function listUsers(params: {
   }
   if (params.roleId) conditions.push(eq(users.roleId, params.roleId));
   if (params.status) conditions.push(eq(users.status, params.status));
+  if (params.exploitationId) {
+    const subquery = db
+      .select({ userId: userExploitations.userId })
+      .from(userExploitations)
+      .where(eq(userExploitations.exploitationId, params.exploitationId));
+    conditions.push(inArray(users.id, subquery));
+  }
 
   const whereClause = conditions.length ? and(...conditions) : undefined;
   const offset = (params.page - 1) * params.limit;

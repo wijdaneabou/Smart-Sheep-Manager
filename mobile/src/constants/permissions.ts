@@ -42,6 +42,8 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'AI:EXPLAIN',
     'AI:STATISTICS',
     'AI:NOTIFICATIONS',
+    // CRM / FIDELISATION
+    'CRM:READ', 'CRM:CREATE', 'CRM:UPDATE', 'CRM:DELETE',
   ],
 
   manager: [
@@ -80,6 +82,12 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'AI:EXPLAIN',
     'AI:STATISTICS',
     'AI:NOTIFICATIONS',
+    // DELIVERIES
+    'DELIVERIES:READ', 'DELIVERIES:CREATE', 'DELIVERIES:UPDATE', 'DELIVERIES:DELETE',
+    // MARKETPLACE
+    'MARKETPLACE:READ', 'MARKETPLACE:CREATE', 'MARKETPLACE:UPDATE', 'MARKETPLACE:DELETE',
+    // CRM / FIDELISATION
+    'CRM:READ', 'CRM:CREATE', 'CRM:UPDATE', 'CRM:DELETE',
   ],
 
   eleveur: [
@@ -117,6 +125,10 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'AI:EXPLAIN',
     'AI:STATISTICS',
     'AI:NOTIFICATIONS',
+    // DELIVERIES
+    'DELIVERIES:READ', 'DELIVERIES:CREATE', 'DELIVERIES:UPDATE', 'DELIVERIES:DELETE',
+    // FRAMEWORK_CONTRACTS
+    'FRAMEWORK_CONTRACTS:READ', 'FRAMEWORK_CONTRACTS:CREATE', 'FRAMEWORK_CONTRACTS:UPDATE', 'FRAMEWORK_CONTRACTS:DELETE',
   ],
 
   ouvrier: [
@@ -135,6 +147,15 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     // ✅ AI – Limited Read (Ouvrier)
     'AI:READ',
     'AI:NOTIFICATIONS',
+    // DELIVERIES
+    'DELIVERIES:READ',
+    // FRAMEWORK_CONTRACTS
+    'FRAMEWORK_CONTRACTS:READ',
+    // MARKETPLACE
+    'MARKETPLACE:READ',
+    // CRM / FIDELISATION
+    'CRM:READ', 'CRM:CREATE', 'CRM:UPDATE',
+    // No finance permissions
   ],
 
   veterinaire: [
@@ -163,6 +184,14 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     'AI:EXPLAIN',
     'AI:STATISTICS',
     'AI:NOTIFICATIONS',
+    // DELIVERIES
+    'DELIVERIES:READ',
+    // FRAMEWORK_CONTRACTS
+    'FRAMEWORK_CONTRACTS:READ',
+    // MARKETPLACE
+    'MARKETPLACE:READ',
+    // CRM / FIDELISATION
+    'CRM:READ',
   ],
 
   cooperative: [
@@ -178,6 +207,12 @@ export const PERMISSIONS_MAP: Record<string, string[]> = {
     // ✅ AI – Aggregate Only (Cooperative)
     'AI:STATISTICS',
     'AI:NOTIFICATIONS',
+    // FRAMEWORK_CONTRACTS
+    'FRAMEWORK_CONTRACTS:READ',
+    // MARKETPLACE
+    'MARKETPLACE:READ',
+    // CRM / FIDELISATION
+    'CRM:READ',
   ],
 };
 

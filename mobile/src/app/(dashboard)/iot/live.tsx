@@ -38,24 +38,10 @@ const ACTIVITY_ICONS: Record<string, keyof typeof MaterialCommunityIcons.glyphMa
 };
 
 const SENSOR_TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  LOCALIZATION: "location",
+  GPS: "location",
   TEMPERATURE: "thermometer",
   ACTIVITY: "fitness",
-  FEEDING: "restaurant",
-  WATER_INTAKE: "water",
-  HEART_RATE: "heart",
 };
-
-const SENSOR_METRICS: Record<string, { temperature: boolean; activity: boolean; battery: boolean }> = {
-  LOCALIZATION: { temperature: false, activity: true, battery: true },
-  TEMPERATURE: { temperature: true, activity: false, battery: true },
-  ACTIVITY: { temperature: false, activity: true, battery: true },
-  FEEDING: { temperature: false, activity: false, battery: true },
-  WATER_INTAKE: { temperature: false, activity: false, battery: true },
-  HEART_RATE: { temperature: false, activity: false, battery: true },
-};
-
-const DEFAULT_METRICS = { temperature: true, activity: true, battery: true };
 
 const COORD_PRECISION = 4;
 const NOMINATIM_MIN_INTERVAL_MS = 1100;
@@ -120,12 +106,15 @@ function timeAgoLabel(dateStr: string | null): string {
   return `Il y a ${diffH} h`;
 }
 
+function shieldHasSensor(sensors: { sensorType: string }[], type: string): boolean {
+  return sensors.some(s => s.sensorType === type);
+}
+
 export default function IoTLiveScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
 
-  // Silent redirect if no sensor read permission
   useEffect(() => {
     if (!hasPermission('IOT', 'SENSOR:READ')) {
       router.replace("/iot");
@@ -257,8 +246,10 @@ export default function IoTLiveScreen() {
     if (updated) setSelectedReading(updated);
   }, [readings]);
 
-  const alertCount = readings.filter((r) => {
-    if (r.shield.sensorType !== "TEMPERATURE") return false;
+  const alertCount = readings.reduce((sum, r) => sum + (r.unresolvedAlertCount || 0), 0);
+
+  const tempAlertCount = readings.filter((r) => {
+    if (!shieldHasSensor(r.shield.sensors, "TEMPERATURE")) return false;
     const t = r.temperature ? parseFloat(r.temperature) : null;
     return t !== null && t > 40.5;
   }).length;
@@ -400,45 +391,65 @@ export default function IoTLiveScreen() {
               </View>
             }
             renderItem={({ item }) => {
-              const sensorInfo = getSensorTypeInfo(item.shield.sensorType);
               const statusInfo = getShieldStatusInfo(item.shield.status);
               const battery = getBatteryLevel(item.shield.battery);
               const activityLabel = item.activity ? ACTIVITY_LABELS[item.activity] ?? item.activity : "—";
               const activityIcon = item.activity ? ACTIVITY_ICONS[item.activity] : undefined;
               const tempNum = item.temperature ? parseFloat(item.temperature) : null;
               const temp = getTempLevel(tempNum);
-              const iconName = SENSOR_TYPE_ICONS[item.shield.sensorType] ?? "hardware-chip-outline";
 
-              const metricsConfig = SENSOR_METRICS[item.shield.sensorType] ?? DEFAULT_METRICS;
-              const showTemperature = metricsConfig.temperature && tempNum !== null;
-              const showActivity = metricsConfig.activity && !!item.activity;
-              const showBattery = metricsConfig.battery;
+              const hasTemp = shieldHasSensor(item.shield.sensors, "TEMPERATURE");
+              const hasActivity = shieldHasSensor(item.shield.sensors, "ACTIVITY");
+              const hasGps = shieldHasSensor(item.shield.sensors, "GPS");
+
+              const showTemperature = hasTemp && tempNum !== null;
+              const showActivity = hasActivity && !!item.activity;
+              const showBattery = true;
 
               const isAlert = showTemperature && tempNum !== null && tempNum > 40.5;
+              const isLowBattery = showBattery && parseFloat(item.shield.battery) < 15;
+              const unresolvedAlerts = item.unresolvedAlertCount || 0;
+              const hasOutOfZone = item.shield.sensors.some(s => s.sensorType === "GPS") &&
+                item.unresolvedAlertCount > 0 &&
+                item.latitude && item.longitude;
 
               const visibleMetricsCount =
                 (showTemperature ? 1 : 0) + (showActivity ? 1 : 0) + (showBattery ? 1 : 0);
 
               const { label: gpsLabel, resolved: gpsResolved, resolving: gpsResolving } = getPlaceLabelFor(item);
 
+              const sensorsLabel = item.shield.sensors.map(s => getSensorTypeInfo(s.sensorType).label).join(" • ");
+
               return (
                 <Pressable
-                  style={[styles.sensorCard, isAlert && styles.sensorCardAlert]}
+                  style={[
+                    styles.sensorCard,
+                    isAlert && styles.sensorCardAlert,
+                    isLowBattery && styles.sensorCardLowBattery,
+                  ]}
                   onPress={() => setSelectedReading(item)}
                 >
                   <View style={styles.cardTopRow}>
                     <View style={styles.cardIdentity}>
                       <View style={styles.cardIconWrap}>
-                        <Ionicons name={iconName} size={18} color="#14532d" />
+                        <Ionicons name="wifi" size={18} color="#fff" />
                       </View>
                       <View>
                         <Text style={styles.ssmNumber}>{item.shield.ssmIotNumber}</Text>
-                        <Text style={styles.sensorTypeLabel}>{sensorInfo.label}</Text>
+                        <Text style={styles.sensorTypeLabel} numberOfLines={1}>{sensorsLabel}</Text>
                       </View>
                     </View>
-                    <View style={styles.statusPill}>
-                      <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
-                      <Text style={styles.statusPillText}>{statusInfo.label}</Text>
+                    <View style={styles.cardTopRight}>
+                      {unresolvedAlerts > 0 && (
+                        <View style={styles.cardAlertBadge}>
+                          <Ionicons name="warning-outline" size={12} color="#B42318" />
+                          <Text style={styles.cardAlertBadgeText}>{unresolvedAlerts}</Text>
+                        </View>
+                      )}
+                      <View style={styles.statusPill}>
+                        <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
+                        <Text style={styles.statusPillText}>{statusInfo.label}</Text>
+                      </View>
                     </View>
                   </View>
 
@@ -446,6 +457,20 @@ export default function IoTLiveScreen() {
                     <View style={styles.alertBanner}>
                       <Ionicons name="warning-outline" size={13} color="#B42318" />
                       <Text style={styles.alertBannerText}>Température au-dessus du seuil</Text>
+                    </View>
+                  )}
+
+                  {isLowBattery && (
+                    <View style={styles.lowBatteryBanner}>
+                      <Ionicons name="battery-dead-outline" size={13} color="#B7791F" />
+                      <Text style={styles.lowBatteryBannerText}>Batterie faible</Text>
+                    </View>
+                  )}
+
+                  {hasOutOfZone && (
+                    <View style={styles.outOfZoneBanner}>
+                      <Ionicons name="map-outline" size={13} color="#B42318" />
+                      <Text style={styles.outOfZoneBannerText}>Animal hors zone de pâturage</Text>
                     </View>
                   )}
 
@@ -493,19 +518,21 @@ export default function IoTLiveScreen() {
                     </View>
                   )}
 
-                  <View style={styles.gpsRow}>
-                    <Ionicons
-                      name="location-outline"
-                      size={13}
-                      color={gpsResolved ? "#3D3D3A" : "#8A8A85"}
-                    />
-                    <Text style={[styles.gpsText, gpsResolved && styles.gpsTextResolved]} numberOfLines={1}>
-                      {gpsLabel}
-                    </Text>
-                    {gpsResolving && (
-                      <ActivityIndicator size="small" color="#B0AEA5" style={{ marginLeft: 4 }} />
-                    )}
-                  </View>
+                  {hasGps && (
+                    <View style={styles.gpsRow}>
+                      <Ionicons
+                        name="location-outline"
+                        size={13}
+                        color={gpsResolved ? "#3D3D3A" : "#8A8A85"}
+                      />
+                      <Text style={[styles.gpsText, gpsResolved && styles.gpsTextResolved]} numberOfLines={1}>
+                        {gpsLabel}
+                      </Text>
+                      {gpsResolving && (
+                        <ActivityIndicator size="small" color="#B0AEA5" style={{ marginLeft: 4 }} />
+                      )}
+                    </View>
+                  )}
 
                   <View style={styles.cardFooter}>
                     <Text style={styles.footerTime}>
@@ -533,20 +560,23 @@ export default function IoTLiveScreen() {
           <View style={styles.modalSheet}>
             {selectedReading && (() => {
               const item = selectedReading;
-              const sensorInfo = getSensorTypeInfo(item.shield.sensorType);
               const statusInfo = getShieldStatusInfo(item.shield.status);
               const battery = getBatteryLevel(item.shield.battery);
               const tempNum = item.temperature ? parseFloat(item.temperature) : null;
               const temp = getTempLevel(tempNum);
               const activityLabel = item.activity ? ACTIVITY_LABELS[item.activity] ?? item.activity : "—";
               const activityIcon = item.activity ? ACTIVITY_ICONS[item.activity] : undefined;
-              const iconName = SENSOR_TYPE_ICONS[item.shield.sensorType] ?? "hardware-chip-outline";
-              const metricsConfig = SENSOR_METRICS[item.shield.sensorType] ?? DEFAULT_METRICS;
-              const showTemperature = metricsConfig.temperature && tempNum !== null;
-              const showActivity = metricsConfig.activity && !!item.activity;
+
+              const hasTemp = shieldHasSensor(item.shield.sensors, "TEMPERATURE");
+              const hasActivity = shieldHasSensor(item.shield.sensors, "ACTIVITY");
+              const hasGps = shieldHasSensor(item.shield.sensors, "GPS");
+
+              const showTemperature = hasTemp && tempNum !== null;
+              const showActivity = hasActivity && !!item.activity;
               const { label: gpsLabel, resolved: gpsResolved } = getPlaceLabelFor(item);
               const lat = item.latitude ? parseFloat(item.latitude) : null;
               const lng = item.longitude ? parseFloat(item.longitude) : null;
+              const sensorsLabel = item.shield.sensors.map(s => getSensorTypeInfo(s.sensorType).label).join(" • ");
 
               return (
                 <>
@@ -555,11 +585,11 @@ export default function IoTLiveScreen() {
                   <View style={styles.modalHeader}>
                     <View style={styles.modalHeaderIdentity}>
                       <View style={styles.modalIconWrap}>
-                        <Ionicons name={iconName} size={22} color="#14532d" />
+                        <Ionicons name="wifi" size={22} color="#14532d" />
                       </View>
                       <View>
                         <Text style={styles.modalSsmNumber}>{item.shield.ssmIotNumber}</Text>
-                        <Text style={styles.modalSensorType}>{sensorInfo.label}</Text>
+                        <Text style={styles.modalSensorType} numberOfLines={1}>{sensorsLabel}</Text>
                       </View>
                     </View>
                     <Pressable
@@ -619,31 +649,35 @@ export default function IoTLiveScreen() {
                       </Text>
                     </View>
 
-                    <Text style={styles.modalSectionTitle}>Position</Text>
+                    {hasGps && (
+                      <>
+                        <Text style={styles.modalSectionTitle}>Position</Text>
 
-                    <View style={styles.modalDataRow}>
-                      <View style={styles.modalDataLabelRow}>
-                        <Ionicons name="location-outline" size={16} color={TEXT_MUTED} />
-                        <Text style={styles.modalDataLabel}>Lieu</Text>
-                      </View>
-                      <Text
-                        style={[styles.modalDataValue, gpsResolved && { color: "#14532d" }]}
-                        numberOfLines={2}
-                      >
-                        {gpsLabel}
-                      </Text>
-                    </View>
-
-                    {lat !== null && lng !== null && !Number.isNaN(lat) && !Number.isNaN(lng) && (
-                      <View style={styles.modalDataRow}>
-                        <View style={styles.modalDataLabelRow}>
-                          <Ionicons name="navigate-outline" size={16} color={TEXT_MUTED} />
-                          <Text style={styles.modalDataLabel}>Coordonnées</Text>
+                        <View style={styles.modalDataRow}>
+                          <View style={styles.modalDataLabelRow}>
+                            <Ionicons name="location-outline" size={16} color={TEXT_MUTED} />
+                            <Text style={styles.modalDataLabel}>Lieu</Text>
+                          </View>
+                          <Text
+                            style={[styles.modalDataValue, gpsResolved && { color: "#14532d" }]}
+                            numberOfLines={2}
+                          >
+                            {gpsLabel}
+                          </Text>
                         </View>
-                        <Text style={styles.modalDataValueMono}>
-                          {lat.toFixed(6)}, {lng.toFixed(6)}
-                        </Text>
-                      </View>
+
+                        {lat !== null && lng !== null && !Number.isNaN(lat) && !Number.isNaN(lng) && (
+                          <View style={styles.modalDataRow}>
+                            <View style={styles.modalDataLabelRow}>
+                              <Ionicons name="navigate-outline" size={16} color={TEXT_MUTED} />
+                              <Text style={styles.modalDataLabel}>Coordonnées</Text>
+                            </View>
+                            <Text style={styles.modalDataValueMono}>
+                              {lat.toFixed(6)}, {lng.toFixed(6)}
+                            </Text>
+                          </View>
+                        )}
+                      </>
                     )}
 
                     <Text style={styles.modalSectionTitle}>Horodatage</Text>
@@ -822,6 +856,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sensorCardAlert: { borderColor: "#FECDCA" },
+  sensorCardLowBattery: { borderColor: "#FEF3E2" },
 
   cardTopRow: {
     flexDirection: "row",
@@ -830,11 +865,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardIdentity: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
+  cardTopRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  cardAlertBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "#FEF3F2",
+    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  cardAlertBadgeText: { fontSize: 11, fontWeight: "700", color: "#B42318" },
   cardIconWrap: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#F0FDF4",
+    backgroundColor: GREEN,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -864,6 +910,30 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   alertBannerText: { fontSize: 11.5, color: "#B42318", fontWeight: "600" },
+
+  lowBatteryBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#FFFAEB",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    marginBottom: 12,
+  },
+  lowBatteryBannerText: { fontSize: 11.5, color: "#B7791F", fontWeight: "600" },
+
+  outOfZoneBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#FEF3F2",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    marginBottom: 12,
+  },
+  outOfZoneBannerText: { fontSize: 11.5, color: "#B42318", fontWeight: "600" },
 
   metricsGrid: {
     flexDirection: "row",
@@ -929,7 +999,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: "#F0FDF4",
+    backgroundColor: GREEN,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -18,11 +18,10 @@ import {
   associateAnimalToShield,
   type IotShield,
 } from "../../../../services/iotShieldsService";
-import { getSensorTypeInfo, getShieldStatusInfo } from "../../../../constants/iot";
+import { getSensorTypeInfo, getShieldStatusInfo, formatSensorsList } from "../../../../constants/iot";
 import { BackButton } from "../../../../components/BackButton";
 import { usePermissions } from "../../../../contexts/PermissionsContext";
 
-// ── Design tokens ──
 const GREEN = "#14532d";
 const GREEN_EMERALD = "#059669";
 const BACKGROUND = "#f8fafc";
@@ -31,7 +30,6 @@ const BORDER = "#e5e7eb";
 const TEXT_DARK = "#1f2937";
 const TEXT_MUTED = "#6b7280";
 
-// ── Helpers ──
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "—";
   return new Date(dateStr).toLocaleDateString("fr-FR");
@@ -44,14 +42,12 @@ function getBatteryColor(battery: string): string {
   return "#dc2626";
 }
 
-// ── Main component ──
 export default function IotShieldDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const shieldId = Number(id);
   const router = useRouter();
   const { hasPermission } = usePermissions();
 
-  // Silent redirect if no read permission
   useEffect(() => {
     if (!hasPermission('IOT', 'SHIELDS:READ')) {
       router.replace("/iot");
@@ -64,7 +60,6 @@ export default function IotShieldDetailScreen() {
   const [deleting, setDeleting] = useState(false);
   const [toggling, setToggling] = useState(false);
 
-  // Permissions for actions
   const canUpdate = hasPermission('IOT', 'SHIELDS:UPDATE');
   const canDelete = hasPermission('IOT', 'SHIELDS:DELETE');
 
@@ -173,7 +168,6 @@ export default function IotShieldDetailScreen() {
     }
   }
 
-  // ── Loading state ──
   if (loading) {
     return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
@@ -187,7 +181,6 @@ export default function IotShieldDetailScreen() {
     );
   }
 
-  // ── Error state ──
   if (error || !shield) {
     return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
@@ -202,9 +195,9 @@ export default function IotShieldDetailScreen() {
     );
   }
 
-  const sensorInfo = getSensorTypeInfo(shield.sensorType);
   const statusInfo = getShieldStatusInfo(shield.status);
   const batteryColor = getBatteryColor(shield.battery);
+  const sensorsLabel = formatSensorsList(shield.sensors);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
@@ -220,7 +213,7 @@ export default function IotShieldDetailScreen() {
         <View style={styles.heroCard}>
           <View style={styles.heroTop}>
             <View style={styles.heroAvatar}>
-              <Text style={styles.heroAvatarIcon}>{sensorInfo.icon}</Text>
+              <Ionicons name="wifi" size={28} color="#fff" />
             </View>
             <View style={styles.heroBadges}>
               <View
@@ -247,7 +240,7 @@ export default function IotShieldDetailScreen() {
           </View>
 
           <Text style={styles.heroName}>{shield.ssmIotNumber}</Text>
-          <Text style={styles.heroRfid}>{sensorInfo.label}</Text>
+          <Text style={styles.heroRfid}>{sensorsLabel}</Text>
         </View>
 
         {/* ── Quick Stats ── */}
@@ -259,10 +252,10 @@ export default function IotShieldDetailScreen() {
             label="Batterie"
           />
           <StatCard
-            icon="wifi"
+            icon="hardware-chip"
             iconColor={GREEN}
-            value={sensorInfo.label}
-            label="Capteur"
+            value={String(shield.sensors.length)}
+            label="Capteur(s)"
           />
           <StatCard
             icon="checkmark-circle"
@@ -334,7 +327,7 @@ export default function IotShieldDetailScreen() {
           <SectionTitle label="Informations" />
           <View style={styles.infoBlock}>
             <InfoRow label="Numéro SSM-IOT" value={shield.ssmIotNumber} />
-            <InfoRow label="Type de capteur" value={sensorInfo.label} />
+            <InfoRow label="Capteurs" value={sensorsLabel} />
             <InfoRow
               label="Batterie"
               value={`${shield.battery}%`}
@@ -390,8 +383,6 @@ export default function IotShieldDetailScreen() {
     </SafeAreaView>
   );
 }
-
-// ── Sub-components ──
 
 function StatCard({
   icon,
@@ -482,10 +473,8 @@ function InfoRow({
   );
 }
 
-// ── Styles ──
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: BACKGROUND },
-
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -534,13 +523,10 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#F0FDF4",
+    backgroundColor: GREEN,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
-  },
-  heroAvatarIcon: {
-    fontSize: 42,
   },
   heroBadges: {
     flexDirection: "row",

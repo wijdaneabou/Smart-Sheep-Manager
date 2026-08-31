@@ -40,7 +40,6 @@ export default function EditIotShieldScreen() {
   const router = useRouter();
   const { hasPermission } = usePermissions();
 
-  // Silent redirect if no update permission
   useEffect(() => {
     if (!hasPermission('IOT', 'SHIELDS:UPDATE')) {
       router.replace(`/iot/${id}/detail` as any);
@@ -48,11 +47,10 @@ export default function EditIotShieldScreen() {
   }, [hasPermission, router, id]);
 
   const [ssmIotNumber, setSsmIotNumber] = useState("");
-  const [sensorType, setSensorType] = useState<SensorType>("LOCALIZATION");
+  const [selectedSensors, setSelectedSensors] = useState<SensorType[]>(["GPS", "TEMPERATURE", "ACTIVITY"]);
   const [battery, setBattery] = useState("100");
   const [status, setStatus] = useState<ShieldStatus>("ACTIVE");
 
-  // --- Association ---
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [selectedAnimalId, setSelectedAnimalId] = useState<number | null>(null);
   const [exploitations, setExploitations] = useState<Exploitation[]>([]);
@@ -85,7 +83,7 @@ export default function EditIotShieldScreen() {
     if (result.success) {
       const s = result.shield;
       setSsmIotNumber(s.ssmIotNumber);
-      setSensorType(s.sensorType as SensorType);
+      setSelectedSensors(s.sensors.map(sens => sens.sensorType as SensorType));
       setBattery(s.battery ?? "100");
       setStatus(s.status as ShieldStatus);
       setSelectedAnimalId(s.animalId ?? null);
@@ -104,6 +102,14 @@ export default function EditIotShieldScreen() {
     }, [shieldId])
   );
 
+  function toggleSensor(sensor: SensorType) {
+    setSelectedSensors(prev =>
+      prev.includes(sensor)
+        ? prev.filter(s => s !== sensor)
+        : [...prev, sensor]
+    );
+  }
+
   function validate(): string | null {
     if (!/^SSM-IOT-\d+$/.test(ssmIotNumber.trim()))
       return "Le numéro SSM-IOT doit être au format SSM-IOT-XXXXXX.";
@@ -111,6 +117,8 @@ export default function EditIotShieldScreen() {
       return "La batterie doit être un nombre.";
     if (Number(battery) < 0 || Number(battery) > 100)
       return "La batterie doit être entre 0 et 100.";
+    if (selectedSensors.length === 0)
+      return "Veuillez sélectionner au moins un capteur.";
     return null;
   }
 
@@ -126,7 +134,7 @@ export default function EditIotShieldScreen() {
 
     const result = await updateIotShield(shieldId, {
       ssmIotNumber: ssmIotNumber.trim(),
-      sensorType,
+      sensors: selectedSensors,
       battery: battery ? Number(battery) : null,
       animalId: selectedAnimalId,
       status,
@@ -208,25 +216,26 @@ export default function EditIotShieldScreen() {
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Type de capteur</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={sensorType}
-                onValueChange={(itemValue) => setSensorType(itemValue)}
-                style={styles.picker}
-                dropdownIconColor="#14532d"
-              >
-                {SENSOR_TYPES.map((type) => (
-                  <Picker.Item
+            <Text style={styles.label}>Capteurs intégrés</Text>
+            <View style={styles.sensorGrid}>
+              {SENSOR_TYPES.map((type) => {
+                const isSelected = selectedSensors.includes(type.id);
+                return (
+                  <Pressable
                     key={type.id}
-                    label={`${type.icon} ${type.label}`}
-                    value={type.id}
-                  />
-                ))}
-              </Picker>
-              <View style={styles.pickerIcon}>
-                <Ionicons name="chevron-down" size={20} color="#14532d" />
-              </View>
+                    style={[styles.sensorChip, isSelected && styles.sensorChipActive]}
+                    onPress={() => toggleSensor(type.id)}
+                  >
+                    <Text style={styles.sensorChipIcon}>{type.icon}</Text>
+                    <Text style={[styles.sensorChipLabel, isSelected && styles.sensorChipLabelActive]}>
+                      {type.label}
+                    </Text>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={18} color="#14532d" style={styles.sensorChipCheck} />
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
@@ -282,10 +291,12 @@ export default function EditIotShieldScreen() {
             ) : (
               <View style={styles.pickerContainer}>
                 <Picker
+                  mode="dropdown"
                   selectedValue={selectedAnimalId}
                   onValueChange={(itemValue) => setSelectedAnimalId(itemValue)}
                   style={styles.picker}
                   dropdownIconColor="#14532d"
+                  enabled
                 >
                   <Picker.Item label="Aucun animal" value={null} />
                   {animals.map((animal) => (
@@ -311,10 +322,12 @@ export default function EditIotShieldScreen() {
             ) : (
               <View style={styles.pickerContainer}>
                 <Picker
+                  mode="dropdown"
                   selectedValue={selectedExploitationId}
                   onValueChange={(itemValue) => setSelectedExploitationId(itemValue)}
                   style={styles.picker}
                   dropdownIconColor="#14532d"
+                  enabled
                 >
                   <Picker.Item label="Aucune exploitation" value={null} />
                   {exploitations.map((exploitation) => (
@@ -401,7 +414,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1f2937" },
 
   fieldGroup: { marginBottom: 14 },
-  label: { fontSize: 13, fontWeight: "600", color: "#444", marginBottom: 6 },
+  label: { fontSize: 13, fontWeight: "600", color: "#444", marginBottom: 8 },
   input: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -436,6 +449,27 @@ const styles = StyleSheet.create({
 
   row: { flexDirection: "row", gap: 12 },
   rowItem: { flex: 1 },
+
+  sensorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  sensorChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: BORDER,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  sensorChipActive: {
+    borderColor: "#14532d",
+    backgroundColor: "#F0FDF4",
+  },
+  sensorChipIcon: { fontSize: 18 },
+  sensorChipLabel: { fontSize: 13, fontWeight: "600", color: "#444" },
+  sensorChipLabelActive: { color: "#14532d", fontWeight: "700" },
+  sensorChipCheck: { marginLeft: 4 },
 
   error: {
     color: "#dc2626",

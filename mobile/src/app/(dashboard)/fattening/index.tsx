@@ -25,14 +25,30 @@ import { usePermissions } from "@/contexts/PermissionsContext";
 
 type FilterStatus = "ALL" | FatteningStatus;
 
+// 🎨 Palette unifiée — cohérente avec les écrans de création/modification
+const GREEN = "#14532d";
+const GREEN_DARK = "#0B3A1F";
+const BG = "#faf6f1";
+const CARD_BG = "#fff";
+const BORDER = "#ECECE6";
+const SOFT_GREEN = "#f5f5f0";
+const GREEN_SOFT_BG = "#DCFCE7";
+const GREEN_SOFT_TEXT = "#15803D";
+const BLUE_SOFT_BG = "#DBEAFE";
+const BLUE_SOFT_TEXT = "#1D4ED8";
+const RED = "#DC2626";
+const RED_SOFT_BG = "#FEE2E2";
+const RED_SOFT_TEXT = "#DC2626";
+const BLUE_ACTION = "#3B82F6";
+const MUTED = "#888";
+
 const STATUS_CONFIG: Record<FatteningStatus, { label: string; color: string; bgColor: string }> = {
-  ACTIVE: { label: "En cours", color: "#15803D", bgColor: "#DCFCE7" },
-  COMPLETED: { label: "Terminé", color: "#1D4ED8", bgColor: "#DBEAFE" },
-  CANCELLED: { label: "Annulé", color: "#DC2626", bgColor: "#FEE2E2" },
+  ACTIVE: { label: "En cours", color: GREEN_SOFT_TEXT, bgColor: GREEN_SOFT_BG },
+  COMPLETED: { label: "Terminé", color: BLUE_SOFT_TEXT, bgColor: BLUE_SOFT_BG },
+  CANCELLED: { label: "Annulé", color: RED, bgColor: RED_SOFT_BG },
 };
 
 const PAGE_SIZE = 20;
-const GREEN = "#0F7A3C";
 
 export default function FatteningScreen() {
   const router = useRouter();
@@ -163,7 +179,7 @@ export default function FatteningScreen() {
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoIcon}>📅</Text>
+          <Ionicons name="calendar-outline" size={14} color={MUTED} style={styles.infoIcon} />
           <Text style={styles.infoValue}>
             Début: {new Date(item.startDate).toLocaleDateString("fr-FR")}
           </Text>
@@ -171,7 +187,7 @@ export default function FatteningScreen() {
 
         {item.estimatedEndDate ? (
           <View style={styles.infoRow}>
-            <Text style={styles.infoIcon}>🏁</Text>
+            <Ionicons name="flag-outline" size={14} color={MUTED} style={styles.infoIcon} />
             <Text style={styles.infoValue}>
               Fin prévue: {new Date(item.estimatedEndDate).toLocaleDateString("fr-FR")}
             </Text>
@@ -179,13 +195,13 @@ export default function FatteningScreen() {
         ) : null}
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoIcon}>📈</Text>
+          <Ionicons name="trending-up-outline" size={14} color={MUTED} style={styles.infoIcon} />
           <Text style={styles.infoValue}>Gain visé: +{avgGain} kg / animal</Text>
         </View>
 
         {item.notes ? (
           <View style={styles.infoRow}>
-            <Text style={styles.infoIcon}>📝</Text>
+            <Ionicons name="document-text-outline" size={14} color={MUTED} style={styles.infoIcon} />
             <Text style={styles.infoValue} numberOfLines={1}>
               {item.notes}
             </Text>
@@ -205,8 +221,8 @@ export default function FatteningScreen() {
                 router.push(`/fattening/${item.id}/edit`);
               }}
             >
-              <Ionicons name="pencil-outline" size={18} color="#3B82F6" />
-              <Text style={[styles.actionText, { color: "#3B82F6" }]}>Modifier</Text>
+              <Ionicons name="pencil-outline" size={18} color={BLUE_ACTION} />
+              <Text style={[styles.actionText, { color: BLUE_ACTION }]}>Modifier</Text>
             </Pressable>
           )}
           {canDelete && (
@@ -220,11 +236,11 @@ export default function FatteningScreen() {
                 handleDeleteBatch(item);
               }}
             >
-              <Ionicons name="trash-outline" size={18} color="#EF4444" />
-              <Text style={[styles.actionText, { color: "#EF4444" }]}>Supprimer</Text>
+              <Ionicons name="trash-outline" size={18} color={RED_SOFT_TEXT} />
+              <Text style={[styles.actionText, { color: RED_SOFT_TEXT }]}>Supprimer</Text>
             </Pressable>
           )}
-          <Text style={styles.chevron}>›</Text>
+          <Ionicons name="chevron-forward" size={20} color="#ccc" style={styles.chevron} />
         </View>
       </Pressable>
     );
@@ -236,7 +252,7 @@ export default function FatteningScreen() {
         <View style={styles.headerRow}>
           <BackButton variant="dark" style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.title}>Lots d’engraissement</Text>
+            <Text style={styles.title}>Lots d'engraissement</Text>
             <Text style={styles.subtitle}>
               {filteredBatches.length} lot{filteredBatches.length > 1 ? "s" : ""}
             </Text>
@@ -249,18 +265,18 @@ export default function FatteningScreen() {
         </View>
 
         <View style={styles.summaryRow}>
-          <View style={[styles.summaryPill, { backgroundColor: "#DCFCE7" }]}>
-            <Text style={[styles.summaryPillText, { color: "#15803D" }]}>
+          <View style={[styles.summaryPill, { backgroundColor: GREEN_SOFT_BG }]}>
+            <Text style={[styles.summaryPillText, { color: GREEN_SOFT_TEXT }]}>
               {batches.filter(b => b.status === "ACTIVE").length} en cours
             </Text>
           </View>
-          <View style={[styles.summaryPill, { backgroundColor: "#DBEAFE" }]}>
-            <Text style={[styles.summaryPillText, { color: "#1D4ED8" }]}>
+          <View style={[styles.summaryPill, { backgroundColor: BLUE_SOFT_BG }]}>
+            <Text style={[styles.summaryPillText, { color: BLUE_SOFT_TEXT }]}>
               {batches.filter(b => b.status === "COMPLETED").length} terminés
             </Text>
           </View>
-          <View style={[styles.summaryPill, { backgroundColor: "#FEE2E2" }]}>
-            <Text style={[styles.summaryPillText, { color: "#DC2626" }]}>
+          <View style={[styles.summaryPill, { backgroundColor: RED_SOFT_BG }]}>
+            <Text style={[styles.summaryPillText, { color: RED }]}>
               {batches.filter(b => b.status === "CANCELLED").length} annulés
             </Text>
           </View>
@@ -268,7 +284,7 @@ export default function FatteningScreen() {
 
         <View style={styles.searchRow}>
           <View style={styles.searchInputWrap}>
-            <Text style={styles.searchIcon}>🔍</Text>
+            <Ionicons name="search-outline" size={16} color="#999" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
               placeholder="Rechercher par nom..."
@@ -299,20 +315,29 @@ export default function FatteningScreen() {
           ))}
         </View>
 
-        {error && <Text style={styles.error}>{error}</Text>}
+        {/* 🔴 Bannière d'erreur cohérente avec les écrans de formulaire */}
+        {error && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle" size={16} color={RED} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
         {loading ? (
-          <ActivityIndicator style={{ marginTop: 24 }} />
+          <ActivityIndicator style={{ marginTop: 24 }} color={GREEN} />
         ) : (
           <FlatList
             data={filteredBatches}
             keyExtractor={(item) => String(item.id)}
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} />
             }
             ListEmptyComponent={
-              <Text style={styles.empty}>Aucun lot d’engraissement trouvé.</Text>
+              <View style={styles.emptyState}>
+                <Ionicons name="leaf-outline" size={32} color="#bbb" />
+                <Text style={styles.empty}>Aucun lot d'engraissement trouvé.</Text>
+              </View>
             }
             renderItem={renderBatchItem}
           />
@@ -329,7 +354,7 @@ export default function FatteningScreen() {
         {canCreate && (
           <Link href={"/fattening/create" as any} asChild>
             <Pressable style={styles.fab}>
-              <Text style={styles.fabIcon}>+</Text>
+              <Ionicons name="add" size={28} color="#fff" />
             </Pressable>
           </Link>
         )}
@@ -362,7 +387,7 @@ function FilterPill({
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
+  safeArea: { flex: 1, backgroundColor: BG },
   container: { flex: 1, paddingHorizontal: 16 },
   headerRow: {
     flexDirection: "row",
@@ -376,14 +401,14 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
+    backgroundColor: CARD_BG,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#e5e5e5",
+    borderColor: BORDER,
   },
   headerTitleContainer: { flex: 1 },
   title: { fontSize: 22, fontWeight: "800", color: "#111" },
-  subtitle: { fontSize: 13, color: "#888", marginTop: 2 },
+  subtitle: { fontSize: 13, color: MUTED, marginTop: 2 },
 
   summaryRow: {
     flexDirection: "row",
@@ -407,39 +432,54 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: CARD_BG,
     borderWidth: 1,
-    borderColor: "#e5e5e5",
+    borderColor: BORDER,
     borderRadius: 14,
     paddingHorizontal: 14,
   },
-  searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.6 },
+  searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, paddingVertical: 13, fontSize: 14 },
   filterRow: { flexDirection: "row", gap: 8, marginBottom: 14, flexWrap: "wrap" },
   filterPill: {
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 20,
-    backgroundColor: "#fff",
+    backgroundColor: CARD_BG,
     borderWidth: 1,
-    borderColor: "#e5e5e5",
+    borderColor: BORDER,
   },
-  filterPillActive: { backgroundColor: "#DCFCE7", borderColor: GREEN },
+  filterPillActive: { backgroundColor: GREEN_SOFT_BG, borderColor: GREEN },
   filterPillText: { fontSize: 13, fontWeight: "600", color: "#555" },
   filterPillTextActive: { color: GREEN },
-  error: { color: "#dc2626", marginBottom: 8, fontSize: 13 },
-  empty: { textAlign: "center", color: "#888", marginTop: 24 },
+
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: RED_SOFT_BG,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  errorText: { color: RED, fontSize: 13, fontWeight: "600", flex: 1 },
+
+  emptyState: { alignItems: "center", marginTop: 40, gap: 8 },
+  empty: { textAlign: "center", color: MUTED },
   listContent: { paddingBottom: 20 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: CARD_BG,
     borderRadius: 18,
+    borderWidth: 1,
+    borderColor: BORDER,
     marginBottom: 16,
     padding: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.04,
     shadowRadius: 6,
-    elevation: 2,
+    elevation: 1,
   },
   cardHeader: { marginBottom: 12 },
   cardTitleRow: {
@@ -449,7 +489,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   name: { fontSize: 17, fontWeight: "800", color: GREEN, flex: 1, marginRight: 8 },
-  idText: { fontSize: 11, color: "#999", fontWeight: "600" },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -460,7 +499,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 12,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: SOFT_GREEN,
     borderRadius: 12,
     padding: 10,
   },
@@ -468,7 +507,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, color: "#666", fontWeight: "600", marginBottom: 2 },
   statValue: { fontSize: 14, fontWeight: "800", color: "#111" },
   infoRow: { flexDirection: "row", alignItems: "center", minHeight: 18, marginTop: 4 },
-  infoIcon: { fontSize: 14, width: 24, color: "#666" },
+  infoIcon: { width: 24 },
   infoValue: { fontSize: 13, fontWeight: "600", color: "#333", flex: 1 },
   actionRow: {
     flexDirection: "row",
@@ -476,7 +515,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
+    borderTopColor: BORDER,
   },
   actionButton: {
     flexDirection: "row",
@@ -488,7 +527,7 @@ const styles = StyleSheet.create({
   },
   actionButtonPressed: { opacity: 0.7 },
   actionText: { fontSize: 12, fontWeight: "600", marginLeft: 4 },
-  chevron: { fontSize: 24, color: "#ccc", marginLeft: "auto" },
+  chevron: { marginLeft: "auto" },
   fab: {
     position: "absolute",
     right: 4,
@@ -496,7 +535,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: "#0B4A24",
+    backgroundColor: GREEN_DARK,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -505,5 +544,4 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  fabIcon: { fontSize: 28, color: "#fff", fontWeight: "300", marginTop: -2 },
 });

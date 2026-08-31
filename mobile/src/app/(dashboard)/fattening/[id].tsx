@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import {
   getFatteningBatchById,
@@ -35,7 +35,26 @@ import { getAnimalById } from "../../../services/animalsService";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import SubTabBar from "@/components/SubTabBar";
 
-const GREEN = "#14532d";
+// 🎨 Palette unifiée — cohérente avec l'écran de liste des lots
+const GREEN = "#0F7A3C";
+const GREEN_DARK = "#0B4A24";
+const GREEN_SOFT_BG = "#DCFCE7";
+const GREEN_SOFT_TEXT = "#15803D";
+const BLUE_SOFT_BG = "#DBEAFE";
+const BLUE_SOFT_TEXT = "#1D4ED8";
+const RED = "#DC2626";
+const RED_SOFT_BG = "#FEE2E2";
+const RED_SOFT_TEXT = "#991B1B";
+const AMBER = "#D97706";
+const AMBER_SOFT_BG = "#FEF3C7";
+const PURPLE = "#7C3AED";
+const PURPLE_SOFT_BG = "#F5F3FF";
+const BLUE = "#2563EB";
+const BLUE_SOFT_BG_2 = "#EFF6FF";
+const BORDER = "#f0f0f0";
+const BG = "#f5f5f5";
+const INK = "#111827";
+const MUTED = "#6B7280";
 
 type TabKey = "overview" | "weighings" | "individual" | "feed" | "costs" | "alerts";
 
@@ -49,9 +68,9 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
-  ACTIVE: { label: "En cours", color: "#15803D", bgColor: "#DCFCE7" },
-  COMPLETED: { label: "Terminé", color: "#1D4ED8", bgColor: "#DBEAFE" },
-  CANCELLED: { label: "Annulé", color: "#DC2626", bgColor: "#FEE2E2" },
+  ACTIVE: { label: "En cours", color: GREEN_SOFT_TEXT, bgColor: GREEN_SOFT_BG },
+  COMPLETED: { label: "Terminé", color: BLUE_SOFT_TEXT, bgColor: BLUE_SOFT_BG },
+  CANCELLED: { label: "Annulé", color: RED, bgColor: RED_SOFT_BG },
 };
 
 export default function FatteningBatchDetailScreen() {
@@ -240,13 +259,13 @@ export default function FatteningBatchDetailScreen() {
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Ionicons name="arrow-back" size={22} color="#14532d" />
+            <Ionicons name="arrow-back" size={22} color={GREEN} />
           </Pressable>
           <Text style={styles.headerTitle}>Détail du lot</Text>
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#15803D" />
+          <ActivityIndicator size="large" color={GREEN} />
         </View>
       </SafeAreaView>
     );
@@ -257,12 +276,15 @@ export default function FatteningBatchDetailScreen() {
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Ionicons name="arrow-back" size={22} color="#14532d" />
+            <Ionicons name="arrow-back" size={22} color={GREEN} />
           </Pressable>
           <Text style={styles.headerTitle}>Détail du lot</Text>
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.centerContainer}>
+          <View style={styles.errorIconWrap}>
+            <Ionicons name="alert-circle-outline" size={28} color={RED} />
+          </View>
           <Text style={styles.errorText}>{error || "Lot introuvable."}</Text>
           <Pressable style={styles.retryButton} onPress={loadBatch}>
             <Text style={styles.retryButtonText}>RÉESSAYER</Text>
@@ -290,15 +312,22 @@ export default function FatteningBatchDetailScreen() {
       <ScrollView
         contentContainerStyle={styles.container}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} />
         }
       >
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Ionicons name="arrow-back" size={22} color="#14532d" />
+            <Ionicons name="arrow-back" size={22} color={GREEN} />
           </Pressable>
-          <Text style={styles.headerTitle}>Détail du lot</Text>
-          <View style={{ width: 32 }} />
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.headerTitle} numberOfLines={1}>{batch.name}</Text>
+            <Text style={styles.headerSubtitle}>Détail du lot</Text>
+          </View>
+          <View style={[styles.statusBadgeSmall, { backgroundColor: statusInfo.bgColor }]}>
+            <Text style={[styles.statusBadgeSmallText, { color: statusInfo.color }]}>
+              {statusInfo.label}
+            </Text>
+          </View>
         </View>
 
         <SubTabBar
@@ -309,22 +338,11 @@ export default function FatteningBatchDetailScreen() {
 
         {activeTab === "overview" && (
           <View>
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.name}>{batch.name}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
-                  <Text style={[styles.statusBadgeText, { color: statusInfo.color }]}>
-                    {statusInfo.label}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
             <View style={styles.statsGrid}>
-              <StatBox icon="🐑" label="Animaux" value={String(batch.animalCount)} />
-              <StatBox icon="⚖️" label="Poids initial" value={`${Number(batch.initialAverageWeight).toFixed(2)} kg`} />
-              <StatBox icon="🎯" label="Poids cible" value={`${Number(batch.targetWeight).toFixed(2)} kg`} />
-              <StatBox icon="📈" label="Gain visé" value={`+${avgGain} kg`} />
+              <StatBox icon="paw-outline" iconLib="ion" label="Animaux" value={String(batch.animalCount)} />
+              <StatBox icon="scale-balance" iconLib="mci" label="Poids initial" value={`${Number(batch.initialAverageWeight).toFixed(2)} kg`} />
+              <StatBox icon="flag-outline" iconLib="ion" label="Poids cible" value={`${Number(batch.targetWeight).toFixed(2)} kg`} />
+              <StatBox icon="trending-up" iconLib="ion" label="Gain visé" value={`+${avgGain} kg`} />
             </View>
 
             <View style={styles.section}>
@@ -339,22 +357,22 @@ export default function FatteningBatchDetailScreen() {
                 />
                 <ActionCard
                   icon="nutrition"
-                  iconBg="#FEF3C7"
-                  iconColor="#D97706"
+                  iconBg={AMBER_SOFT_BG}
+                  iconColor={AMBER}
                   label="Alimentation"
                   onPress={() => setActiveTab("feed")}
                 />
                 <ActionCard
                   icon="cash"
-                  iconBg="#EFF6FF"
-                  iconColor="#2563EB"
+                  iconBg={BLUE_SOFT_BG_2}
+                  iconColor={BLUE}
                   label="Coûts"
                   onPress={() => setActiveTab("costs")}
                 />
                 <ActionCard
                   icon="barbell"
-                  iconBg="#F5F3FF"
-                  iconColor="#7C3AED"
+                  iconBg={PURPLE_SOFT_BG}
+                  iconColor={PURPLE}
                   label="Poids ind."
                   onPress={() => setActiveTab("individual")}
                 />
@@ -363,11 +381,11 @@ export default function FatteningBatchDetailScreen() {
 
             <View style={styles.section}>
               <SectionTitle index={2} label="Dates" />
-              <DetailRow icon="📅" label="Date de début" value={new Date(batch.startDate).toLocaleDateString("fr-FR")} />
+              <DetailRow icon="calendar-outline" label="Date de début" value={new Date(batch.startDate).toLocaleDateString("fr-FR")} />
               {batch.estimatedEndDate ? (
-                <DetailRow icon="🏁" label="Date de fin prévue" value={new Date(batch.estimatedEndDate).toLocaleDateString("fr-FR")} />
+                <DetailRow icon="flag-outline" label="Date de fin prévue" value={new Date(batch.estimatedEndDate).toLocaleDateString("fr-FR")} />
               ) : null}
-              <DetailRow icon="🕐" label="Créé le" value={new Date(batch.createdAt).toLocaleDateString("fr-FR")} />
+              <DetailRow icon="time-outline" label="Créé le" value={new Date(batch.createdAt).toLocaleDateString("fr-FR")} isLast />
             </View>
 
             {batch.notes ? (
@@ -381,18 +399,21 @@ export default function FatteningBatchDetailScreen() {
 
             {hasPermission("FATTENING", "UPDATE") && (
               <Pressable
-                style={styles.editButton}
+                style={({ pressed }) => [styles.editButton, pressed && styles.buttonPressed]}
                 onPress={() => router.push(`/fattening/${batch.id}/edit` as any)}
               >
-                <Feather name="edit" size={18} color="#fff" />
-                <Text style={styles.editButtonText}>MODIFIER</Text>
+                <Feather name="edit-2" size={17} color="#fff" />
+                <Text style={styles.editButtonText}>Modifier le lot</Text>
               </Pressable>
             )}
 
             {hasPermission("FATTENING", "DELETE") && (
-              <Pressable style={styles.deleteButton} onPress={handleDelete}>
-                <Feather name="trash-2" size={18} color="#fff" />
-                <Text style={styles.deleteButtonText}>SUPPRIMER</Text>
+              <Pressable
+                style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]}
+                onPress={handleDelete}
+              >
+                <Feather name="trash-2" size={17} color={RED} />
+                <Text style={styles.deleteButtonText}>Supprimer le lot</Text>
               </Pressable>
             )}
           </View>
@@ -408,7 +429,8 @@ export default function FatteningBatchDetailScreen() {
                     style={styles.linkButton}
                     onPress={() => router.push(`/fattening/${batchId}/weighing-history` as any)}
                   >
-                    <Text style={styles.linkButtonText}>Voir tout ›</Text>
+                    <Text style={styles.linkButtonText}>Voir tout</Text>
+                    <Ionicons name="chevron-forward" size={14} color={GREEN} />
                   </Pressable>
                 </View>
                 <View style={styles.gmqGrid}>
@@ -453,18 +475,15 @@ export default function FatteningBatchDetailScreen() {
                 </View>
               </View>
             ) : (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>Aucune pesée enregistrée</Text>
-                <Text style={styles.emptySubtext}>Ajoutez une pesée pour suivre le GMQ.</Text>
-              </View>
+              <EmptyCard icon="analytics-outline" text="Aucune pesée enregistrée" subtext="Ajoutez une pesée pour suivre le GMQ." />
             )}
             {hasPermission("FATTENING", "CREATE") && (
               <Pressable
-                style={styles.addButton}
+                style={({ pressed }) => [styles.addButton, pressed && styles.buttonPressed]}
                 onPress={() => router.push(`/fattening/${batchId}/add-weighing` as any)}
               >
-                <Feather name="plus" size={16} color="#fff" style={{ marginRight: 6 }} />
-                <Text style={styles.addButtonText}>NOUVELLE PESÉE</Text>
+                <Feather name="plus" size={17} color="#fff" />
+                <Text style={styles.addButtonText}>Nouvelle pesée</Text>
               </Pressable>
             )}
           </View>
@@ -479,7 +498,8 @@ export default function FatteningBatchDetailScreen() {
                   style={styles.linkButton}
                   onPress={() => router.push(`/fattening/${batchId}/individual-weights` as any)}
                 >
-                  <Text style={styles.linkButtonText}>Gérer ›</Text>
+                  <Text style={styles.linkButtonText}>Gérer</Text>
+                  <Ionicons name="chevron-forward" size={14} color={GREEN} />
                 </Pressable>
               </View>
               {individualWeights.length > 0 ? (
@@ -515,9 +535,7 @@ export default function FatteningBatchDetailScreen() {
                   </View>
                 </View>
               ) : (
-                <View style={styles.emptyCard}>
-                  <Text style={styles.emptyText}>Aucun poids individuel</Text>
-                </View>
+                <EmptyCard icon="barbell-outline" text="Aucun poids individuel" />
               )}
             </View>
           </View>
@@ -532,7 +550,8 @@ export default function FatteningBatchDetailScreen() {
                   style={styles.linkButton}
                   onPress={() => router.push(`/fattening/${batchId}/feed` as any)}
                 >
-                  <Text style={styles.linkButtonText}>Gérer ›</Text>
+                  <Text style={styles.linkButtonText}>Gérer</Text>
+                  <Ionicons name="chevron-forward" size={14} color={GREEN} />
                 </Pressable>
               </View>
               {feedRecords.length > 0 ? (
@@ -560,9 +579,7 @@ export default function FatteningBatchDetailScreen() {
                   </View>
                 </View>
               ) : (
-                <View style={styles.emptyCard}>
-                  <Text style={styles.emptyText}>Aucun enregistrement alimentaire</Text>
-                </View>
+                <EmptyCard icon="nutrition-outline" text="Aucun enregistrement alimentaire" />
               )}
             </View>
           </View>
@@ -577,7 +594,8 @@ export default function FatteningBatchDetailScreen() {
                   style={styles.linkButton}
                   onPress={() => router.push(`/fattening/${batchId}/costs` as any)}
                 >
-                  <Text style={styles.linkButtonText}>Gérer ›</Text>
+                  <Text style={styles.linkButtonText}>Gérer</Text>
+                  <Ionicons name="chevron-forward" size={14} color={GREEN} />
                 </Pressable>
               </View>
               {costs.length > 0 ? (
@@ -605,9 +623,7 @@ export default function FatteningBatchDetailScreen() {
                   </View>
                 </View>
               ) : (
-                <View style={styles.emptyCard}>
-                  <Text style={styles.emptyText}>Aucun coût enregistré</Text>
-                </View>
+                <EmptyCard icon="cash-outline" text="Aucun coût enregistré" />
               )}
             </View>
           </View>
@@ -618,17 +634,19 @@ export default function FatteningBatchDetailScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Alertes actives</Text>
               {loadingAlerts ? (
-                <View style={styles.centerContainer}>
-                  <ActivityIndicator size="small" color="#15803D" />
+                <View style={styles.centerContainerSmall}>
+                  <ActivityIndicator size="small" color={GREEN} />
                 </View>
               ) : alerts.length > 0 ? (
-                <View>
+                <View style={{ marginTop: 12 }}>
                   {alerts.map((alert) => (
                     <View key={alert.id} style={styles.alertRow}>
                       <View style={styles.alertIconWrap}>
-                        <Text style={styles.alertIcon}>
-                          {alert.type === "LOW_GMQ" ? "📉" : "⚖️"}
-                        </Text>
+                        <Ionicons
+                          name={alert.type === "LOW_GMQ" ? "trending-down" : "scale-outline"}
+                          size={16}
+                          color={RED}
+                        />
                       </View>
                       <View style={styles.alertContent}>
                         <Text style={styles.alertMessage}>{alert.message}</Text>
@@ -638,19 +656,18 @@ export default function FatteningBatchDetailScreen() {
                       </View>
                       {hasPermission("FATTENING", "UPDATE") && (
                         <Pressable
-                          style={styles.alertResolveButton}
+                          style={({ pressed }) => [styles.alertResolveButton, pressed && { opacity: 0.7 }]}
                           onPress={() => handleResolveAlert(alert.id)}
+                          hitSlop={8}
                         >
-                          <Text style={styles.alertResolveText}>✓</Text>
+                          <Ionicons name="checkmark" size={16} color="#fff" />
                         </Pressable>
                       )}
                     </View>
                   ))}
                 </View>
               ) : (
-                <View style={styles.emptyCard}>
-                  <Text style={styles.emptyText}>Aucune alerte active</Text>
-                </View>
+                <EmptyCard icon="checkmark-circle-outline" text="Aucune alerte active" />
               )}
             </View>
           </View>
@@ -660,10 +677,26 @@ export default function FatteningBatchDetailScreen() {
   );
 }
 
-function StatBox({ icon, label, value }: { icon: string; label: string; value: string }) {
+function StatBox({
+  icon,
+  iconLib,
+  label,
+  value,
+}: {
+  icon: string;
+  iconLib: "ion" | "mci";
+  label: string;
+  value: string;
+}) {
   return (
     <View style={styles.statBox}>
-      <Text style={styles.statIcon}>{icon}</Text>
+      <View style={styles.statIconWrap}>
+        {iconLib === "ion" ? (
+          <Ionicons name={icon as any} size={18} color={GREEN} />
+        ) : (
+          <MaterialCommunityIcons name={icon as any} size={18} color={GREEN} />
+        )}
+      </View>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
@@ -699,10 +732,20 @@ function ActionCard({
   );
 }
 
-function DetailRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+function DetailRow({
+  icon,
+  label,
+  value,
+  isLast,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+  isLast?: boolean;
+}) {
   return (
-    <View style={styles.detailRow}>
-      <Text style={styles.detailIcon}>{icon}</Text>
+    <View style={[styles.detailRow, isLast && { borderBottomWidth: 0 }]}>
+      <Ionicons name={icon as any} size={16} color={MUTED} style={styles.detailIcon} />
       <Text style={styles.detailLabel}>{label}</Text>
       <Text style={styles.detailValue}>{value}</Text>
     </View>
@@ -720,19 +763,48 @@ function SectionTitle({ index, label }: { index: number; label: string }) {
   );
 }
 
+function EmptyCard({ icon, text, subtext }: { icon: string; text: string; subtext?: string }) {
+  return (
+    <View style={styles.emptyCard}>
+      <Ionicons name={icon as any} size={26} color="#bbb" style={{ marginBottom: 8 }} />
+      <Text style={styles.emptyText}>{text}</Text>
+      {subtext ? <Text style={styles.emptySubtext}>{subtext}</Text> : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
+  safeArea: { flex: 1, backgroundColor: BG },
   container: { padding: 16, paddingBottom: 40 },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     marginBottom: 12,
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: GREEN },
-  centerContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
-  errorText: { color: "#dc2626", fontSize: 15, marginBottom: 16, textAlign: "center" },
+  headerTitleWrap: { flex: 1, marginLeft: 4 },
+  headerTitle: { fontSize: 17, fontWeight: "800", color: INK },
+  headerSubtitle: { fontSize: 12, color: MUTED, marginTop: 1 },
+  statusBadgeSmall: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  statusBadgeSmallText: { fontSize: 11, fontWeight: "700" },
+
+  centerContainer: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 60 },
+  centerContainerSmall: { alignItems: "center", justifyContent: "center", paddingVertical: 20 },
+  errorIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: RED_SOFT_BG,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  errorText: { color: "#7F1D1D", fontSize: 14, fontWeight: "600", marginBottom: 16, textAlign: "center", paddingHorizontal: 24 },
   retryButton: {
     backgroundColor: GREEN,
     paddingHorizontal: 20,
@@ -740,30 +812,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   retryButtonText: { color: "#fff", fontWeight: "700", fontSize: 13 },
-
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  name: { fontSize: 20, fontWeight: "800", color: GREEN, flex: 1, marginRight: 12 },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-  },
-  statusBadgeText: { fontSize: 12, fontWeight: "700" },
 
   statsGrid: {
     flexDirection: "row",
@@ -784,9 +832,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  statIcon: { fontSize: 22, marginBottom: 6 },
-  statValue: { fontSize: 15, fontWeight: "800", color: "#111" },
-  statLabel: { fontSize: 11, color: "#666", fontWeight: "600", marginTop: 2 },
+  statIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: GREEN_SOFT_BG,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  statValue: { fontSize: 15, fontWeight: "800", color: INK },
+  statLabel: { fontSize: 11, color: MUTED, fontWeight: "600", marginTop: 2 },
 
   section: {
     backgroundColor: "#fff",
@@ -821,7 +877,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: BORDER,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -861,12 +917,12 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: "center",
   },
-  gmqLabel: { fontSize: 11, color: "#666", fontWeight: "600", marginBottom: 4 },
-  gmqValue: { fontSize: 16, fontWeight: "800", color: "#111" },
+  gmqLabel: { fontSize: 11, color: MUTED, fontWeight: "600", marginBottom: 4 },
+  gmqValue: { fontSize: 16, fontWeight: "800", color: INK },
 
   recentHistory: {
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
+    borderTopColor: BORDER,
     paddingTop: 10,
   },
   recentHistoryTitle: { fontSize: 12, fontWeight: "700", color: "#555", marginBottom: 8 },
@@ -878,8 +934,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "#f5f5f5",
   },
   gmqHistoryDate: { flex: 1, fontSize: 13, color: "#444" },
-  gmqHistoryWeight: { flex: 1, fontSize: 13, fontWeight: "700", color: "#111", textAlign: "center" },
-  gmqHistoryGmq: { flex: 1, fontSize: 13, fontWeight: "600", color: "#15803D", textAlign: "right" },
+  gmqHistoryWeight: { flex: 1, fontSize: 13, fontWeight: "700", color: INK, textAlign: "center" },
+  gmqHistoryGmq: { flex: 1, fontSize: 13, fontWeight: "600", color: GREEN_SOFT_TEXT, textAlign: "right" },
 
   miniStatsGrid: {
     flexDirection: "row",
@@ -896,18 +952,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   miniStatValue: { fontSize: 16, fontWeight: "800", color: GREEN },
-  miniStatLabel: { fontSize: 11, color: "#666", fontWeight: "600", marginTop: 2 },
+  miniStatLabel: { fontSize: 11, color: MUTED, fontWeight: "600", marginTop: 2 },
 
   detailRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: BORDER,
   },
-  detailIcon: { fontSize: 16, width: 28, color: "#666" },
+  detailIcon: { width: 26 },
   detailLabel: { fontSize: 13, fontWeight: "600", color: "#555", width: 140 },
-  detailValue: { fontSize: 14, fontWeight: "700", color: "#111", flex: 1 },
+  detailValue: { fontSize: 14, fontWeight: "700", color: INK, flex: 1 },
   notesBox: {
     backgroundColor: "#F9FAFB",
     borderRadius: 10,
@@ -930,14 +986,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#DC2626",
+    backgroundColor: "#fff",
     borderRadius: 12,
-    paddingVertical: 14,
+    borderWidth: 1.5,
+    borderColor: RED_SOFT_BG,
+    paddingVertical: 13,
     gap: 8,
   },
-  deleteButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  deleteButtonPressed: { backgroundColor: RED_SOFT_BG },
+  deleteButtonText: { color: RED, fontWeight: "700", fontSize: 14 },
+  buttonPressed: { opacity: 0.85 },
 
-  alertLoading: { paddingVertical: 16, alignItems: "center" },
   alertRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -947,31 +1006,29 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 8,
     borderLeftWidth: 4,
-    borderLeftColor: "#DC2626",
+    borderLeftColor: RED,
   },
   alertIconWrap: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#FEE2E2",
+    backgroundColor: RED_SOFT_BG,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
   },
-  alertIcon: { fontSize: 16 },
   alertContent: { flex: 1 },
   alertMessage: { fontSize: 13, fontWeight: "600", color: "#7F1D1D", lineHeight: 18 },
-  alertMeta: { fontSize: 11, color: "#991B1B", fontWeight: "500", marginTop: 2 },
+  alertMeta: { fontSize: 11, color: RED_SOFT_TEXT, fontWeight: "500", marginTop: 2 },
   alertResolveButton: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#DC2626",
+    backgroundColor: GREEN,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
   },
-  alertResolveText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 
   emptyCard: {
     backgroundColor: "#fff",
@@ -1000,7 +1057,10 @@ const styles = StyleSheet.create({
   addButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 
   linkButton: {
-    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    paddingHorizontal: 6,
     paddingVertical: 4,
   },
   linkButtonText: {

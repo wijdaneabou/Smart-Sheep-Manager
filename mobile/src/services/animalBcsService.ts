@@ -50,14 +50,14 @@ export interface BcsHerdSummaryResponse {
     HEAVY: number;
     OBESE: number;
   };
-  attentionList: Array<{
+  attentionList: {
     animalId: number;
     animalName: string;
     animalOfficialId: string;
     bcsScore: number;
     category: BcsCategoryInfo;
     date: string;
-  }>;
+  }[];
 }
 
 function extractError(err: any): string {

@@ -5,6 +5,7 @@ import {
   incrementFailedAttempts,
   resetFailedAttempts,
   lockUser,
+  recordLogin,
 } from "../repositories/users.repository.js";
 
 type User = NonNullable<Awaited<ReturnType<typeof findUserByEmail>>>;
@@ -23,7 +24,9 @@ export type LoginResult =
 
 export async function login(
   email: string,
-  password: string
+  password: string,
+  ip: string | null = null,
+  userAgent: string | null = null
 ): Promise<LoginResult> {
   const user = await findUserByEmail(email);
 
@@ -61,7 +64,7 @@ export async function login(
 
     if (failedAttempts >= 5) {
       await lockUser(user.id);
-
+      await recordLogin(user.id, ip, userAgent, false);
       return {
         success: false,
         status: 423,
@@ -70,6 +73,7 @@ export async function login(
       };
     }
 
+    await recordLogin(user.id, ip, userAgent, false);
     return {
       success: false,
       status: 401,
@@ -79,6 +83,7 @@ export async function login(
 
   // Réinitialiser le compteur
   await resetFailedAttempts(user.id);
+  await recordLogin(user.id, ip, userAgent, true);
 
   return {
     success: true,

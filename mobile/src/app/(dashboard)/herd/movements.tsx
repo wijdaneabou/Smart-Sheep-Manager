@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,11 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useFocusEffect } from "expo-router";
+import {
+  useRouter,
+  useFocusEffect,
+  useLocalSearchParams,
+} from "expo-router";
 import {
   listMovements,
   type AnimalMovement,
@@ -23,15 +27,23 @@ import {
 
 export default function MovementsScreen() {
   const router = useRouter();
+  const { animalId } = useLocalSearchParams<{ animalId?: string }>();
+  const parsedAnimalId = animalId ? Number(animalId) : undefined;
+
   const [movements, setMovements] = useState<AnimalMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeType, setActiveType] = useState<MovementType | "all">("all");
 
-  const filters =
-    activeType === "all" ? {} : { type: activeType as MovementType };
+  const filters = useMemo<{ animalId?: number; type?: MovementType }>(
+    () => ({
+      ...(parsedAnimalId ? { animalId: parsedAnimalId } : {}),
+      ...(activeType === "all" ? {} : { type: activeType as MovementType }),
+    }),
+    [parsedAnimalId, activeType]
+  );
 
-  async function fetchMovements() {
+  const fetchMovements = useCallback(async () => {
     setError(null);
     const result = await listMovements(filters);
     if (result.success) {
@@ -39,13 +51,19 @@ export default function MovementsScreen() {
     } else {
       setError(result.message);
     }
-  }
+  }, [filters]);
 
   useFocusEffect(
     useCallback(() => {
+      let active = true;
       setLoading(true);
-      fetchMovements().finally(() => setLoading(false));
-    }, [activeType])
+      fetchMovements().finally(() => {
+        if (active) setLoading(false);
+      });
+      return () => {
+        active = false;
+      };
+    }, [fetchMovements])
   );
 
   return (
@@ -55,8 +73,16 @@ export default function MovementsScreen() {
         <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
           <Text style={styles.backButtonText}>‹</Text>
         </Pressable>
+        <Text style={styles.title}>
+          {parsedAnimalId ? `Mouvements · #${parsedAnimalId}` : "Mouvements"}
+        </Text>
         <Pressable
-          onPress={() => router.push("/herd/movements/create" as any)}
+          onPress={() =>
+            router.push({
+              pathname: "/herd/movements/create",
+              params: parsedAnimalId ? { animalId: String(parsedAnimalId) } : {},
+            } as any)
+          }
           style={styles.addButton}
           hitSlop={8}
         >
@@ -168,6 +194,7 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   backButtonText: { fontSize: 26, color: "#1a1a1a", fontWeight: "400" },
+  title: { fontSize: 16, fontWeight: "700", color: "#1a1a1a", flexShrink: 1 },
   addButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center", backgroundColor: "#059669", borderRadius: 10 },
   addIcon: { fontSize: 18, color: "#fff" },
 

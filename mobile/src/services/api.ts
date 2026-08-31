@@ -11,15 +11,16 @@ import {
 
 export { saveToken };
 
-// 🔥 Read API_URL from .env – NO FALLBACK!
-export const API_URL = process.env.EXPO_PUBLIC_API_URL;
+export const API_URL =
+  process.env.EXPO_PUBLIC_API_URL || "http://172.27.182.10:3000";
 
-if (!API_URL) {
+if (!process.env.EXPO_PUBLIC_API_URL) {
   console.warn(
-    "⚠️ EXPO_PUBLIC_API_URL is not set in .env. Please set it to your backend URL."
+    "⚠️ EXPO_PUBLIC_API_URL is not set in .env. Using default backend URL."
   );
 }
 
+// Helper to build a full URL for uploaded files (avatars, etc.)
 export const getFileUrl = (path: string | null | undefined): string | null => {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) {
@@ -73,10 +74,10 @@ api.interceptors.request.use(async (config) => {
 });
 
 let isRefreshing = false;
-let failedQueue: Array<{
+let failedQueue: {
   resolve: (token: string) => void;
   reject: (error: any) => void;
-}> = [];
+}[] = [];
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach((prom) => {

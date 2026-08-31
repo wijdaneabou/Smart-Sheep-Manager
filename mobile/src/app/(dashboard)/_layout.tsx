@@ -135,6 +135,13 @@ export default function DashboardLayout() {
           <Tabs.Screen name="ai" />
           <Tabs.Screen name="ai-assistant" />
           <Tabs.Screen name="bi" />
+          <Tabs.Screen name="commercial/clients" />
+          <Tabs.Screen name="commercial/loyalty" />
+          <Tabs.Screen name="commercial/products" />
+          <Tabs.Screen name="commercial/orders" />
+          <Tabs.Screen name="commercial/deliveries" />
+          <Tabs.Screen name="commercial/framework-contracts" />
+          <Tabs.Screen name="commercial/marketplace" />
           <Tabs.Screen name="commercial" />
           <Tabs.Screen name="communication" />
           <Tabs.Screen name="exploitations" />
@@ -144,7 +151,6 @@ export default function DashboardLayout() {
           <Tabs.Screen name="iot" />
           <Tabs.Screen name="permissions" />
           <Tabs.Screen name="profile" />
-          <Tabs.Screen name="reporting" />
           <Tabs.Screen name="reproduction" />
           <Tabs.Screen name="users" />
         </Tabs>

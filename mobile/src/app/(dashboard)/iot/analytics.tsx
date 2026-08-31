@@ -42,8 +42,6 @@ export default function IotAnalyticsScreen() {
     }
   }, [hasPermission, router]);
 
-  const exploitationId = (user as any)?.exploitationId;
-
   const [days, setDays] = useState(7);
   const [loading, setLoading] = useState(true);
   const [comparison, setComparison] = useState<AnimalComparison[]>([]);
@@ -54,9 +52,7 @@ export default function IotAnalyticsScreen() {
   const [totalKm, setTotalKm] = useState(0);
 
   async function fetchAll() {
-    if (!exploitationId) return;
-
-    const compResult = await compareAnimals(exploitationId, days);
+    const compResult = await compareAnimals(days);
     if (!compResult.success) {
       Alert.alert("Erreur", compResult.message);
       return;
@@ -85,12 +81,15 @@ export default function IotAnalyticsScreen() {
     useCallback(() => {
       setLoading(true);
       fetchAll().finally(() => setLoading(false));
-    }, [exploitationId, days, selectedShieldId])
+    }, [days, selectedShieldId])
   );
 
   function formatDay(day: string): string {
     const d = new Date(day);
-    return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+    return d.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+    });
   }
 
   const maxTemp = Math.max(...tempTrend.map((t) => t.maxTemperature), 41);

@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import {
   listZones,
   createZone,
@@ -24,16 +25,19 @@ import {
   type ZonePoint,
 } from "../../../services/iotZonesService";
 import { searchLocation as searchLocationApi } from "../../../services/geocodeService";
+import { getLatestAllSensorData } from "../../../services/sensorDataService";
 import { BackButton } from "../../../components/BackButton";
-import { useAuth } from "../../../hooks/useAuth";
 import { usePermissions } from "../../../contexts/PermissionsContext";
 
 const GREEN = "#14532d";
-const BORDER = "#E7E4DC";
-const TEXT_MUTED = "#8A8A85";
+const CREAM = "#f5f5f0";
+const BORDER = "#ECECE6";
+const TEXT_MUTED = "#888888";
 const AMBER = "#B7791F";
 
 const DEFAULT_CENTER = { lat: 33.5731, lng: -7.5898, zoom: 15 };
+
+type LocationSearchResult = { display_name: string; lat: string; lon: string };
 
 const MAP_HTML = `
 <!DOCTYPE html>
@@ -46,6 +50,8 @@ const MAP_HTML = `
     .leaflet-control-attribution { font-size: 9px; }
     .leaflet-control-zoom { border: none !important; box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important; }
     .leaflet-control-zoom a { color: #1A1A18 !important; }
+    .zone-tooltip { background: rgba(26,26,24,0.85); color: #fff; border: none; border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: 600; }
+    .leaflet-tooltip-left:before, .leaflet-tooltip-right:before { border: none; }
   </style>
 </head>
 <body>
@@ -55,21 +61,21 @@ const MAP_HTML = `
     const map = L.map('map', { zoomControl: false }).setView([${DEFAULT_CENTER.lat}, ${DEFAULT_CENTER.lng}], ${DEFAULT_CENTER.zoom});
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 19,
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20,
     }).addTo(map);
 
     const zonesLayer = L.layerGroup().addTo(map);
     const draftLayer = L.layerGroup().addTo(map);
+    const animalsLayer = L.layerGroup().addTo(map);
 
     function post(payload) {
       window.ReactNativeWebView.postMessage(JSON.stringify(payload));
     }
 
-    map.on('click', function (e) {
-      post({ type: 'click', lat: e.latlng.lat, lng: e.latlng.lng });
-    });
+    const drawingState = { active: false, points: [] };
 
     function redrawZones(zones) {
       zonesLayer.clearLayers();
@@ -87,6 +93,7 @@ const MAP_HTML = `
 
     function redrawDraft(points) {
       draftLayer.clearLayers();
+      drawingState.points = points;
       if (points.length > 0) {
         const latlngs = points.map(function (p) { return [p.lat, p.lng]; });
         if (points.length >= 2) {
@@ -110,20 +117,59 @@ const MAP_HTML = `
       }
     }
 
+    function updateAnimals(animals) {
+      animalsLayer.clearLayers();
+      animals.forEach(function (animal) {
+        if (animal.latitude && animal.longitude) {
+          const marker = L.circleMarker([animal.latitude, animal.longitude], {
+            radius: 8,
+            color: '#fff',
+            weight: 2,
+            fillColor: animal.zoneColor || '${GREEN}',
+            fillOpacity: 1,
+          }).bindTooltip(animal.name, { permanent: false, direction: 'top', offset: [0, -8], className: 'zone-tooltip' });
+          marker.addTo(animalsLayer);
+        }
+      });
+    }
+
+    function setDrawing(active) {
+      drawingState.active = active;
+      if (!active) drawingState.points = [];
+    }
+
     function handleMessage(event) {
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === 'zones') redrawZones(msg.zones);
-        if (msg.type === 'draft') redrawDraft(msg.points);
+        if (msg.type === 'draft') { redrawDraft(msg.points); setDrawing(true); }
+        if (msg.type === 'animals') updateAnimals(msg.animals);
         if (msg.type === 'center') map.setView([msg.lat, msg.lng], msg.zoom || map.getZoom());
         if (msg.type === 'fitBounds' && msg.bounds) {
           map.fitBounds(msg.bounds);
         }
+        if (msg.type === 'setDrawing') setDrawing(msg.active);
       } catch (e) {}
     }
 
     document.addEventListener('message', handleMessage);
     window.addEventListener('message', handleMessage);
+
+    map.on('click', function (e) {
+      if (!drawingState.active) {
+        post({ type: 'click', lat: e.latlng.lat, lng: e.latlng.lng });
+        return;
+      }
+      if (drawingState.points.length >= 3) {
+        const first = drawingState.points[0];
+        const dist = map.distance(e.latlng, L.latLng(first.lat, first.lng));
+        if (dist < 20) {
+          post({ type: 'close' });
+          return;
+        }
+      }
+      post({ type: 'click', lat: e.latlng.lat, lng: e.latlng.lng });
+    });
 
     post({ type: 'ready' });
   </script>
@@ -135,7 +181,6 @@ type ViewMode = "list" | "view" | "draw";
 
 export default function IotZonesScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const { hasPermission } = usePermissions();
 
   // Silent redirect if no read permission
@@ -159,12 +204,39 @@ export default function IotZonesScreen() {
   const [selectedZone, setSelectedZone] = useState<IotZone | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<
-    { display_name: string; lat: string; lon: string }[]
-  >([]);
+  const [searchResults, setSearchResults] = useState<LocationSearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searching, setSearching] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [animals, setAnimals] = useState<{ name: string; latitude: number; longitude: number; zoneColor?: string }[]>([]);
+
+  const loadAnimals = useCallback(async () => {
+    try {
+      const result = await getLatestAllSensorData();
+      if (result.success) {
+        const animalsList = result.data
+          .filter(item => item.latitude && item.longitude)
+          .map(item => ({
+            name: item.shield.animalId ? `Animal ${item.shield.animalId}` : item.shield.ssmIotNumber,
+            latitude: parseFloat(item.latitude!),
+            longitude: parseFloat(item.longitude!),
+            zoneColor: zones[0]?.color || GREEN,
+          }))
+          .filter(a => !Number.isNaN(a.latitude) && !Number.isNaN(a.longitude));
+        setAnimals(animalsList);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des animaux:", error);
+    }
+  }, [zones]);
+
+  useEffect(() => {
+    if (mapReady) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadAnimals();
+    }
+  }, [mapReady, loadAnimals]);
 
   const canCreate = hasPermission('IOT', 'ZONES:CREATE');
   const canDelete = hasPermission('IOT', 'ZONES:DELETE');
@@ -226,12 +298,22 @@ export default function IotZonesScreen() {
       if (msg.type === "ready") {
         setMapReady(true);
       } else if (msg.type === "click" && drawing) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setDraftPoints((prev) => [...prev, { lat: msg.lat, lng: msg.lng }]);
+      } else if (msg.type === "close") {
+        finishDrawing();
       }
     } catch {
       // ignore
     }
   }
+
+  useEffect(() => {
+    if (!mapReady) return;
+    webviewRef.current?.postMessage(
+      JSON.stringify({ type: "animals", animals })
+    );
+  }, [animals, mapReady]);
 
   function startDrawing() {
     setDraftPoints([]);
@@ -374,10 +456,11 @@ export default function IotZonesScreen() {
             hitSlop={8}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#1A1A18" />
+            <Ionicons name="chevron-back" size={24} color={GREEN} />
           </Pressable>
         )}
         <View style={{ flex: 1 }}>
+          <Text style={styles.title}>Zones IoT</Text>
           {isList && (
             <View style={styles.headerMetaRow}>
               <View style={styles.liveDot} />
@@ -492,7 +575,7 @@ export default function IotZonesScreen() {
               <TextInput
                 style={styles.searchInput}
                 placeholder="Rechercher un lieu..."
-                placeholderTextColor="#B0AEA5"
+                placeholderTextColor="#B0B0B0"
                 value={searchQuery}
                 onChangeText={handleSearchChange}
                 onSubmitEditing={() => searchLocation(searchQuery)}
@@ -515,7 +598,7 @@ export default function IotZonesScreen() {
             {searching && <ActivityIndicator size="small" color={GREEN} style={{ marginTop: 4 }} />}
             {showSuggestions && searchResults.length > 0 && (
               <View style={styles.suggestionsList}>
-                {searchResults.map((res, idx) => (
+                {searchResults.map((res: LocationSearchResult, idx: number) => (
                   <Pressable
                     key={idx}
                     style={styles.suggestionRow}
@@ -655,7 +738,7 @@ export default function IotZonesScreen() {
             <TextInput
               style={styles.modalInput}
               placeholder="Ex : Pâturage nord"
-              placeholderTextColor="#B0AEA5"
+              placeholderTextColor="#B0B0B0"
               value={zoneName}
               onChangeText={setZoneName}
               autoFocus
@@ -687,7 +770,7 @@ export default function IotZonesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#FAF8F4" },
+  safeArea: { flex: 1, backgroundColor: CREAM },
 
   header: {
     flexDirection: "row",
@@ -698,9 +781,9 @@ const styles = StyleSheet.create({
   },
   backButton: { marginRight: 8 },
   title: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: "700",
-    color: "#1A1A18",
+    color: GREEN,
     letterSpacing: -0.2,
   },
   headerMetaRow: {
@@ -727,7 +810,7 @@ const styles = StyleSheet.create({
   map: { flex: 1 },
   mapLoadingOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: "#FAF8F4",
+    backgroundColor: CREAM,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -758,7 +841,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     fontSize: 14,
-    color: "#1A1A18",
+    color: "#1f2937",
   },
   suggestionsList: {
     marginTop: 4,
@@ -780,11 +863,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#F5F3EF",
+    borderBottomColor: "#F5F5F0",
   },
   suggestionText: {
     fontSize: 13,
-    color: "#1A1A18",
+    color: "#1f2937",
     flex: 1,
   },
 
@@ -795,7 +878,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(26,26,24,0.85)",
+    backgroundColor: "rgba(20,83,45,0.9)",
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 7,
@@ -846,11 +929,11 @@ const styles = StyleSheet.create({
     height: 24,
     paddingHorizontal: 7,
     borderRadius: 12,
-    backgroundColor: "#F7F6F2",
+    backgroundColor: "#F9FAFB",
     alignItems: "center",
     justifyContent: "center",
   },
-  pointCountText: { fontSize: 12, fontWeight: "700", color: "#1A1A18" },
+  pointCountText: { fontSize: 12, fontWeight: "700", color: "#1f2937" },
 
   drawActions: { flexDirection: "row", gap: 8 },
   drawBtnIcon: {
@@ -905,7 +988,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#F7F6F2",
+    backgroundColor: "#F9FAFB",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -922,7 +1005,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#F5F3EF",
+    borderBottomColor: "#F5F5F0",
   },
   zoneColorSwatch: {
     width: 34,
@@ -932,7 +1015,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   zoneColorDot: { width: 10, height: 10, borderRadius: 5 },
-  zoneName: { fontSize: 13.5, fontWeight: "700", color: "#1A1A18" },
+  zoneName: { fontSize: 13.5, fontWeight: "700", color: "#111" },
   zonePointsCount: { fontSize: 11, color: TEXT_MUTED, marginTop: 1 },
   deleteBtn: {
     width: 30,
@@ -940,7 +1023,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FEF3F2",
+    backgroundColor: "#FEF2F2",
   },
 
   newZoneWrap: {
@@ -987,7 +1070,7 @@ const styles = StyleSheet.create({
   viewInfoTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#1A1A18",
+    color: "#111",
   },
   viewInfoPoints: {
     fontSize: 12,
@@ -997,7 +1080,7 @@ const styles = StyleSheet.create({
   viewBackBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: "#F7F6F2",
+    backgroundColor: "#F9FAFB",
     borderRadius: 10,
   },
   viewBackBtnText: {
@@ -1029,7 +1112,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 10,
   },
-  modalTitle: { fontSize: 16, fontWeight: "700", color: "#1A1A18" },
+  modalTitle: { fontSize: 16, fontWeight: "700", color: "#111" },
   modalSubtitle: {
     fontSize: 12,
     color: TEXT_MUTED,

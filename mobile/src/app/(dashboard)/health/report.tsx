@@ -25,11 +25,11 @@ interface ReportData {
     avgRecoveryDays: number;
   };
   statusDistribution: Record<string, number>;
-  recentActivities: Array<{
+  recentActivities: {
     type: string;
     date: string;
     description: string;
-  }>;
+  }[];
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; dot: string; iconName: string }> = {

@@ -55,10 +55,10 @@ export async function getDistance(shieldId: number, days = 7) {
   }
 }
 
-export async function compareAnimals(exploitationId: number, days = 7) {
+export async function compareAnimals(days = 7) {
   try {
     const response = await api.get<{ data: AnimalComparison[] }>("/iot-analytics/compare", {
-      params: { exploitationId, days },
+      params: { days },
     });
     return { success: true as const, data: response.data.data };
   } catch (err: any) {

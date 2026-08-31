@@ -23,6 +23,7 @@ export const listUsersQuerySchema = z.object({
   search: z.string().optional(),
   roleId: z.coerce.number().int().positive().optional(),
   status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).optional(),
+  exploitationId: z.coerce.number().int().positive().optional(),
 });
 
 export const loginHistoryQuerySchema = z.object({

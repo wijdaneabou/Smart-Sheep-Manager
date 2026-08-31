@@ -30,6 +30,7 @@ export * from './matingServices.js';
 export * from "./userExploitations.js";
 
 export * from "./iotShields.js";
+export * from "./iotShieldSensors.js";
 export * from "./iotSensorData.js";
 export * from "./iotAlerts.js";
 export * from "./iotZones.js";
@@ -49,3 +50,21 @@ export * from './fatteningFeedRecords.js';
 export * from './posts.js';
 
 export * from './predictions.js';
+export * from './feedItems.js';
+export * from './feedStocks.js';
+export * from './feedRations.js';
+export * from './feedRationItems.js';
+export * from './feedDistributions.js';
+export * from './clients.js';
+export * from './clientSegments.js';
+export * from './clientLoyaltyProfiles.js';
+export * from './loyaltyOffers.js';
+export * from './loyaltyNotifications.js';
+export * from './products.js';
+export * from './orders.js';
+export * from './deliveries.js';
+export * from './framework-contracts.js';
+export * from './marketplace.js';
+export * from './userDashboardWidgets.js';
+export * from './posts.js';
+

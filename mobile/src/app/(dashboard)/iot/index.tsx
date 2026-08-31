@@ -15,14 +15,12 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   listIotShields,
   type IotShield,
-  type SensorType,
   type ShieldStatus,
 } from "../../../services/iotShieldsService";
-import { SENSOR_TYPES, getSensorTypeInfo, getShieldStatusInfo } from "../../../constants/iot";
+import { SHIELD_STATUSES, getShieldStatusInfo, formatSensorsList } from "../../../constants/iot";
 import { BackButton } from "../../../components/BackButton";
 import { usePermissions } from "../../../contexts/PermissionsContext";
 
-type FilterType = "TOUT" | SensorType;
 type StatusFilterType = "TOUT" | ShieldStatus;
 
 const SEARCH_DEBOUNCE_MS = 400;
@@ -31,7 +29,6 @@ export default function IoTShieldScreen() {
   const router = useRouter();
   const { hasPermission } = usePermissions();
 
-  // Silent redirect if no read permission
   useEffect(() => {
     if (!hasPermission('IOT', 'SHIELDS:READ')) {
       router.replace("/(dashboard)");
@@ -40,24 +37,22 @@ export default function IoTShieldScreen() {
 
   const [shields, setShields] = useState<IotShield[]>([]);
   const [search, setSearch] = useState("");
-  const [sensorFilter, setSensorFilter] = useState<FilterType>("TOUT");
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>("TOUT");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const filtersRef = useRef({ search, sensorFilter, statusFilter });
-  filtersRef.current = { search, sensorFilter, statusFilter };
+  const filtersRef = useRef({ search, statusFilter });
+  filtersRef.current = { search, statusFilter };
   const requestIdRef = useRef(0);
 
   async function fetchShields() {
-    const { search, sensorFilter, statusFilter } = filtersRef.current;
+    const { search, statusFilter } = filtersRef.current;
     const requestId = ++requestIdRef.current;
 
     setError(null);
     const result = await listIotShields({
       search: search || undefined,
-      sensorType: sensorFilter === "TOUT" ? undefined : sensorFilter,
       status: statusFilter === "TOUT" ? undefined : statusFilter,
       limit: 50,
     });
@@ -86,7 +81,7 @@ export default function IoTShieldScreen() {
     }
     setLoading(true);
     fetchShields().finally(() => setLoading(false));
-  }, [sensorFilter, statusFilter]);
+  }, [statusFilter]);
 
   useEffect(() => {
     if (isFirstRender.current) return;
@@ -157,22 +152,6 @@ export default function IoTShieldScreen() {
 
         <View style={styles.filterRow}>
           <FilterPill
-            label="Tous les capteurs"
-            active={sensorFilter === "TOUT"}
-            onPress={() => setSensorFilter("TOUT")}
-          />
-          {SENSOR_TYPES.map((s) => (
-            <FilterPill
-              key={s.id}
-              label={s.label}
-              active={sensorFilter === s.id}
-              onPress={() => setSensorFilter(s.id)}
-            />
-          ))}
-        </View>
-
-        <View style={styles.filterRow}>
-          <FilterPill
             label={`Tous (${shields.length})`}
             active={statusFilter === "TOUT"}
             onPress={() => setStatusFilter("TOUT")}
@@ -205,7 +184,6 @@ export default function IoTShieldScreen() {
               <Text style={styles.empty}>Aucun bouclier IoT trouvé.</Text>
             }
             renderItem={({ item }) => {
-              const sensorInfo = getSensorTypeInfo(item.sensorType);
               const statusInfo = getShieldStatusInfo(item.status);
               const batteryNum = parseFloat(item.battery);
               const batteryColor =
@@ -214,6 +192,7 @@ export default function IoTShieldScreen() {
                   : batteryNum > 20
                   ? "#f59e0b"
                   : "#dc2626";
+              const sensorsLabel = formatSensorsList(item.sensors);
 
               return (
                 <Link
@@ -227,7 +206,7 @@ export default function IoTShieldScreen() {
                 >
                   <Pressable style={styles.card}>
                     <View style={styles.cardIcon}>
-                      <Text style={styles.cardIconText}>{sensorInfo.icon}</Text>
+                      <Ionicons name="wifi" size={24} color="#fff" />
                     </View>
 
                     <View style={styles.cardBody}>
@@ -247,7 +226,7 @@ export default function IoTShieldScreen() {
 
                       <View style={styles.infoRow}>
                         <Ionicons name="hardware-chip" size={12} color="#666" style={{ width: 20 }} />
-                        <Text style={styles.infoValue}>{sensorInfo.label}</Text>
+                        <Text style={styles.infoValue} numberOfLines={1}>{sensorsLabel}</Text>
                       </View>
 
                       <View style={styles.infoRow}>
@@ -387,7 +366,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 14,
-    backgroundColor: "#F0FDF4",
+    backgroundColor: GREEN,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 14,

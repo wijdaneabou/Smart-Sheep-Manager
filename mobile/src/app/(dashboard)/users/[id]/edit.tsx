@@ -11,12 +11,22 @@ import {
   Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { getUserById, updateUser } from "../../../../services/userService";
 
-// TODO : remplacer par un select alimente par GET /roles (US-1.3) et
-// GET /exploitations (Module 2) une fois ces endpoints disponibles.
-const ROLES_HINT =
-  "Roles : 1=Admin, 2=Manager, 3=Eleveur, 4=Ouvrier, 5=Veterinaire, 6=Cooperative";
+const GREEN = "#14532d";
+const CREAM = "#f5f5f0";
+
+// TODO : remplacer par un select alimenté par GET /roles (US-1.3) une fois disponible.
+const ROLES: { id: number; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: 1, label: "Admin", icon: "shield-checkmark-outline" },
+  { id: 2, label: "Manager", icon: "briefcase-outline" },
+  { id: 3, label: "Éleveur", icon: "leaf-outline" },
+  { id: 4, label: "Ouvrier", icon: "hammer-outline" },
+  { id: 5, label: "Vétérinaire", icon: "medkit-outline" },
+  { id: 6, label: "Coopérative", icon: "people-outline" },
+];
 
 export default function EditUserScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -61,12 +71,12 @@ export default function EditUserScreen() {
   );
 
   function validate(): string | null {
-    if (firstName.trim().length < 2) return "Le prenom doit faire au moins 2 caracteres.";
-    if (lastName.trim().length < 2) return "Le nom doit faire au moins 2 caracteres.";
+    if (firstName.trim().length < 2) return "Le prénom doit faire au moins 2 caractères.";
+    if (lastName.trim().length < 2) return "Le nom doit faire au moins 2 caractères.";
     if (!email.includes("@")) return "Email invalide.";
-    if (roleId && Number.isNaN(Number(roleId))) return "Le role doit etre un nombre.";
+    if (roleId && Number.isNaN(Number(roleId))) return "Le rôle doit être valide.";
     if (exploitationId && Number.isNaN(Number(exploitationId)))
-      return "L'exploitation doit etre un nombre.";
+      return "L'exploitation doit être un nombre.";
     return null;
   }
 
@@ -99,92 +109,305 @@ export default function EditUserScreen() {
   }
 
   if (loadingUser) {
-    return <ActivityIndicator style={{ marginTop: 40 }} />;
+    return (
+      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+            <Ionicons name="arrow-back" size={22} color={GREEN} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Modifier le profil</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={GREEN} />
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container}>
-        <TextInput
-          style={styles.input}
-          placeholder="Prenom"
-          value={firstName}
-          onChangeText={setFirstName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Nom"
-          value={lastName}
-          onChangeText={setLastName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Telephone"
-          keyboardType="phone-pad"
-          value={phone}
-          onChangeText={setPhone}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="ID du role"
-          keyboardType="number-pad"
-          value={roleId}
-          onChangeText={setRoleId}
-        />
-        <Text style={styles.hint}>{ROLES_HINT}</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="ID de l'exploitation (optionnel)"
-          keyboardType="number-pad"
-          value={exploitationId}
-          onChangeText={setExploitationId}
-        />
-
-        {error && <Text style={styles.error}>{error}</Text>}
-
-        <Pressable style={styles.button} onPress={handleSubmit} disabled={saving}>
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Enregistrer</Text>
-          )}
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+          <Ionicons name="arrow-back" size={22} color={GREEN} />
         </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <Text style={styles.headerTitle}>Modifier le profil</Text>
+        <View style={{ width: 32 }} />
+      </View>
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          {/* Identité */}
+          <View style={styles.section}>
+            <SectionHeader icon="person-outline" label="Identité" />
+
+            <FormField
+              icon="person-outline"
+              label="Prénom"
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="ex : Ahmed"
+            />
+            <FormField
+              icon="person-outline"
+              label="Nom"
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="ex : Benali"
+            />
+            <FormField
+              icon="mail-outline"
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="nom@exemple.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <FormField
+              icon="call-outline"
+              label="Téléphone"
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="06 12 34 56 78"
+              keyboardType="phone-pad"
+              isLast
+            />
+          </View>
+
+          {/* Rôle */}
+          <View style={styles.section}>
+            <SectionHeader icon="shield-checkmark-outline" label="Rôle" />
+            <View style={styles.roleGrid}>
+              {ROLES.map((role) => {
+                const selected = roleId === String(role.id);
+                return (
+                  <Pressable
+                    key={role.id}
+                    style={[styles.roleChip, selected && styles.roleChipSelected]}
+                    onPress={() => setRoleId(String(role.id))}
+                  >
+                    <Ionicons
+                      name={role.icon}
+                      size={15}
+                      color={selected ? "#fff" : GREEN}
+                    />
+                    <Text style={[styles.roleChipText, selected && styles.roleChipTextSelected]}>
+                      {role.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Affectation */}
+          <View style={styles.section}>
+            <SectionHeader icon="business-outline" label="Affectation" />
+            <FormField
+              icon="business-outline"
+              label="Exploitation"
+              value={exploitationId}
+              onChangeText={setExploitationId}
+              placeholder="ID de l'exploitation (optionnel)"
+              keyboardType="number-pad"
+              isLast
+            />
+          </View>
+
+          {error && (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle" size={16} color="#dc2626" />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          <Pressable
+            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
+                <Text style={styles.saveButtonText}>ENREGISTRER</Text>
+              </>
+            )}
+          </Pressable>
+
+          <Pressable style={styles.cancelButton} onPress={() => router.back()} disabled={saving}>
+            <Text style={styles.cancelButtonText}>ANNULER</Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+function SectionHeader({ icon, label }: { icon: keyof typeof Ionicons.glyphMap; label: string }) {
+  return (
+    <View style={styles.sectionHeader}>
+      <Ionicons name={icon} size={16} color={GREEN} />
+      <Text style={styles.sectionHeaderText}>{label}</Text>
+    </View>
+  );
+}
+
+function FormField({
+  icon,
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType,
+  autoCapitalize,
+  isLast,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  keyboardType?: "default" | "email-address" | "phone-pad" | "number-pad";
+  autoCapitalize?: "none" | "sentences";
+  isLast?: boolean;
+}) {
+  return (
+    <View style={[styles.fieldWrapper, !isLast && styles.fieldWrapperSpaced]}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <View style={styles.fieldInputRow}>
+        <Ionicons name={icon} size={16} color="#999" style={styles.fieldIcon} />
+        <TextInput
+          style={styles.fieldInput}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor="#B0B0B0"
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+        />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, paddingTop: 4, backgroundColor: "#F2FAF5", flexGrow: 1 },
-  input: {
+  safeArea: { flex: 1, backgroundColor: CREAM },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  backButton: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+  headerTitle: { fontSize: 17, fontWeight: "700", color: GREEN },
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+
+  container: { padding: 16, paddingBottom: 40 },
+
+  section: {
     backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 14,
+  },
+  sectionHeaderText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#1f2937",
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+
+  fieldWrapper: {},
+  fieldWrapperSpaced: { marginBottom: 14 },
+  fieldLabel: { fontSize: 12, fontWeight: "600", color: "#666", marginBottom: 6 },
+  fieldInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F9FAFB",
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
+    borderColor: "#ECECE6",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+  },
+  fieldIcon: { marginRight: 8 },
+  fieldInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: "#1f2937",
+  },
+
+  roleGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  roleChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 20,
+    backgroundColor: "#F9FAFB",
+    borderWidth: 1,
+    borderColor: "#ECECE6",
+  },
+  roleChipSelected: {
+    backgroundColor: GREEN,
+    borderColor: GREEN,
+  },
+  roleChipText: { fontSize: 13, fontWeight: "600", color: "#1f2937" },
+  roleChipTextSelected: { color: "#fff" },
+
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#FEF2F2",
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    marginBottom: 10,
-    fontSize: 15,
+    marginBottom: 16,
   },
-  hint: { fontSize: 11, color: "#7EAB91", marginBottom: 14, marginTop: -4 },
-  error: { color: "#166534", marginBottom: 12, fontSize: 13 },
-  button: {
-    backgroundColor: "#2563eb",
-    borderRadius: 8,
-    paddingVertical: 14,
+  errorText: { color: "#dc2626", fontSize: 13, flex: 1 },
+
+  saveButton: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: GREEN,
+    borderRadius: 12,
+    paddingVertical: 14,
+    gap: 8,
+    marginBottom: 10,
   },
-  buttonText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+  saveButtonDisabled: { opacity: 0.6 },
+  saveButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+
+  cancelButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+  },
+  cancelButtonText: { color: "#666", fontWeight: "600", fontSize: 13 },
 });

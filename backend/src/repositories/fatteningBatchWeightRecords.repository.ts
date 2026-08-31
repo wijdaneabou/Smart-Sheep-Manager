@@ -82,8 +82,12 @@ export async function getFirstWeightRecordByBatch(batchId: number) {
 }
 
 export async function getBatchWeightHistory(batchId: number) {
-  const records = await listWeightRecordsByBatch(batchId);
-  const sorted = [...records].reverse();
+  // `listWeightRecordsByBatch` returns pagination metadata together with the
+  // records.  Only its `rows` collection is iterable.  Passing the wrapper
+  // object to the spread operator made every batch update that recalculates
+  // alerts fail with "records is not iterable".
+  const { rows } = await listWeightRecordsByBatch(batchId);
+  const sorted = [...rows].reverse();
 
   const dataPoints = sorted.map((record, index) => {
     const weight = Number(record.averageWeight);

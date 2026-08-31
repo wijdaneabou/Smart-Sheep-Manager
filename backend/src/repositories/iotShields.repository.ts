@@ -1,8 +1,9 @@
 import { db } from "../db/connection.js";
 import { iotShields } from "../db/schema/iotShields.js";
+import { iotShieldSensors } from "../db/schema/iotShieldSensors.js";
 import { animals } from "../db/schema/animals.js";
 import { exploitations } from "../db/schema/exploitations.js";
-import { eq, and, like, desc, count, or, ne, inArray } from "drizzle-orm"; // added inArray
+import { eq, and, like, desc, count, or, ne, inArray } from "drizzle-orm";
 
 type CreateIotShieldData = typeof iotShields.$inferInsert;
 type UpdateIotShieldData = Partial<CreateIotShieldData>;
@@ -13,7 +14,6 @@ export async function findIotShieldById(id: number) {
       id: iotShields.id,
       ssmIotNumber: iotShields.ssmIotNumber,
       apiKey: iotShields.apiKey,
-      sensorType: iotShields.sensorType,
       battery: iotShields.battery,
       animalId: iotShields.animalId,
       status: iotShields.status,
@@ -56,19 +56,12 @@ export async function findIotShieldByApiKey(apiKey: string) {
 }
 
 export async function createIotShield(data: CreateIotShieldData) {
-  try {
-    console.log("INSERT =", data);
+  const [result] = await db
+    .insert(iotShields)
+    .values(data)
+    .$returningId();
 
-    const [result] = await db
-      .insert(iotShields)
-      .values(data)
-      .$returningId();
-
-    return findIotShieldById(result.id);
-  } catch (error) {
-    console.error("DB ERROR =", error);
-    throw error;
-  }
+  return findIotShieldById(result.id);
 }
 
 export async function updateIotShield(id: number, data: UpdateIotShieldData) {
@@ -83,9 +76,8 @@ export async function deleteIotShield(id: number) {
   await db.delete(iotShields).where(eq(iotShields.id, id));
 }
 
-// 🔽 MODIFIED FUNCTION
 export async function listIotShields(params: {
-  exploitationIds?: number[] | null;          // changed: was exploitationId?: number;
+  exploitationIds?: number[] | null;
   page: number;
   limit: number;
   search?: string;
@@ -94,7 +86,6 @@ export async function listIotShields(params: {
 }) {
   const conditions = [];
 
-  // 🔁 Use inArray instead of eq
   if (params.exploitationIds && params.exploitationIds.length > 0) {
     conditions.push(inArray(iotShields.exploitationId, params.exploitationIds));
   }
@@ -109,10 +100,6 @@ export async function listIotShields(params: {
     );
   }
 
-  if (params.sensorType) {
-    conditions.push(eq(iotShields.sensorType, params.sensorType as any));
-  }
-
   if (params.status) {
     conditions.push(eq(iotShields.status, params.status as any));
   }
@@ -124,7 +111,6 @@ export async function listIotShields(params: {
     .select({
       id: iotShields.id,
       ssmIotNumber: iotShields.ssmIotNumber,
-      sensorType: iotShields.sensorType,
       battery: iotShields.battery,
       animalId: iotShields.animalId,
       status: iotShields.status,
@@ -184,4 +170,39 @@ export async function toggleStatus(shieldId: number) {
     .set({ status: newStatus, updatedAt: new Date() })
     .where(eq(iotShields.id, shieldId));
   return findIotShieldById(shieldId);
+}
+
+// ── Shield Sensors CRUD ──
+
+export async function listShieldSensors(shieldId: number) {
+  return db
+    .select()
+    .from(iotShieldSensors)
+    .where(eq(iotShieldSensors.shieldId, shieldId))
+    .orderBy(iotShieldSensors.sensorType);
+}
+
+export async function createShieldSensor(shieldId: number, sensorType: string) {
+  const [result] = await db
+    .insert(iotShieldSensors)
+    .values({ shieldId, sensorType: sensorType as any })
+    .$returningId();
+  return findShieldSensorById(result.id);
+}
+
+export async function findShieldSensorById(id: number) {
+  const rows = await db
+    .select()
+    .from(iotShieldSensors)
+    .where(eq(iotShieldSensors.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function deleteShieldSensor(id: number) {
+  await db.delete(iotShieldSensors).where(eq(iotShieldSensors.id, id));
+}
+
+export async function deleteShieldSensorsByShieldId(shieldId: number) {
+  await db.delete(iotShieldSensors).where(eq(iotShieldSensors.shieldId, shieldId));
 }

@@ -18,7 +18,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 type VaccinationStatus = "PENDING" | "DONE" | "OVERDUE";
 
-const STATUS_OPTIONS: Array<{ id: VaccinationStatus; label: string; iconName: string }> = [
+const STATUS_OPTIONS: { id: VaccinationStatus; label: string; iconName: string }[] = [
   { id: "PENDING", label: "En attente", iconName: "time" },
   { id: "DONE", label: "Effectué", iconName: "checkmark-circle" },
   { id: "OVERDUE", label: "En retard", iconName: "alert-circle" },

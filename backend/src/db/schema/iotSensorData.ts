@@ -4,6 +4,7 @@ import {
   decimal,
   mysqlEnum,
   timestamp,
+  index,
   type AnyMySqlColumn,
 } from "drizzle-orm/mysql-core";
 import { iotShields } from "./iotShields.js";
@@ -42,3 +43,7 @@ export const iotSensorDataRelations = relations(
     }),
   })
 );
+
+export const iotSensorDataIndexes = {
+  shieldMeasuredAtIdx: index("idx_sensor_data_shield_measured_at").on(iotSensorData.shieldId, iotSensorData.measuredAt),
+};

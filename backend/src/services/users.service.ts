@@ -8,6 +8,11 @@ import {
   listUsers as listUsersInDb,
   getLoginHistory as getLoginHistoryInDb,
 } from "../repositories/users.repository.js";
+import { db } from "../db/connection.js";
+import { userExploitations } from "../db/schema/userExploitations.js";
+import { exploitations } from "../db/schema/exploitations.js";
+import { animals } from "../db/schema/animals.js";
+import { eq, count, sql, inArray } from "drizzle-orm";
 
 const SALT_ROUNDS = 12;
 
@@ -131,6 +136,7 @@ export async function listUsers(params: {
   search?: string;
   roleId?: number;
   status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
+  exploitationId?: number;
 }) {
   const { rows, total } = await listUsersInDb(params);
   return {
@@ -178,4 +184,122 @@ export async function getLoginHistory(
   }
   const { rows, total } = await getLoginHistoryInDb(userId, page, limit);
   return { success: true, status: 200, history: rows, pagination: { total, page, limit } };
+}
+
+export type UserExploitationSummary = {
+  id: number;
+  name: string;
+  type: string;
+  role: string;
+  animalsCount: number;
+  superficie: string | null;
+};
+
+export type UserAdminDetailsResult =
+  | {
+      success: true;
+      status: 200;
+      user: SanitizedUser;
+      exploitations: UserExploitationSummary[];
+      totalExploitations: number;
+      totalAnimals: number;
+    }
+  | { success: false; status: 404 | 500; message: string };
+
+export async function getUserAdminDetails(userId: number): Promise<UserAdminDetailsResult> {
+  const user = await findUserById(userId);
+  if (!user) {
+    return { success: false, status: 404, message: "Utilisateur introuvable." };
+  }
+
+  const linkedExploitations = await db
+    .select({
+      exploitationId: userExploitations.exploitationId,
+      role: userExploitations.role,
+      name: exploitations.name,
+      type: exploitations.type,
+      superficie: exploitations.superficie,
+    })
+    .from(userExploitations)
+    .leftJoin(exploitations, eq(userExploitations.exploitationId, exploitations.id))
+    .where(eq(userExploitations.userId, userId));
+
+  const ownedExploitations = await db
+    .select({
+      id: exploitations.id,
+      name: exploitations.name,
+      type: exploitations.type,
+      superficie: exploitations.superficie,
+    })
+    .from(exploitations)
+    .where(eq(exploitations.ownerId, userId));
+
+  const linkedIds = new Set(
+    linkedExploitations
+      .map((ue) => ue.exploitationId)
+      .filter((id): id is number => id != null)
+  );
+
+  const ownedNotLinked = ownedExploitations.filter(
+    (exp) => !linkedIds.has(exp.id)
+  );
+
+  const userExploitationsList = [
+    ...linkedExploitations,
+    ...ownedNotLinked.map((exp) => ({
+      exploitationId: exp.id,
+      role: "OWNER" as const,
+      name: exp.name,
+      type: exp.type,
+      superficie: exp.superficie,
+    })),
+  ];
+
+  const exploitationIds = userExploitationsList
+    .map((ue) => ue.exploitationId)
+    .filter((id): id is number => id != null);
+
+  let animalsCountByExploitation: Record<number, number> = {};
+
+  if (exploitationIds.length > 0) {
+    const counts = await db
+      .select({
+        exploitationId: animals.exploitationId,
+        count: count(),
+      })
+      .from(animals)
+      .where(inArray(animals.exploitationId, exploitationIds))
+      .groupBy(animals.exploitationId);
+
+    counts.forEach((row) => {
+      if (row.exploitationId != null) {
+        animalsCountByExploitation[row.exploitationId] = Number(row.count);
+      }
+    });
+  }
+
+  const exploitationsSummary: UserExploitationSummary[] = userExploitationsList.map(
+    (ue) => ({
+      id: ue.exploitationId,
+      name: ue.name || "Exploitation inconnue",
+      type: ue.type || "OVIN",
+      role: ue.role,
+      animalsCount: animalsCountByExploitation[ue.exploitationId] || 0,
+      superficie: ue.superficie,
+    })
+  );
+
+  const totalAnimals = Object.values(animalsCountByExploitation).reduce(
+    (sum, c) => sum + c,
+    0
+  );
+
+  return {
+    success: true,
+    status: 200,
+    user: sanitizeUser(user),
+    exploitations: exploitationsSummary,
+    totalExploitations: exploitationsSummary.length,
+    totalAnimals,
+  };
 }

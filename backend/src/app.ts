@@ -44,7 +44,24 @@ import fatteningIndividualWeightsRoutes from './routes/fatteningBatchIndividualW
 import fatteningCostsRoutes from './routes/fatteningBatchCosts.routes.js';
 import fatteningPerformanceRoutes from './routes/fatteningPerformance.routes.js';
 import fatteningAlertsRoutes from './routes/fatteningAlerts.routes.js';
+
+
+
+import feedingRoutes from "./routes/feeding.routes.js";
+import feedingStockMgmtRoutes from "./routes/feedingStockMgmt.routes.js";
 import postsRoutes from "./routes/posts.js";
+
+
+import clientsRoutes from "./routes/clients.routes.js";
+import productsRoutes from "./routes/products.routes.js";
+import ordersRoutes from "./routes/orders.routes.js";
+import deliveriesRoutes from "./routes/deliveries.routes.js";
+import frameworkContractsRoutes from "./routes/framework-contracts.routes.js";
+import marketplaceRoutes from "./routes/marketplace.routes.js";
+import crmRoutes from "./routes/crm.routes.js";
+import biRoutes from "./routes/bi.routes.js";
+import widgetsRoutes from "./routes/widgets.routes.js";
+import aiRoutes from "./routes/ai.routes.js";
 
 const app = new Hono();
 
@@ -141,8 +158,21 @@ app.route('/api/fattening/alerts', fatteningAlertsRoutes);
 
 app.route("/api/posts", postsRoutes);
 
+app.route('/api/feeding', feedingRoutes);
+app.route('/api/feeding-stock', feedingStockMgmtRoutes);
 
 app.route("/api/predictions", predictionRoutes);
+app.route('/api/clients', clientsRoutes);
+app.route('/api/products', productsRoutes);
+app.route('/api/products', productsRoutes);
+app.route('/api/orders', ordersRoutes);
+app.route('/api/deliveries', deliveriesRoutes);
+app.route('/api/framework-contracts', frameworkContractsRoutes);
+app.route('/api/marketplace', marketplaceRoutes);
+app.route('/api/crm', crmRoutes);
+app.route('/api/bi', biRoutes);
+app.route('/api/dashboard', widgetsRoutes);
 
+app.route("/api/ai", aiRoutes);
 
 export default app;

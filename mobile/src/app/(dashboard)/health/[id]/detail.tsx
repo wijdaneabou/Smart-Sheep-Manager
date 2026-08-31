@@ -12,10 +12,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import api from "../../../../services/api";
+import api, { API_URL } from "../../../../services/api";
 import { BackButton } from "../../../../components/BackButton";
 import { usePermissions } from "@/contexts/PermissionsContext";
-import { API_URL } from "../../../../services/api";
+
 
 // ── Design Tokens ──
 const GREEN = "#14532d";

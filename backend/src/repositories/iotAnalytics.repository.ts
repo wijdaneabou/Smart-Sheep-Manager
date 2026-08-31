@@ -63,3 +63,20 @@ export async function getAnimalShieldsForExploitation(exploitationId: number) {
     .innerJoin(animals, eq(iotShields.animalId, animals.id))
     .where(eq(iotShields.exploitationId, exploitationId));
 }
+
+/**
+ * Tous les boucliers associés à un animal (sans filtre d'exploitation) —
+ * utilisé pour les admins / coopératives dans les analytics.
+ */
+export async function getAllAnimalShields() {
+  return db
+    .select({
+      shieldId: iotShields.id,
+      ssmIotNumber: iotShields.ssmIotNumber,
+      animalId: animals.id,
+      animalName: animals.name,
+      animalRfid: animals.rfid,
+    })
+    .from(iotShields)
+    .innerJoin(animals, eq(iotShields.animalId, animals.id));
+}

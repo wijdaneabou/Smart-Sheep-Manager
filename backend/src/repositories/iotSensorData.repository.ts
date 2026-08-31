@@ -36,7 +36,6 @@ export async function findSensorDataById(id: number) {
       shield: {
         id: iotShields.id,
         ssmIotNumber: iotShields.ssmIotNumber,
-        sensorType: iotShields.sensorType,
         battery: iotShields.battery,
         status: iotShields.status,
       },
@@ -67,7 +66,6 @@ export async function getLatestSensorData(shieldId: number) {
       shield: {
         id: iotShields.id,
         ssmIotNumber: iotShields.ssmIotNumber,
-        sensorType: iotShields.sensorType,
         battery: iotShields.battery,
         status: iotShields.status,
         animalId: iotShields.animalId,
@@ -118,7 +116,6 @@ export async function getLatestSensorDataForExploitationIds(
       shield: {
         id: iotShields.id,
         ssmIotNumber: iotShields.ssmIotNumber,
-        sensorType: iotShields.sensorType,
         battery: iotShields.battery,
         status: iotShields.status,
         animalId: iotShields.animalId,
@@ -199,7 +196,6 @@ export async function getLatestForAllShields(exploitationIds?: number[] | null) 
       shield: {
         id: iotShields.id,
         ssmIotNumber: iotShields.ssmIotNumber,
-        sensorType: iotShields.sensorType,
         battery: iotShields.battery,
         status: iotShields.status,
         animalId: iotShields.animalId,

@@ -43,7 +43,13 @@ export async function login(c: Context) {
 
   const result = await loginService(
     validation.data.email,
-    validation.data.password
+    validation.data.password,
+    c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+      c.req.header("x-real-ip") ??
+      null,
+    c.req.header("x-device-info") ??
+      c.req.header("user-agent") ??
+      null
   );
 
   if (result.success === false) {

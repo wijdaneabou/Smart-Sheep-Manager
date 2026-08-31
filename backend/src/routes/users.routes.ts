@@ -8,6 +8,7 @@ import {
   listUsersHandler,
   getLoginHistoryHandler,
   uploadUserPhotoHandler,
+  getUserAdminDetailsHandler,
 } from "../controllers/users.controller.js";
 import { isAuthenticated } from "../middlewares/auth.middleware.js";
 import { requirePermission } from "../middlewares/permissions.middleware.js";
@@ -42,8 +43,10 @@ usersRoutes.patch("/:id/reactivate", requirePermission("USERS", "UPDATE"), react
 
 // GET – requires READ
 usersRoutes.get("/:id", requirePermission("USERS", "READ"), getUserByIdHandler);
+usersRoutes.get("/:id/admin-details", requirePermission("USERS", "READ"), getUserAdminDetailsHandler);
 
 // GET list – requires EXPLOITATIONS:UPDATE
+
 usersRoutes.get("/", requirePermission("EXPLOITATIONS", "UPDATE"), listUsersHandler);
 
 // Login history – requires READ

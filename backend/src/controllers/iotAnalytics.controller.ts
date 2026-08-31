@@ -15,7 +15,8 @@ export async function getTemperatureTrendHandler(c: Context) {
   if (Number.isNaN(shieldId)) {
     return c.json({ error: "ID de bouclier invalide." }, 400);
   }
-  const result = await analyticsService.getTemperatureTrend(shieldId, parseDays(c));
+  const user = c.get("user");
+  const result = await analyticsService.getTemperatureTrend(shieldId, parseDays(c), user);
   return c.json({ data: result.data }, result.status);
 }
 
@@ -27,7 +28,8 @@ export async function getGrazingTimeHandler(c: Context) {
   if (Number.isNaN(shieldId)) {
     return c.json({ error: "ID de bouclier invalide." }, 400);
   }
-  const result = await analyticsService.getGrazingTime(shieldId, parseDays(c));
+  const user = c.get("user");
+  const result = await analyticsService.getGrazingTime(shieldId, parseDays(c), user);
   return c.json({ data: result.data }, result.status);
 }
 
@@ -39,7 +41,8 @@ export async function getDistanceHandler(c: Context) {
   if (Number.isNaN(shieldId)) {
     return c.json({ error: "ID de bouclier invalide." }, 400);
   }
-  const result = await analyticsService.getDistanceTraveled(shieldId, parseDays(c));
+  const user = c.get("user");
+  const result = await analyticsService.getDistanceTraveled(shieldId, parseDays(c), user);
   return c.json({ data: result.data, totalKm: result.totalKm }, result.status);
 }
 
@@ -47,10 +50,7 @@ export async function getDistanceHandler(c: Context) {
  * GET /api/iot-analytics/compare?exploitationId=1&days=7
  */
 export async function compareAnimalsHandler(c: Context) {
-  const exploitationId = c.req.query("exploitationId");
-  if (!exploitationId) {
-    return c.json({ error: "exploitationId requis." }, 400);
-  }
-  const result = await analyticsService.compareAnimals(Number(exploitationId), parseDays(c));
+  const user = c.get("user");
+  const result = await analyticsService.compareAnimals(user, parseDays(c));
   return c.json({ data: result.data }, result.status);
 }

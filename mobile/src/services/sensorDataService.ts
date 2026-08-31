@@ -12,7 +12,7 @@ export type SensorData = {
   shield: {
     id: number;
     ssmIotNumber: string;
-    sensorType: string;
+    sensors: { id: number; sensorType: string; status: string }[];
     battery: string;
     status: string;
     animalId: number | null;
@@ -28,10 +28,11 @@ export type LatestSensorData = {
   longitude: string | null;
   measuredAt: string;
   createdAt: string;
+  unresolvedAlertCount: number;
   shield: {
     id: number;
     ssmIotNumber: string;
-    sensorType: string;
+    sensors: { id: number; sensorType: string; status: string }[];
     battery: string;
     status: string;
     animalId: number | null;
@@ -44,9 +45,6 @@ function extractError(err: any): string {
   return err?.response?.data?.message ?? "Impossible de contacter le serveur.";
 }
 
-/**
- * ✅ Updated: No params needed - backend filters based on authenticated user's exploitations.
- */
 export async function getLatestAllSensorData() {
   try {
     const response = await api.get<{ data: LatestSensorData[] }>("/sensor-data/latest");
