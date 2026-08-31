@@ -5,85 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1785618272445,
-      "tag": "0000_wandering_jocasta",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1785697881339,
-      "tag": "0001_pale_rattler",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1786025548431,
-      "tag": "0002_even_texas_twister",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1787144842269,
-      "tag": "0003_overconfident_daimon_hellstrom",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1787181432217,
-      "tag": "0004_redundant_toad_men",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "5",
-      "when": 1785753811845,
-      "tag": "0011_nosy_changeling",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "5",
-      "when": 1787330946027,
-      "tag": "0012_misty_blindfold",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "5",
-      "when": 1787339434762,
-      "tag": "0013_giant_zeigeist",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "5",
-      "when": 1787344884615,
-      "tag": "0014_amazing_cannonball",
-      "breakpoints": true
-    },
-    {
-      "idx": 15,
-      "version": "5",
-      "when": 1787348746892,
-      "tag": "0015_lovely_carmella_unuscione",
-      "breakpoints": true
-    },
-    {
-      "idx": 16,
-      "version": "5",
-      "when": 1787443236813,
-      "tag": "0016_illegal_mentor",
-      "breakpoints": true
-    },
-    {
-      "idx": 17,
-      "version": "5",
-      "when": 1787535462408,
-      "tag": "0017_nappy_the_captain",
+      "when": 1788149632265,
+      "tag": "0000_mute_lyja",
       "breakpoints": true
     }
   ]
